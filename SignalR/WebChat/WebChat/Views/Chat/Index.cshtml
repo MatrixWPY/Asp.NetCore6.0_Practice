@@ -1,0 +1,73 @@
+﻿<h1>即時聊天範例</h1>
+
+<div class="row">
+    <div class="col-8">
+        <h4>個人 ID: <span id="SelfID"></span></h4>
+        <div class="mb-3">
+            <label for="message" class="form-label">發送訊息</label>
+            <input type="text" class="form-control" id="message">
+        </div>
+        <div class="mb-3">
+            <label for="sendToID" class="form-label">指定 ID</label>
+            <input type="text" class="form-control" id="sendToID">
+        </div>
+        <button type="button" class="btn btn-primary" id="sendButton">傳送訊息</button>
+    </div>
+    <div class="col-4">
+        <h4>連線 ID 列表</h4>
+        <ul class="list-group" id="IDList">
+        </ul>
+    </div>
+</div>
+
+<div class="row mt-3">
+    <div class="col-12">
+        <h3>聊天內容</h3>
+        <ul class="list-group" id="Content">
+        </ul>
+    </div>
+</div>
+
+@section scripts{
+    <script src="~/js/signalr/dist/browser/signalr.js"></script>
+    <script>
+        var connection = new signalR.HubConnectionBuilder().withUrl("/chatHub").build();
+
+        //與Server建立連線
+        connection.start().then(function () {
+            console.log("Hub 連線完成");
+        }).catch(function (err) {
+            alert('連線錯誤: ' + err.toString());
+        });
+
+        // 更新連線 ID 列表事件
+        connection.on("UpdList", function (jsonList) {
+            var list = JSON.parse(jsonList);
+            $("#IDList li").remove();
+            for(i=0; i<list.length; i++)
+            {
+                $("#IDList").append($("<li></li>").attr("class", "list-group-item").text(list[i]));
+            }
+        });
+
+        // 更新用戶個人連線 ID 事件
+        connection.on("UpdSelfID", function (id) {
+            $('#SelfID').html(id);
+        });
+
+        // 更新聊天內容事件
+        connection.on("UpdContent", function (msg) {
+            $("#Content").append($("<li></li>").attr("class", "list-group-item").text(msg));
+        });
+
+        //傳送訊息
+        $('#sendButton').on('click', function() {
+            let selfID = $('#SelfID').html();
+            let message = $('#message').val();
+            let sendToID = $('#sendToID').val();
+            connection.invoke("SendMessage", selfID, message, sendToID).catch(function (err) {
+                alert('傳送錯誤: ' + err.toString());
+            });
+        });
+    </script>
+}

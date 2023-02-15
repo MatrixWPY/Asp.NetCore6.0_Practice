@@ -1,5 +1,6 @@
 ﻿using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
+using System.Diagnostics;
 using System.Text;
 
 namespace Consumer
@@ -53,13 +54,13 @@ namespace Consumer
                     //global : 是否為全局設置
                     channel.BasicQos(prefetchSize: 0, prefetchCount: 1, global: false);
 
-                    int index = new Random().Next(100);
+                    int pId = Process.GetCurrentProcess().Id;
                     var consumer = new EventingBasicConsumer(channel);
                     consumer.Received += (model, ea) =>
                     {
                         //消費者業務處理
                         var message = Encoding.UTF8.GetString(ea.Body.ToArray());
-                        Console.WriteLine($"消費者:{index}, 接收消息從隊列:{queueName}, 內容:{message}");
+                        Console.WriteLine($"ProcessId:{pId}, 接收消息從隊列:{queueName}, 內容:{message}");
 
                         //消息ack確認，告訴RabbitMQ這條消息處理完，可以從RabbitMQ刪除了
                         channel.BasicAck(ea.DeliveryTag, false);

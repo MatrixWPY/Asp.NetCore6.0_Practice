@@ -1,6 +1,9 @@
 ﻿using Producer;
 
 // Simple 模式
-Send.Simple();
+//Send.Simple();
+
+// Worker 模式
+Send.Worker();
 
 Console.ReadKey();

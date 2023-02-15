@@ -19,13 +19,11 @@ namespace Consumer
                     //創建隊列
                     channel.QueueDeclare(queueName, durable: false, exclusive: false, autoDelete: false, arguments: null);
                     var consumer = new EventingBasicConsumer(channel);
-                    int i = 0;
                     consumer.Received += (model, ea) =>
                     {
                         //消費者業務處理
                         var message = Encoding.UTF8.GetString(ea.Body.ToArray());
-                        Console.WriteLine($"{i},隊列{queueName}消費消息長度:{message.Length}");
-                        i++;
+                        Console.WriteLine($"接收消息從隊列:{queueName}, 內容:{message}");
                     };
                     channel.BasicConsume(queueName, true, consumer);
                 }

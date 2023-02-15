@@ -18,11 +18,11 @@ namespace Producer
                     channel.QueueDeclare(queueName, durable: false, exclusive: false, autoDelete: false, arguments: null);
                     for (var i = 0; i < 10; i++)
                     {
-                        string message = $"Hello RabbitMQ MessageHello,{i + 1}";
+                        string message = $"Hello RabbitMQ ~ {i + 1}";
                         var body = Encoding.UTF8.GetBytes(message);
                         //發送消息
                         channel.BasicPublish(exchange: "", routingKey: queueName, mandatory: false, basicProperties: null, body);
-                        Console.WriteLine($"發送消息到隊列:{queueName},內容:{message}");
+                        Console.WriteLine($"發送消息到隊列:{queueName}, 內容:{message}");
                     }
                 }
             }

@@ -1,2 +1,6 @@
-﻿// See https://aka.ms/new-console-template for more information
-Console.WriteLine("Hello, World!");
+﻿using Producer;
+
+// Simple 模式
+Send.Simple();
+
+Console.ReadKey();

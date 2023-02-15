@@ -1,2 +1,6 @@
-﻿// See https://aka.ms/new-console-template for more information
-Console.WriteLine("Hello, World!");
+﻿using Consumer;
+
+// Simple 模式
+Receive.Simple();
+
+Console.ReadKey();

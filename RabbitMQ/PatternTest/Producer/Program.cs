@@ -7,6 +7,9 @@
 //Send.Worker();
 
 // Publish/Subscribe 模式 (Fanout)
-Send.Fanout();
+//Send.Fanout();
+
+// Routing 模式 (Direct)
+Send.Direct();
 
 Console.ReadKey();

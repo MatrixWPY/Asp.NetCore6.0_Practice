@@ -48,9 +48,9 @@ namespace Producer
                 {
                     //創建隊列
                     channel.QueueDeclare(queueName, durable: true, exclusive: false, autoDelete: false, arguments: null);
+
                     var properties = channel.CreateBasicProperties();
-                    //消息持久化
-                    properties.Persistent = true;
+                    properties.Persistent = true;//消息持久化
 
                     for (var i = 0; i < 10; i++)
                     {
@@ -82,20 +82,20 @@ namespace Producer
                 //創建通道
                 using (var channel = connection.CreateModel())
                 {
-                    //創建交換機:fanout類型
+                    //創建交換機:Fanout類型
                     channel.ExchangeDeclare(exchangeName1, ExchangeType.Fanout, durable: true);
                     channel.ExchangeDeclare(exchangeName2, ExchangeType.Fanout, durable: true);
                     //創建隊列
                     channel.QueueDeclare(queueName1, durable: true, exclusive: false, autoDelete: false, arguments: null);
                     channel.QueueDeclare(queueName2, durable: true, exclusive: false, autoDelete: false, arguments: null);
                     channel.QueueDeclare(queueName3, durable: true, exclusive: false, autoDelete: false, arguments: null);
-                    //把創建的隊列綁定交換機，routingKey不用給值，給了也沒意義
+                    //隊列綁定交換機，routingKey不用給值，給了也沒意義
                     channel.QueueBind(queue: queueName1, exchange: exchangeName1, routingKey: "");
                     channel.QueueBind(queue: queueName2, exchange: exchangeName1, routingKey: "");
                     channel.QueueBind(queue: queueName3, exchange: exchangeName2, routingKey: "");
+
                     var properties = channel.CreateBasicProperties();
-                    //消息持久化
-                    properties.Persistent = true;
+                    properties.Persistent = true;//消息持久化
 
                     for (int i = 0; i < 10; i++)
                     {
@@ -112,6 +112,55 @@ namespace Producer
                         //發送消息
                         channel.BasicPublish(exchange: exchangeName2, routingKey: "", basicProperties: properties, body);
                         Console.WriteLine($"發送Fanout_2消息:{message}");
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Routing 模式 (Direct)
+        /// </summary>
+        public static void Direct()
+        {
+            //交換機名
+            string exchangeName = "direct_exchange";
+            //隊列名
+            string queueName1 = "direct_errorLog";
+            string queueName2 = "direct_allLog";
+            //創建連接
+            using (var connection = RabbitMQHelper.GetConnection())
+            {
+                //創建通道
+                using (var channel = connection.CreateModel())
+                {
+                    //創建交換機:Direct類型
+                    channel.ExchangeDeclare(exchangeName, ExchangeType.Direct, durable: true);
+                    //創建隊列
+                    channel.QueueDeclare(queueName1, durable: true, exclusive: false, autoDelete: false, arguments: null);
+                    channel.QueueDeclare(queueName2, durable: true, exclusive: false, autoDelete: false, arguments: null);
+                    //隊列綁定交換機
+                    //direct_errorLog隊列綁定routingKey:error
+                    channel.QueueBind(queue: queueName1, exchange: exchangeName, routingKey: "error");
+                    //direct_allLog隊列綁定routingKey:info,error
+                    channel.QueueBind(queue: queueName2, exchange: exchangeName, routingKey: "info");
+                    channel.QueueBind(queue: queueName2, exchange: exchangeName, routingKey: "error");
+
+                    var properties = channel.CreateBasicProperties();
+                    properties.Persistent = true;//消息持久化
+
+                    for (int i = 0; i < 10; i++)
+                    {
+                        string message = $"RabbitMQ Direct {i + 1} error Message";
+                        var body = Encoding.UTF8.GetBytes(message);
+                        //發送消息
+                        channel.BasicPublish(exchangeName, routingKey: "error", properties, body);
+                        Console.WriteLine($"發送Direct消息error:{message}");
+
+                        string message2 = $"RabbitMQ Direct {i + 1} info Message";
+                        var body2 = Encoding.UTF8.GetBytes(message2);
+                        //發送消息
+                        channel.BasicPublish(exchangeName, routingKey: "info", properties, body2);
+                        Console.WriteLine($"發送Direct消息info:{message2}");
                     }
                 }
             }

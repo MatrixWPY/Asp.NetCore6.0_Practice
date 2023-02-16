@@ -7,6 +7,9 @@
 //Receive.Worker();
 
 // Publish/Subscribe 模式 (Fanout)
-Receive.Fanout();
+//Receive.Fanout();
+
+//Routing 模式 (Direct)
+Receive.Direct();
 
 Console.ReadKey();

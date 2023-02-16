@@ -83,8 +83,8 @@ namespace Producer
                 using (var channel = connection.CreateModel())
                 {
                     //創建交換機:fanout類型
-                    channel.ExchangeDeclare(exchangeName1, ExchangeType.Fanout);
-                    channel.ExchangeDeclare(exchangeName2, ExchangeType.Fanout);
+                    channel.ExchangeDeclare(exchangeName1, ExchangeType.Fanout, durable: true);
+                    channel.ExchangeDeclare(exchangeName2, ExchangeType.Fanout, durable: true);
                     //創建隊列
                     channel.QueueDeclare(queueName1, durable: true, exclusive: false, autoDelete: false, arguments: null);
                     channel.QueueDeclare(queueName2, durable: true, exclusive: false, autoDelete: false, arguments: null);
@@ -105,7 +105,7 @@ namespace Producer
                         channel.BasicPublish(exchange: exchangeName1, routingKey: "", basicProperties: properties, body);
                         Console.WriteLine($"發送Fanout_1消息:{message}");
                     }
-                    for (int i = 0; i < 10; i++)
+                    for (int i = 0; i < 5; i++)
                     {
                         string message = $"RabbitMQ Fanout_2 {i + 1} Message";
                         var body = Encoding.UTF8.GetBytes(message);

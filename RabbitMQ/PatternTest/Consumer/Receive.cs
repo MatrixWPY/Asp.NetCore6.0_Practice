@@ -22,6 +22,7 @@ namespace Consumer
                 {
                     //創建隊列
                     channel.QueueDeclare(queueName, durable: false, exclusive: false, autoDelete: false, arguments: null);
+
                     var consumer = new EventingBasicConsumer(channel);
                     consumer.Received += (model, ea) =>
                     {
@@ -29,6 +30,7 @@ namespace Consumer
                         var message = Encoding.UTF8.GetString(ea.Body.ToArray());
                         Console.WriteLine($"接收消息從隊列:{queueName}, 內容:{message}");
                     };
+
                     channel.BasicConsume(queueName, autoAck: true, consumer);
                 }
             }
@@ -67,6 +69,7 @@ namespace Consumer
 
                         Thread.Sleep(1000);
                     };
+
                     channel.BasicConsume(queueName, autoAck: false, consumer);
                 }
             }
@@ -107,6 +110,7 @@ namespace Consumer
 
                         Thread.Sleep(1000);
                     };
+
                     channel1.BasicConsume(queueName1, autoAck: false, consumer);
                 }
                 //創建通道
@@ -132,6 +136,7 @@ namespace Consumer
 
                         Thread.Sleep(1000);
                     };
+
                     channel2.BasicConsume(queueName2, autoAck: false, consumer);
                 }
                 //創建通道
@@ -157,6 +162,7 @@ namespace Consumer
 
                         Thread.Sleep(1000);
                     };
+
                     channel3.BasicConsume(queueName3, autoAck: false, consumer);
                 }
             }
@@ -196,6 +202,7 @@ namespace Consumer
 
                         Thread.Sleep(1000);
                     };
+
                     channel1.BasicConsume(queueName1, autoAck: false, consumer);
                 }
                 //創建通道
@@ -221,6 +228,7 @@ namespace Consumer
 
                         Thread.Sleep(1000);
                     };
+
                     channel2.BasicConsume(queueName2, autoAck: false, consumer);
                 }
             }
@@ -260,6 +268,7 @@ namespace Consumer
 
                         Thread.Sleep(1000);
                     };
+
                     channel1.BasicConsume(queueName1, autoAck: false, consumer);
                 }
                 //創建通道
@@ -285,6 +294,7 @@ namespace Consumer
 
                         Thread.Sleep(1000);
                     };
+
                     channel2.BasicConsume(queueName2, autoAck: false, consumer);
                 }
             }

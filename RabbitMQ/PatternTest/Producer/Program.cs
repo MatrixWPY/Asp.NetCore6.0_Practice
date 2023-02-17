@@ -1,18 +1,28 @@
 ﻿using Producer;
 
-// Simple 模式
+#region Simple 模式
 //Send.Simple();
+#endregion
 
-// Worker 模式
+#region Worker 模式
 //Send.Worker();
+#endregion
 
-// Publish/Subscribe 模式 (ExchangeType: Fanout)
+#region Publish/Subscribe 模式 (ExchangeType: Fanout)
 //Send.Fanout();
+#endregion
 
-// Routing 模式 (ExchangeType: Direct)
+#region Routing 模式 (ExchangeType: Direct)
 //Send.Direct();
+#endregion
 
-// Topics 模式 (ExchangeType: Topic)
-Send.Topic();
+#region Topics 模式 (ExchangeType: Topic)
+//Send.Topic();
+#endregion
+
+#region RPC 模式
+//啟動服務端
+RPCServer.RpcHandle();
+#endregion
 
 Console.ReadKey();

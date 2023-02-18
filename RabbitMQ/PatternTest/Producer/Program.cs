@@ -1,11 +1,10 @@
 ﻿using Producer;
 
 string input = string.Empty;
-bool showReturnMsg = true;
 
 do
 {
-    showReturnMsg = true;
+    Console.Clear();
 
     Console.WriteLine("RabbitMQ Pattern Test");
     Console.WriteLine("");
@@ -19,87 +18,77 @@ do
     Console.WriteLine("");
     Console.Write("Choise:");
 
-    switch (input = Console.ReadLine().ToLower())
+    input = Console.ReadLine();
+    Console.Clear();
+    Console.WriteLine("[Press any key to menu]");
+
+    switch (input)
     {
         case "1":
-            Console.Clear();
-            Console.Write("Producer Simple Mode:");
+            Console.WriteLine("Producer Simple Mode:");
             Console.WriteLine("");
 
             #region Simple 模式
             Send.Simple();
             #endregion
+
+            Console.ReadKey();
             break;
 
         case "2":
-            Console.Clear();
-            Console.Write("Producer Worker Mode:");
+            Console.WriteLine("Producer Worker Mode:");
             Console.WriteLine("");
 
             #region Worker 模式
             Send.Worker();
             #endregion
+
+            Console.ReadKey();
             break;
 
         case "3":
-            Console.Clear();
-            Console.Write("Producer Publish/Subscribe Mode:");
+            Console.WriteLine("Producer Publish/Subscribe Mode:");
             Console.WriteLine("");
 
             #region Publish/Subscribe 模式 (ExchangeType: Fanout)
             Send.Fanout();
             #endregion
+
+            Console.ReadKey();
             break;
 
         case "4":
-            Console.Clear();
-            Console.Write("Producer Routing Mode:");
+            Console.WriteLine("Producer Routing Mode:");
             Console.WriteLine("");
 
             #region Routing 模式 (ExchangeType: Direct)
             Send.Direct();
             #endregion
+
+            Console.ReadKey();
             break;
 
         case "5":
-            Console.Clear();
-            Console.Write("Producer Topics Mode:");
+            Console.WriteLine("Producer Topics Mode:");
             Console.WriteLine("");
 
             #region Topics 模式 (ExchangeType: Topic)
             Send.Topic();
             #endregion
+
+            Console.ReadKey();
             break;
 
         case "6":
-            Console.Clear();
-            Console.Write("Producer RPC Mode:");
+            Console.WriteLine("Producer RPC Mode:");
             Console.WriteLine("");
 
             #region RPC 模式
             //啟動服務端
             RPCServer.RpcHandle();
             #endregion
-            break;
 
-        default:
-            Console.Clear();
-            showReturnMsg = false;
+            Console.ReadKey();
             break;
     }
-
-    if (showReturnMsg)
-    {
-        Console.WriteLine("");
-        Console.Write("Return to menu? (Y/N):");
-        input = Console.ReadLine().ToLower();
-        if (input == "y")
-        {
-            Console.Clear();
-        }
-        else
-        {
-            input = "exit";
-        }
-    }
-} while(input != "exit");
+} while(input.ToLower() != "exit");

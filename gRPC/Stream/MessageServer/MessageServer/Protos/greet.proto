@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+option csharp_namespace = "MessageServer";
+
+package greet;
+
+service CandidateService {
+    rpc CreateCv (stream Candidate) returns (CreateCvResponse);         //client-side streaming
+    rpc DownloadCv (DownloadByName) returns (stream Candidate);         //server-side streaming
+    rpc CreateDownloadCv (stream Candidate) returns (stream Candidates);//bidirectional streaming
+}
+
+message Job {
+    string Title = 1;
+    int32 Salary = 2;
+    string JobDescription = 3;
+}
+message Candidate {
+    string Name = 1;
+    repeated Job Jobs = 2;
+}
+message Candidates {
+    repeated Candidate Candidates = 2;
+}
+message DownloadByName {
+    string Name = 1;
+}
+message CreateCvResponse {
+    bool IsSuccess = 1;
+}

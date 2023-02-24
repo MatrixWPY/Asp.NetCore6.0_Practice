@@ -44,6 +44,12 @@ app.MapPut("/Test/{id}", ([FromRoute] int id, [FromBody] PutRequestModel request
     return new ResponseModel { Message = "PUT", Data = new { id, request } };
 });
 #endregion
+#region HttpPatch
+app.MapMethods("/Test/{id}", new string[] { "PATCH" }, ([FromRoute] int id, [FromBody] PatchRequestModel request) =>
+{
+    return new ResponseModel { Message = "PATCH", Data = new { id, request } };
+});
+#endregion
 #region HttpDelete
 app.MapDelete("/Test/{id}", ([FromRoute] int id) =>
 {
@@ -60,6 +66,10 @@ public class PostRequestModel
     public string Describe { get; set; }
 }
 public class PutRequestModel
+{
+    public string Describe { get; set; }
+}
+public class PatchRequestModel
 {
     public string Describe { get; set; }
 }

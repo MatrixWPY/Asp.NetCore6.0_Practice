@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
+using MiniValidation;
+using System.ComponentModel.DataAnnotations;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,19 +37,31 @@ app.MapGet("/Test/{id}", ([FromRoute] int id) =>
 #region HttpPost
 app.MapPost("/Test", ([FromBody] PostRequestModel request) =>
 {
-    return new ResponseModel { Message = "POST", Data = request };
+    if (MiniValidator.TryValidate(request, out var errors))
+    {
+        return new ResponseModel { Message = "POST", Data = request };
+    }
+    return new ResponseModel { Message = "POST", Data = (errors.SelectMany(e => e.Value)) };
 });
 #endregion
 #region HttpPut
 app.MapPut("/Test/{id}", ([FromRoute] int id, [FromBody] PutRequestModel request) =>
 {
-    return new ResponseModel { Message = "PUT", Data = new { id, request } };
+    if (MiniValidator.TryValidate(request, out var errors))
+    {
+        return new ResponseModel { Message = "PUT", Data = new { id, request } };
+    }
+    return new ResponseModel { Message = "PUT", Data = (errors.SelectMany(e => e.Value)) };
 });
 #endregion
 #region HttpPatch
 app.MapMethods("/Test/{id}", new string[] { "PATCH" }, ([FromRoute] int id, [FromBody] PatchRequestModel request) =>
 {
-    return new ResponseModel { Message = "PATCH", Data = new { id, request } };
+    if (MiniValidator.TryValidate(request, out var errors))
+    {
+        return new ResponseModel { Message = "PATCH", Data = new { id, request } };
+    }
+    return new ResponseModel { Message = "PATCH", Data = (errors.SelectMany(e => e.Value)) };
 });
 #endregion
 #region HttpDelete
@@ -62,11 +76,14 @@ app.Run();
 #region Request/Response Model
 public class PostRequestModel
 {
-    public long Id { get; set; }
+    [Required]
+    public long? Id { get; set; }
+    [Required]
     public string Describe { get; set; }
 }
 public class PutRequestModel
 {
+    [Required]
     public string Describe { get; set; }
 }
 public class PatchRequestModel

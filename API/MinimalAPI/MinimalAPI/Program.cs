@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Mvc;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -16,28 +18,54 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-var summaries = new[]
+#region HttpGet
+//app.MapGet("/Test", () =>
+//{
+//    return new ResponseModel { Message = "GET" };
+//});
+app.MapGet("/Test", ([FromQuery] int id) =>
 {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
+    return new ResponseModel { Message = "GET by id", Data = new { id } };
+});
+app.MapGet("/Test/{id}", ([FromRoute] int id) =>
 {
-    var forecast = Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateTime.Now.AddDays(index),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
+    return new ResponseModel { Message = "GET by id", Data = new { id } };
+});
+#endregion
+#region HttpPost
+app.MapPost("/Test", ([FromBody] PostRequestModel request) =>
+{
+    return new ResponseModel { Message = "POST", Data = request };
+});
+#endregion
+#region HttpPut
+app.MapPut("/Test/{id}", ([FromRoute] int id, [FromBody] PutRequestModel request) =>
+{
+    return new ResponseModel { Message = "PUT", Data = new { id, request } };
+});
+#endregion
+#region HttpDelete
+app.MapDelete("/Test/{id}", ([FromRoute] int id) =>
+{
+    return new ResponseModel { Message = "DELETE", Data = new { id } };
+});
+#endregion
 
 app.Run();
 
-internal record WeatherForecast(DateTime Date, int TemperatureC, string? Summary)
+#region Request/Response Model
+public class PostRequestModel
 {
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+    public long Id { get; set; }
+    public string Describe { get; set; }
 }
+public class PutRequestModel
+{
+    public string Describe { get; set; }
+}
+public class ResponseModel
+{
+    public string Message { get; set; }
+    public object Data { get; set; }
+}
+#endregion

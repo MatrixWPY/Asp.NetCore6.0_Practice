@@ -9,9 +9,9 @@ namespace WebApi.Services.Instance
     /// <summary>
     /// 
     /// </summary>
-    public class ContactInfoService : IContactInfoService
+    public class ContactInfoServiceMssql : IContactInfoService
     {
-        private readonly ILogger<ContactInfoService> _logger;
+        private readonly ILogger<ContactInfoServiceMssql> _logger;
         private readonly string _connectString;
 
         /// <summary>
@@ -19,7 +19,7 @@ namespace WebApi.Services.Instance
         /// </summary>
         /// <param name="logger"></param>
         /// <param name="configuration"></param>
-        public ContactInfoService(ILogger<ContactInfoService> logger, IConfiguration configuration)
+        public ContactInfoServiceMssql(ILogger<ContactInfoServiceMssql> logger, IConfiguration configuration)
         {
             _logger = logger;
             _connectString = configuration.GetValue<string>("ConnectionStrings:MsSql");

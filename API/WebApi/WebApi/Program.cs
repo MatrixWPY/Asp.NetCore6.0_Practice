@@ -66,7 +66,17 @@ builder.Services.AddTransient<IContactInfoCommand, ContactInfoCommand>();
 #endregion
 
 #region µù¥UService
-builder.Services.AddTransient<IContactInfoService, ContactInfoService>();
+var dbType = builder.Configuration.GetValue(typeof(string), "DbType");
+switch (dbType)
+{
+    case "MsSql":
+        builder.Services.AddTransient<IContactInfoService, ContactInfoServiceMssql>();
+        break;
+
+    case "MySql":
+        builder.Services.AddTransient<IContactInfoService, ContactInfoServiceMysql>();
+        break;
+}
 #endregion
 
 #endregion

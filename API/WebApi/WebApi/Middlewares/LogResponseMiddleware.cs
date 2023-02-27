@@ -41,12 +41,16 @@ namespace WebApi.Middlewares
             context.Response.Body.Seek(0, SeekOrigin.Begin);
             var responseBodyTxt = await new StreamReader(context.Response.Body).ReadToEndAsync();
 
-            // 保存傳出參數資訊
-            _logger.LogInformation(
-                    $"LogId={(string)context.Items["ApiLogId"]} , " +
-                    $"ResponseStatus={context.Response.StatusCode} , " +
-                    $"ResponseHeader={{{GetHeaders(context.Response.Headers)}}} , " +
-                    $"ResponseBody={responseBodyTxt}");
+            // 排除紀錄SwaggerUI資訊
+            if (context.Request.Path.Value.Contains("swagger") == false)
+            {
+                // 保存傳出參數資訊
+                _logger.LogInformation(
+                        $"LogId={(string)context.Items["ApiLogId"]} , " +
+                        $"ResponseStatus={context.Response.StatusCode} , " +
+                        $"ResponseHeader={{{GetHeaders(context.Response.Headers)}}} , " +
+                        $"ResponseBody={responseBodyTxt}");
+            }
 
             context.Response.Body.Seek(0, SeekOrigin.Begin);
             await responseBody.CopyToAsync(originalBodyStream);

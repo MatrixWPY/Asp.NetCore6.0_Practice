@@ -34,15 +34,20 @@ namespace WebApi.Middlewares
             await using var requestStream = _recyclableMemoryStreamManager.GetStream();
             await context.Request.Body.CopyToAsync(requestStream);
 
-            // 產生唯一的 LogId 串起 Request & Response 兩筆 log 資料
-            context.Items["ApiLogId"] = GetLogId();
+            // 排除紀錄SwaggerUI資訊
+            if (context.Request.Path.Value.Contains("swagger") == false)
+            {
+                // 產生唯一的 LogId 串起 Request & Response 兩筆 log 資料
+                context.Items["ApiLogId"] = GetLogId();
 
-            // 保存傳入參數資訊
-            _logger.LogInformation(
-                    $"LogId={(string)context.Items["ApiLogId"]} , " +
-                    $"Url={context.Request.Scheme}://{context.Request.Host.ToUriComponent()}{context.Request.Path}{context.Request.QueryString} , " +
-                    $"RequestHeader={{{GetHeaders(context.Request.Headers)}}} , " +
-                    $"RequestBody={ReadStreamInChunks(requestStream)}");
+                // 保存傳入參數資訊
+                _logger.LogInformation(
+                        $"LogId={(string)context.Items["ApiLogId"]} , " +
+                        $"Url={context.Request.Scheme}://{context.Request.Host.ToUriComponent()}{context.Request.Path}{context.Request.QueryString} , " +
+                        $"Method={context.Request.Method} , " +
+                        $"RequestHeader={{{GetHeaders(context.Request.Headers)}}} , " +
+                        $"RequestBody={ReadStreamInChunks(requestStream)}");
+            }
 
             context.Request.Body.Position = 0;
             await _next(context);

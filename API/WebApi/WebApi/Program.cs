@@ -61,8 +61,23 @@ builder.Services.AddSwaggerGen(c =>
 builder.Logging.AddNLog("nlog.config");
 #endregion
 
+#region µù¥URedis
+var isUseRedis = (bool)builder.Configuration.GetValue(typeof(bool), "IsUseRedis");
+if (isUseRedis)
+{
+    builder.Services.AddSingleton<IRedisService, RedisService>();
+}
+#endregion
+
 #region µù¥UCommand
-builder.Services.AddTransient<IContactInfoCommand, ContactInfoCommand>();
+if (isUseRedis)
+{
+    builder.Services.AddTransient<IContactInfoCommand, ContactInfoRedisCommand>();
+}
+else
+{
+    builder.Services.AddTransient<IContactInfoCommand, ContactInfoCommand>();
+}
 #endregion
 
 #region µù¥UService

@@ -85,11 +85,11 @@ var dbType = builder.Configuration.GetValue(typeof(string), "DbType");
 switch (dbType)
 {
     case "MsSql":
-        builder.Services.AddTransient<IContactInfoService, ContactInfoServiceMssql>();
+        builder.Services.AddTransient<IContactInfoService, ContactInfoMssqlService>();
         break;
 
     case "MySql":
-        builder.Services.AddTransient<IContactInfoService, ContactInfoServiceMysql>();
+        builder.Services.AddTransient<IContactInfoService, ContactInfoMysqlService>();
         break;
 }
 #endregion

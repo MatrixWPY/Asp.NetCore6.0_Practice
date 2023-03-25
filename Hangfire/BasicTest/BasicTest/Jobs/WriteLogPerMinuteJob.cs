@@ -1,6 +1,8 @@
-﻿namespace BasicTest.Jobs
+﻿using BasicTest.Jobs.Base;
+
+namespace BasicTest.Jobs
 {
-    public class WriteLogPerMinuteJob
+    public class WriteLogPerMinuteJob : JobBase
     {
         private readonly ILogger<WriteLogPerMinuteJob> _logger;
 
@@ -9,7 +11,7 @@
             _logger = logger;
         }
 
-        public void Execute()
+        public override void Execute()
         {
             _logger.LogInformation($"{nameof(WriteLogPerMinuteJob)} Execute");
         }

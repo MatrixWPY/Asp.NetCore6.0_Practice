@@ -1,6 +1,6 @@
 ﻿using BasicTest.Jobs;
+using BasicTest.Jobs.Base;
 using Hangfire;
-using System.Linq.Expressions;
 
 namespace BasicTest
 {
@@ -21,21 +21,21 @@ namespace BasicTest
             using (var scope = _services.CreateScope())
             {
                 SetSchTask(nameof(WriteLogPerMinuteJob),
-                    () => scope.ServiceProvider.GetRequiredService<WriteLogPerMinuteJob>().Execute(),
+                    scope.ServiceProvider.GetRequiredService<WriteLogPerMinuteJob>(),
                     "0 0/1 * * * ?");
 
                 SetSchTask(nameof(WriteLogOnTimeJob),
-                    () => scope.ServiceProvider.GetRequiredService<WriteLogOnTimeJob>().Execute(),
+                    scope.ServiceProvider.GetRequiredService<WriteLogOnTimeJob>(),
                     "0 0 6 * * ?");
             }
         }
 
-        private void SetSchTask(string id, Expression<Action> job, string cron)
+        private void SetSchTask(string id, JobBase job, string cron)
         {
             // 先刪再設，避免錯過時間排程在伺服器啟動時執行
             // https://blog.darkthread.net/blog/missed-recurring-job-in-hangfire/
             RecurringJob.RemoveIfExists(id);
-            RecurringJob.AddOrUpdate(id, job, cron, TimeZoneInfo.Local);
+            RecurringJob.AddOrUpdate(id, () => job.Execute(), cron, TimeZoneInfo.Local);
         }
     }
 

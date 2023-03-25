@@ -20,8 +20,13 @@ namespace BasicTest
         {
             using (var scope = _services.CreateScope())
             {
-                var job = scope.ServiceProvider.GetRequiredService<WriteLogPerMinute>();
-                SetSchTask("WriteLogPerMinute", () => job.Execute(), "0 0/1 * * * ?");
+                SetSchTask(nameof(WriteLogPerMinute),
+                    () => scope.ServiceProvider.GetRequiredService<WriteLogPerMinute>().Execute(),
+                    "0 0/1 * * * ?");
+
+                SetSchTask(nameof(WriteLogOnTime),
+                    () => scope.ServiceProvider.GetRequiredService<WriteLogOnTime>().Execute(),
+                    "0 0 17 * * ?");
             }
         }
 
@@ -41,6 +46,7 @@ namespace BasicTest
         {
             builder.Services.AddSingleton<SchTaskWorker>();
             builder.Services.AddTransient<WriteLogPerMinute>();
+            builder.Services.AddTransient<WriteLogOnTime>();
             return builder;
         }
 

@@ -22,8 +22,10 @@ builder.Services.AddHangfireServer();
 #endregion
 
 #region 註冊排程工作元件
-// 使用擴充方法註冊排程工作元件
 builder.AddSchTaskWorker();
+#endregion
+#region 註冊排程
+builder.AddSchTasks();
 #endregion
 
 var app = builder.Build();
@@ -36,8 +38,7 @@ app.UseHttpsRedirection();
 app.UseHangfireDashboard();
 #endregion
 
-#region 設定排程工作
-// 使用擴充方法設定排程工作
+#region 設定排程
 app.SetSchTasks();
 #endregion
 

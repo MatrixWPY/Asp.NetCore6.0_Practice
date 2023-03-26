@@ -1,5 +1,5 @@
 ﻿using Dapper;
-using System.Data.SqlClient;
+using System.Data;
 using System.Text;
 using WebApi.Models.Data;
 using WebApi.Services.Interface;
@@ -12,17 +12,17 @@ namespace WebApi.Services.Instance
     public class ContactInfoMssqlService : IContactInfoService
     {
         private readonly ILogger<ContactInfoMssqlService> _logger;
-        private readonly string _connectString;
+        private readonly IDbConnection _dbConnection;
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="logger"></param>
-        /// <param name="configuration"></param>
-        public ContactInfoMssqlService(ILogger<ContactInfoMssqlService> logger, IConfiguration configuration)
+        /// <param name="dbConnection"></param>
+        public ContactInfoMssqlService(ILogger<ContactInfoMssqlService> logger, IDbConnection dbConnection)
         {
             _logger = logger;
-            _connectString = configuration.GetValue<string>("ConnectionStrings:MsSql");
+            _dbConnection = dbConnection;
         }
 
         /// <summary>
@@ -39,10 +39,7 @@ namespace WebApi.Services.Instance
                 sbSQL.AppendLine("WHERE ContactInfoID=@ContactInfoID");
                 sbSQL.AppendLine("ORDER BY ContactInfoID DESC");
 
-                using (var db = new SqlConnection(_connectString))
-                {
-                    return db.QueryFirstOrDefault<ContactInfo>(sbSQL.ToString(), new { ContactInfoID = id });
-                }
+                return _dbConnection.QueryFirstOrDefault<ContactInfo>(sbSQL.ToString(), new { ContactInfoID = id });
             }
             catch (Exception ex)
             {
@@ -96,11 +93,8 @@ namespace WebApi.Services.Instance
                 sbQuery.AppendLine("OFFSET @RowStart ROWS FETCH NEXT @RowLength ROWS ONLY");
                 #endregion
 
-                using (var db = new SqlConnection(_connectString))
-                {
-                    var res = db.QueryMultiple(sbCnt.ToString() + sbQuery.ToString(), dicParams);
-                    return (res.Read<int>().FirstOrDefault(), res.Read<ContactInfo>());
-                }
+                var res = _dbConnection.QueryMultiple(sbCnt.ToString() + sbQuery.ToString(), dicParams);
+                return (res.Read<int>().FirstOrDefault(), res.Read<ContactInfo>());
             }
             catch (Exception ex)
             {
@@ -123,11 +117,8 @@ namespace WebApi.Services.Instance
                 sbSQL.AppendLine("VALUES (@Name, @Nickname, @Gender, @Age, @PhoneNo, @Address)");
                 sbSQL.AppendLine("SELECT SCOPE_IDENTITY()");
 
-                using (var db = new SqlConnection(_connectString))
-                {
-                    objContactInfo.ContactInfoID = db.ExecuteScalar<long?>(sbSQL.ToString(), objContactInfo) ?? 0;
-                    return objContactInfo.ContactInfoID > 0;
-                }
+                objContactInfo.ContactInfoID = _dbConnection.ExecuteScalar<long?>(sbSQL.ToString(), objContactInfo) ?? 0;
+                return objContactInfo.ContactInfoID > 0;
             }
             catch (Exception ex)
             {
@@ -150,10 +141,7 @@ namespace WebApi.Services.Instance
                 sbSQL.AppendLine("Name = @Name, Nickname = @Nickname, Gender = @Gender, Age = @Age, PhoneNo = @PhoneNo, Address = @Address, UpdateTime = GETDATE()");
                 sbSQL.AppendLine("WHERE ContactInfoID = @ContactInfoID");
 
-                using (var db = new SqlConnection(_connectString))
-                {
-                    return db.Execute(sbSQL.ToString(), objContactInfo) > 0;
-                }
+                return _dbConnection.Execute(sbSQL.ToString(), objContactInfo) > 0;
             }
             catch (Exception ex)
             {
@@ -175,10 +163,7 @@ namespace WebApi.Services.Instance
                 sbSQL.AppendLine("DELETE FROM dbo.Tbl_ContactInfo");
                 sbSQL.AppendLine("WHERE ContactInfoID IN @ContactInfoIDs");
 
-                using (var db = new SqlConnection(_connectString))
-                {
-                    return db.Execute(sbSQL.ToString(), new { ContactInfoIDs = liID }) > 0;
-                }
+                return _dbConnection.Execute(sbSQL.ToString(), new { ContactInfoIDs = liID }) > 0;
             }
             catch (Exception ex)
             {

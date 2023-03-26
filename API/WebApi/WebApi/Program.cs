@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi.Models;
+using MySql.Data.MySqlClient;
 using NLog.Extensions.Logging;
+using System.Data;
+using System.Data.SqlClient;
 using System.Text.Encodings.Web;
 using System.Text.Unicode;
 using WebApi.Commands.Instance;
@@ -69,28 +72,44 @@ if (isUseRedis)
 }
 #endregion
 
-#region 딩쩤Command
-if (isUseRedis)
+#region 딩쩤DB퀂퐑
+var dbType = builder.Configuration.GetValue(typeof(string), "DbType");
+var dbConnectString = string.Empty;
+switch (dbType)
 {
-    builder.Services.AddTransient<IContactInfoCommand, ContactInfoRedisCommand>();
-}
-else
-{
-    builder.Services.AddTransient<IContactInfoCommand, ContactInfoCommand>();
+    case "MsSql":
+        dbConnectString = (string)builder.Configuration.GetValue(typeof(string), "ConnectionStrings:MsSql");
+        builder.Services.AddScoped<IDbConnection, SqlConnection>(db => new SqlConnection(dbConnectString));
+        break;
+
+    case "MySql":
+        dbConnectString = (string)builder.Configuration.GetValue(typeof(string), "ConnectionStrings:MySql");
+        builder.Services.AddScoped<IDbConnection, MySqlConnection>(db => new MySqlConnection(dbConnectString));
+        break;
 }
 #endregion
 
 #region 딩쩤Service
-var dbType = builder.Configuration.GetValue(typeof(string), "DbType");
 switch (dbType)
 {
     case "MsSql":
-        builder.Services.AddTransient<IContactInfoService, ContactInfoMssqlService>();
+        builder.Services.AddScoped<IContactInfoService, ContactInfoMssqlService>();
         break;
 
     case "MySql":
-        builder.Services.AddTransient<IContactInfoService, ContactInfoMysqlService>();
+        builder.Services.AddScoped<IContactInfoService, ContactInfoMysqlService>();
         break;
+}
+#endregion
+
+#region 딩쩤Command
+if (isUseRedis)
+{
+    builder.Services.AddScoped<IContactInfoCommand, ContactInfoRedisCommand>();
+}
+else
+{
+    builder.Services.AddScoped<IContactInfoCommand, ContactInfoCommand>();
 }
 #endregion
 

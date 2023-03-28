@@ -82,6 +82,11 @@ switch (dbType)
         builder.Services.AddScoped<IDbConnection, SqlConnection>(db => new SqlConnection(dbConnectString));
         break;
 
+    case "MsSqlSP":
+        dbConnectString = (string)builder.Configuration.GetValue(typeof(string), "ConnectionStrings:MsSqlSP");
+        builder.Services.AddScoped<IDbConnection, SqlConnection>(db => new SqlConnection(dbConnectString));
+        break;
+
     case "MySql":
         dbConnectString = (string)builder.Configuration.GetValue(typeof(string), "ConnectionStrings:MySql");
         builder.Services.AddScoped<IDbConnection, MySqlConnection>(db => new MySqlConnection(dbConnectString));
@@ -94,6 +99,10 @@ switch (dbType)
 {
     case "MsSql":
         builder.Services.AddScoped<IContactInfoService, ContactInfoMssqlService>();
+        break;
+
+    case "MsSqlSP":
+        builder.Services.AddScoped<IContactInfoService, ContactInfoMssqlSPService>();
         break;
 
     case "MySql":

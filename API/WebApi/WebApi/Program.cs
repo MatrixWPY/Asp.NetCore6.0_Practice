@@ -91,6 +91,11 @@ switch (dbType)
         dbConnectString = (string)builder.Configuration.GetValue(typeof(string), "ConnectionStrings:MySql");
         builder.Services.AddScoped<IDbConnection, MySqlConnection>(db => new MySqlConnection(dbConnectString));
         break;
+
+    case "MySqlSP":
+        dbConnectString = (string)builder.Configuration.GetValue(typeof(string), "ConnectionStrings:MySqlSP");
+        builder.Services.AddScoped<IDbConnection, MySqlConnection>(db => new MySqlConnection(dbConnectString));
+        break;
 }
 #endregion
 
@@ -107,6 +112,10 @@ switch (dbType)
 
     case "MySql":
         builder.Services.AddScoped<IContactInfoService, ContactInfoMysqlService>();
+        break;
+
+    case "MySqlSP":
+        builder.Services.AddScoped<IContactInfoService, ContactInfoMysqlSPService>();
         break;
 }
 #endregion

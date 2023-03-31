@@ -34,8 +34,9 @@ namespace WebApi.Services.Instance
             try
             {
                 return _dbConnection.QueryFirstOrDefault<ContactInfo>(
-                        "CALL Sp_GetContactInfo(?In_ContactInfoID)",
-                        new { In_ContactInfoID = id });
+                        "Sp_GetContactInfo",
+                        new { In_ContactInfoID = id },
+                        commandType: CommandType.StoredProcedure);
             }
             catch (Exception ex)
             {
@@ -54,7 +55,7 @@ namespace WebApi.Services.Instance
             try
             {
                 var res = _dbConnection.QueryMultiple(
-                            $"CALL Sp_ListContactInfo(?In_Name, ?In_Nickname, ?In_Gender, ?In_RowStart, ?In_RowLength)",
+                            $"Sp_ListContactInfo",
                             new
                             {
                                 In_Name = dicParams.GetValueOrDefault("Name"),
@@ -62,7 +63,8 @@ namespace WebApi.Services.Instance
                                 In_Gender = dicParams.GetValueOrDefault("Gender"),
                                 In_RowStart = dicParams.GetValueOrDefault("RowStart"),
                                 In_RowLength = dicParams.GetValueOrDefault("RowLength"),
-                            });
+                            },
+                            commandType: CommandType.StoredProcedure);
                 return (res.Read<int>().FirstOrDefault(), res.Read<ContactInfo>());
             }
             catch (Exception ex)
@@ -82,7 +84,7 @@ namespace WebApi.Services.Instance
             try
             {
                 objContactInfo.ContactInfoID = _dbConnection.ExecuteScalar<long?>(
-                                                "CALL Sp_AddContactInfo(?In_Name, ?In_Nickname, ?In_Gender, ?In_Age, ?In_PhoneNo, ?In_Address)",
+                                                "Sp_AddContactInfo",
                                                 new
                                                 {
                                                     In_Name = objContactInfo.Name,
@@ -91,7 +93,8 @@ namespace WebApi.Services.Instance
                                                     In_Age = objContactInfo.Age,
                                                     In_PhoneNo = objContactInfo.PhoneNo,
                                                     In_Address = objContactInfo.Address
-                                                }) ?? 0;
+                                                },
+                                                commandType: CommandType.StoredProcedure) ?? 0;
                 return objContactInfo.ContactInfoID > 0;
             }
             catch (Exception ex)
@@ -111,7 +114,7 @@ namespace WebApi.Services.Instance
             try
             {
                 return _dbConnection.Execute(
-                        "CALL Sp_EditContactInfo(?In_ContactInfoID, ?In_Name, ?In_Nickname, ?In_Gender, ?In_Age, ?In_PhoneNo, ?In_Address)",
+                        "Sp_EditContactInfo",
                         new
                         {
                             In_ContactInfoID = objContactInfo.ContactInfoID,
@@ -121,7 +124,8 @@ namespace WebApi.Services.Instance
                             In_Age = objContactInfo.Age,
                             In_PhoneNo = objContactInfo.PhoneNo,
                             In_Address = objContactInfo.Address
-                        }) > 0;
+                        },
+                        commandType: CommandType.StoredProcedure) > 0;
             }
             catch (Exception ex)
             {
@@ -140,8 +144,9 @@ namespace WebApi.Services.Instance
             try
             {
                 return _dbConnection.Execute(
-                        "CALL Sp_RemoveContactInfo(?In_ContactInfoIDs)",
-                        new { In_ContactInfoIDs = string.Join(",", liID) }) > 0;
+                        "Sp_RemoveContactInfo",
+                        new { In_ContactInfoIDs = string.Join(",", liID) },
+                        commandType: CommandType.StoredProcedure) > 0;
             }
             catch (Exception ex)
             {

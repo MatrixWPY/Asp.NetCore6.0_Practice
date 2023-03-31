@@ -34,8 +34,9 @@ namespace WebApi.Services.Instance
             try
             {
                 return _dbConnection.QueryFirstOrDefault<ContactInfo>(
-                        "EXEC dbo.Sp_GetContactInfo @ContactInfoID = @ContactInfoID",
-                        new { ContactInfoID = id });
+                        "dbo.Sp_GetContactInfo",
+                        new { ContactInfoID = id },
+                        commandType: CommandType.StoredProcedure);
             }
             catch (Exception ex)
             {
@@ -54,8 +55,16 @@ namespace WebApi.Services.Instance
             try
             {
                 var res = _dbConnection.QueryMultiple(
-                            $"EXEC dbo.Sp_ListContactInfo {string.Join(",", dicParams.Select(e => $"@{e.Key} = @{e.Key}"))}",
-                            dicParams);
+                            $"dbo.Sp_ListContactInfo",
+                            new
+                            {
+                                Name = dicParams.GetValueOrDefault("Name"),
+                                Nickname = dicParams.GetValueOrDefault("Nickname"),
+                                Gender = dicParams.GetValueOrDefault("Gender"),
+                                RowStart = dicParams.GetValueOrDefault("RowStart"),
+                                RowLength = dicParams.GetValueOrDefault("RowLength"),
+                            },
+                            commandType: CommandType.StoredProcedure);
                 return (res.Read<int>().FirstOrDefault(), res.Read<ContactInfo>());
             }
             catch (Exception ex)
@@ -75,8 +84,17 @@ namespace WebApi.Services.Instance
             try
             {
                 objContactInfo.ContactInfoID = _dbConnection.ExecuteScalar<long?>(
-                                                "EXEC dbo.Sp_AddContactInfo @Name = @Name, @Nickname = @Nickname, @Gender = @Gender, @Age = @Age, @PhoneNo = @PhoneNo, @Address = @Address",
-                                                objContactInfo) ?? 0;
+                                                "dbo.Sp_AddContactInfo",
+                                                new
+                                                {
+                                                    objContactInfo.Name,
+                                                    objContactInfo.Nickname,
+                                                    objContactInfo.Gender,
+                                                    objContactInfo.Age,
+                                                    objContactInfo.PhoneNo,
+                                                    objContactInfo.Address
+                                                },
+                                                commandType: CommandType.StoredProcedure) ?? 0;
                 return objContactInfo.ContactInfoID > 0;
             }
             catch (Exception ex)
@@ -96,8 +114,18 @@ namespace WebApi.Services.Instance
             try
             {
                 return _dbConnection.Execute(
-                        "EXEC dbo.Sp_EditContactInfo @ContactInfoID = @ContactInfoID, @Name = @Name, @Nickname = @Nickname, @Gender = @Gender, @Age = @Age, @PhoneNo = @PhoneNo, @Address = @Address",
-                        objContactInfo) > 0;
+                        "dbo.Sp_EditContactInfo",
+                        new
+                        {
+                            objContactInfo.ContactInfoID,
+                            objContactInfo.Name,
+                            objContactInfo.Nickname,
+                            objContactInfo.Gender,
+                            objContactInfo.Age,
+                            objContactInfo.PhoneNo,
+                            objContactInfo.Address
+                        },
+                        commandType: CommandType.StoredProcedure) > 0;
             }
             catch (Exception ex)
             {
@@ -116,8 +144,9 @@ namespace WebApi.Services.Instance
             try
             {
                 return _dbConnection.Execute(
-                        "EXEC dbo.Sp_RemoveContactInfo @ContactInfoIDs = @ContactInfoIDs",
-                        new { ContactInfoIDs = string.Join(",", liID) }) > 0;
+                        "dbo.Sp_RemoveContactInfo",
+                        new { ContactInfoIDs = string.Join(",", liID) },
+                        commandType: CommandType.StoredProcedure) > 0;
             }
             catch (Exception ex)
             {

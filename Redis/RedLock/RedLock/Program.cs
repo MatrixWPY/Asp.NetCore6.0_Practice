@@ -1,4 +1,6 @@
 using NLog.Extensions.Logging;
+using RedLock.Services.Instance;
+using RedLock.Services.Interface;
 
 namespace RedLock
 {
@@ -16,6 +18,8 @@ namespace RedLock
             builder.Services.AddSwaggerGen();
 
             builder.Logging.AddNLog("nlog.config");
+
+            builder.Services.AddSingleton<IRedisService, RedisService>();
 
             var app = builder.Build();
 

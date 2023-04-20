@@ -9,11 +9,13 @@ namespace RedLock.Controllers
     {
         private readonly ILogger<OrderController> _logger;
         private readonly IRedisService _redisService;
+        private readonly IRedlockService _redlockService;
 
-        public OrderController(ILogger<OrderController> logger, IRedisService redisService)
+        public OrderController(ILogger<OrderController> logger, IRedisService redisService, IRedlockService redlockService)
         {
             _logger = logger;
             _redisService = redisService;
+            _redlockService = redlockService;
         }
 
         [HttpGet]
@@ -28,7 +30,7 @@ namespace RedLock.Controllers
             do
             {
                 // blocks 直到取得 lock 資源或是達到放棄重試時間
-                using (var redLock = _redisService.RedisLockFactory.CreateLockAsync(resource, expiry, wait, retry).Result)
+                using (var redLock = _redlockService.RedisLockFactory.CreateLockAsync(resource, expiry, wait, retry).Result)
                 {
                     // 確定取得 lock 所有權
                     if (redLock.IsAcquired)

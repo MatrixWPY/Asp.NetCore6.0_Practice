@@ -19,7 +19,9 @@ namespace RedLock
 
             builder.Logging.AddNLog("nlog.config");
 
+            builder.Services.AddSingleton<IRedisBase, RedisBase>();
             builder.Services.AddSingleton<IRedisService, RedisService>();
+            builder.Services.AddSingleton<IRedlockService, RedlockService>();
 
             var app = builder.Build();
 

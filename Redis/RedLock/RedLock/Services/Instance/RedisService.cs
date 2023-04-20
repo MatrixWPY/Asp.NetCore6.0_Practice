@@ -1,7 +1,5 @@
 ﻿using Newtonsoft.Json;
 using RedLock.Services.Interface;
-using RedLockNet.SERedis.Configuration;
-using RedLockNet.SERedis;
 using StackExchange.Redis;
 
 namespace RedLock.Services.Instance
@@ -11,78 +9,15 @@ namespace RedLock.Services.Instance
     /// </summary>
     public class RedisService : IRedisService
     {
-        public volatile ConnectionMultiplexer _redisConnection;
-        private static object _redisConnectionLock = new object();
-        private readonly ConfigurationOptions _configOptions;
-        private readonly ILogger<RedisService> _logger;
+        private readonly ConnectionMultiplexer _redisConnection;
 
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="logger"></param>
-        /// <param name="configuration"></param>
-        public RedisService(ILogger<RedisService> logger, IConfiguration configuration)
+        /// <param name="redisBase"></param>
+        public RedisService(IRedisBase redisBase)
         {
-            _logger = logger;
-            ConfigurationOptions options = ReadRedisSetting(configuration);
-            if (options == null)
-            {
-                _logger.LogError("Redis數據庫配置有誤");
-            }
-
-            _configOptions = options;
-            _redisConnection = ConnectionRedis();
-        }
-
-        private ConfigurationOptions ReadRedisSetting(IConfiguration configuration)
-        {
-            try
-            {
-                ConfigurationOptions options = new ConfigurationOptions
-                {
-                    EndPoints =
-                    {
-                        {
-                            configuration.GetValue<string>("Redis:Ip"),
-                            configuration.GetValue<int>("Redis:Port")
-                        }
-                    },
-                    ClientName = configuration.GetValue<string>("Redis:Name"),
-                    Password = configuration.GetValue<string>("Redis:Password"),
-                    ConnectTimeout = configuration.GetValue<int>("Redis:Timeout"),
-                    DefaultDatabase = configuration.GetValue<int>("Redis:Db"),
-                };
-                return options;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"獲取Redis配置信息失敗：{ex.Message}");
-                return null;
-            }
-        }
-
-        private ConnectionMultiplexer ConnectionRedis()
-        {
-            if (_redisConnection != null && _redisConnection.IsConnected)
-            {
-                return _redisConnection; // 已有連接，直接使用
-            }
-            lock (_redisConnectionLock)
-            {
-                if (_redisConnection != null)
-                {
-                    _redisConnection.Dispose(); // 釋放，重連
-                }
-                try
-                {
-                    _redisConnection = ConnectionMultiplexer.Connect(_configOptions);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError($"Redis服務啟動失敗：{ex.Message}");
-                }
-            }
-            return _redisConnection;
+            _redisConnection = redisBase.ConnectionRedis();
         }
 
         /// <summary>
@@ -152,9 +87,9 @@ namespace RedLock.Services.Instance
         /// </summary>
         public void Clear()
         {
-            foreach (var endPoint in ConnectionRedis().GetEndPoints())
+            foreach (var endPoint in _redisConnection.GetEndPoints())
             {
-                var server = ConnectionRedis().GetServer(endPoint);
+                var server = _redisConnection.GetServer(endPoint);
                 foreach (var key in server.Keys())
                 {
                     _redisConnection.GetDatabase().KeyDelete(key);
@@ -254,22 +189,13 @@ namespace RedLock.Services.Instance
         /// <returns></returns>
         public async Task ClearAsync()
         {
-            foreach (var endPoint in ConnectionRedis().GetEndPoints())
+            foreach (var endPoint in _redisConnection.GetEndPoints())
             {
-                var server = ConnectionRedis().GetServer(endPoint);
+                var server = _redisConnection.GetServer(endPoint);
                 foreach (var key in server.Keys())
                 {
                     await _redisConnection.GetDatabase().KeyDeleteAsync(key);
                 }
-            }
-        }
-
-        public RedLockFactory RedisLockFactory
-        {
-            get
-            {
-                var multiplexers = new List<RedLockMultiplexer> { ConnectionRedis() };
-                return RedLockFactory.Create(multiplexers);
             }
         }
     }

@@ -1,6 +1,4 @@
-﻿using RedLockNet.SERedis;
-
-namespace RedLock.Services.Interface
+﻿namespace RedLock.Services.Interface
 {
     /// <summary>
     /// 
@@ -98,7 +96,5 @@ namespace RedLock.Services.Interface
         /// </summary>
         /// <returns></returns>
         Task ClearAsync();
-
-        RedLockFactory RedisLockFactory { get; }
     }
 }

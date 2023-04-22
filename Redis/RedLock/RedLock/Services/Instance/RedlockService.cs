@@ -8,6 +8,7 @@ namespace RedLock.Services.Instance
     public class RedlockService : IRedlockService
     {
         private readonly ConnectionMultiplexer _redisConnection;
+        private readonly RedLockFactory _redLockFactory;
 
         /// <summary>
         /// 
@@ -16,15 +17,7 @@ namespace RedLock.Services.Instance
         public RedlockService(IRedisBase redisBase)
         {
             _redisConnection = redisBase.ConnectionRedis();
-        }
-
-        private RedLockFactory RedisLockFactory
-        {
-            get
-            {
-                var multiplexers = new List<RedLockMultiplexer> { _redisConnection };
-                return RedLockFactory.Create(multiplexers);
-            }
+            _redLockFactory = RedLockFactory.Create(new List<RedLockMultiplexer> { _redisConnection });
         }
 
         /// <summary>
@@ -43,7 +36,7 @@ namespace RedLock.Services.Instance
             T result = default(T);
 
             // blocks 直到取得 lock 資源或是達到放棄重試時間
-            using (var redLock = await RedisLockFactory.CreateLockAsync(resource, expiry, wait, retry))
+            using (var redLock = await _redLockFactory.CreateLockAsync(resource, expiry, wait, retry))
             {
                 // 確定取得 lock 所有權
                 if (redLock.IsAcquired)

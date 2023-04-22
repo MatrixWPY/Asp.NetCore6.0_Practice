@@ -19,7 +19,7 @@ namespace RedLock.Controllers
         }
 
         [HttpGet]
-        public string Get()
+        public async Task<string> Get()
         {
             string orderNo = null;
 
@@ -29,7 +29,7 @@ namespace RedLock.Controllers
             var retry = TimeSpan.FromMilliseconds(1);   //重試間隔時間
             do
             {
-                orderNo = _redlockService.AcquireLockAsync(resource, expiry, wait, retry,
+                orderNo = await _redlockService.AcquireLockAsync(resource, expiry, wait, retry,
                         () =>
                         {
                             var newOrderNo = $"{DateTime.Now:yyyyMMddHHmmssfff}";
@@ -59,7 +59,7 @@ namespace RedLock.Controllers
                             _logger.LogInformation($"{Thread.CurrentThread.ManagedThreadId}: Not get the locker => Retry");
                             return null;
                         }
-                ).Result;
+                );
             } while (orderNo == null);
 
             _logger.LogInformation($"{Thread.CurrentThread.ManagedThreadId}: {orderNo}");

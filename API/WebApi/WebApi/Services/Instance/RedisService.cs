@@ -83,68 +83,7 @@ namespace WebApi.Services.Instance
             return _redisConnection;
         }
 
-        /// <summary>
-        /// 設置緩存值
-        /// </summary>
-        /// <param name="key"></param>
-        /// <param name="value"></param>
-        /// <param name="ts"></param>
-        public void Set(string key, object value, TimeSpan ts)
-        {
-            if (value != null)
-            {
-                _redisConnection.GetDatabase().StringSet(key, JsonConvert.SerializeObject(value), ts);
-            }
-        }
-
-        /// <summary>
-        /// 獲取緩存值
-        /// </summary>
-        /// <param name="key"></param>
-        /// <returns></returns>
-        public string GetValue(string key)
-        {
-            return _redisConnection.GetDatabase().StringGet(key);
-        }
-
-        /// <summary>
-        /// 獲取序列化值
-        /// </summary>
-        /// <typeparam name="TEntity"></typeparam>
-        /// <param name="key"></param>
-        /// <returns></returns>
-        public TEntity Get<TEntity>(string key)
-        {
-            var value = _redisConnection.GetDatabase().StringGet(key);
-            if (value.HasValue)
-            {
-                return JsonConvert.DeserializeObject<TEntity>(value);
-            }
-            else
-            {
-                return default(TEntity);
-            }
-        }
-
-        /// <summary>
-        /// 判斷Key是否存在
-        /// </summary>
-        /// <param name="key"></param>
-        /// <returns></returns>
-        public bool Exist(string key)
-        {
-            return _redisConnection.GetDatabase().KeyExists(key);
-        }
-
-        /// <summary>
-        /// 移除某個Key
-        /// </summary>
-        /// <param name="key"></param>
-        public void Remove(string key)
-        {
-            _redisConnection.GetDatabase().KeyDelete(key);
-        }
-
+        #region Common
         /// <summary>
         /// 清空
         /// </summary>
@@ -161,57 +100,28 @@ namespace WebApi.Services.Instance
         }
 
         /// <summary>
-        /// 異步設置緩存值
+        /// 異步清空
         /// </summary>
-        /// <param name="key"></param>
-        /// <param name="value"></param>
-        /// <param name="ts"></param>
         /// <returns></returns>
-        public async Task SetAsync(string key, object value, TimeSpan ts)
+        public async Task ClearAsync()
         {
-            if (value != null)
+            foreach (var endPoint in ConnectionRedis().GetEndPoints())
             {
-                await _redisConnection.GetDatabase().StringSetAsync(key, JsonConvert.SerializeObject(value), ts);
+                var server = ConnectionRedis().GetServer(endPoint);
+                foreach (var key in server.Keys())
+                {
+                    await _redisConnection.GetDatabase().KeyDeleteAsync(key);
+                }
             }
         }
 
         /// <summary>
-        /// 異步獲取緩存值
+        /// 移除某個Key
         /// </summary>
         /// <param name="key"></param>
-        /// <returns></returns>
-        public async Task<string> GetValueAsync(string key)
+        public void Remove(string key)
         {
-            return await _redisConnection.GetDatabase().StringGetAsync(key);
-        }
-
-        /// <summary>
-        /// 異步獲取序列化值
-        /// </summary>
-        /// <typeparam name="TEntity"></typeparam>
-        /// <param name="key"></param>
-        /// <returns></returns>
-        public async Task<TEntity> GetAsync<TEntity>(string key)
-        {
-            var value = await _redisConnection.GetDatabase().StringGetAsync(key);
-            if (value.HasValue)
-            {
-                return JsonConvert.DeserializeObject<TEntity>(value);
-            }
-            else
-            {
-                return default;
-            }
-        }
-
-        /// <summary>
-        /// 異步判斷Key是否存在
-        /// </summary>
-        /// <param name="key"></param>
-        /// <returns></returns>
-        public async Task<bool> ExistAsync(string key)
-        {
-            return await _redisConnection.GetDatabase().KeyExistsAsync(key);
+            _redisConnection.GetDatabase().KeyDelete(key);
         }
 
         /// <summary>
@@ -247,19 +157,270 @@ namespace WebApi.Services.Instance
         }
 
         /// <summary>
-        /// 異步清空
+        /// 判斷Key是否存在
         /// </summary>
+        /// <param name="key"></param>
         /// <returns></returns>
-        public async Task ClearAsync()
+        public bool Exist(string key)
         {
-            foreach (var endPoint in ConnectionRedis().GetEndPoints())
+            return _redisConnection.GetDatabase().KeyExists(key);
+        }
+
+        /// <summary>
+        /// 異步判斷Key是否存在
+        /// </summary>
+        /// <param name="key"></param>
+        /// <returns></returns>
+        public async Task<bool> ExistAsync(string key)
+        {
+            return await _redisConnection.GetDatabase().KeyExistsAsync(key);
+        }
+        #endregion
+
+        #region String
+        /// <summary>
+        /// 獲取緩存值
+        /// </summary>
+        /// <param name="key"></param>
+        /// <returns></returns>
+        public string GetValue(string key)
+        {
+            return _redisConnection.GetDatabase().StringGet(key);
+        }
+
+        /// <summary>
+        /// 異步獲取緩存值
+        /// </summary>
+        /// <param name="key"></param>
+        /// <returns></returns>
+        public async Task<string> GetValueAsync(string key)
+        {
+            return await _redisConnection.GetDatabase().StringGetAsync(key);
+        }
+
+        /// <summary>
+        /// 獲取序列化值
+        /// </summary>
+        /// <typeparam name="TEntity"></typeparam>
+        /// <param name="key"></param>
+        /// <returns></returns>
+        public TEntity Get<TEntity>(string key)
+        {
+            var value = _redisConnection.GetDatabase().StringGet(key);
+            if (value.HasValue)
             {
-                var server = ConnectionRedis().GetServer(endPoint);
-                foreach (var key in server.Keys())
-                {
-                    await _redisConnection.GetDatabase().KeyDeleteAsync(key);
-                }
+                return JsonConvert.DeserializeObject<TEntity>(value);
+            }
+            else
+            {
+                return default(TEntity);
             }
         }
+
+        /// <summary>
+        /// 異步獲取序列化值
+        /// </summary>
+        /// <typeparam name="TEntity"></typeparam>
+        /// <param name="key"></param>
+        /// <returns></returns>
+        public async Task<TEntity> GetAsync<TEntity>(string key)
+        {
+            var value = await _redisConnection.GetDatabase().StringGetAsync(key);
+            if (value.HasValue)
+            {
+                return JsonConvert.DeserializeObject<TEntity>(value);
+            }
+            else
+            {
+                return default;
+            }
+        }
+
+        /// <summary>
+        /// 設置緩存值
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="value"></param>
+        /// <param name="ts"></param>
+        public void Set(string key, object value, TimeSpan ts)
+        {
+            if (value != null)
+            {
+                _redisConnection.GetDatabase().StringSet(key, JsonConvert.SerializeObject(value), ts);
+            }
+        }
+
+        /// <summary>
+        /// 異步設置緩存值
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="value"></param>
+        /// <param name="ts"></param>
+        /// <returns></returns>
+        public async Task SetAsync(string key, object value, TimeSpan ts)
+        {
+            if (value != null)
+            {
+                await _redisConnection.GetDatabase().StringSetAsync(key, JsonConvert.SerializeObject(value), ts);
+            }
+        }
+        #endregion
+
+        #region Hash
+        /// <summary>
+        /// 判斷Hash緩存值是否存在
+        /// </summary>
+        /// <typeparam name="TKey"></typeparam>
+        /// <param name="redisKey"></param>
+        /// <param name="dictKey"></param>
+        /// <returns></returns>
+        public bool HashExist<TKey>(string redisKey, TKey dictKey)
+        {
+            return _redisConnection.GetDatabase().HashExists(redisKey, dictKey.ToString());
+        }
+
+        /// <summary>
+        /// 異步判斷Hash緩存值是否存在
+        /// </summary>
+        /// <typeparam name="TKey"></typeparam>
+        /// <param name="redisKey"></param>
+        /// <param name="dictKey"></param>
+        /// <returns></returns>
+        public async Task<bool> HashExistAsync<TKey>(string redisKey, TKey dictKey)
+        {
+            return await _redisConnection.GetDatabase().HashExistsAsync(redisKey, dictKey.ToString());
+        }
+
+        /// <summary>
+        /// 獲取Hash緩存值集合
+        /// </summary>
+        /// <typeparam name="TKey"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
+        /// <param name="redisKey"></param>
+        /// <returns></returns>
+        public Dictionary<TKey, TValue> HashGet<TKey, TValue>(string redisKey)
+        {
+            return _redisConnection.GetDatabase().HashGetAll(redisKey).ToDictionary(e => (TKey)Convert.ChangeType(e.Name, typeof(TKey)), e => JsonConvert.DeserializeObject<TValue>(e.Value));
+        }
+
+        /// <summary>
+        /// 異步獲取Hash緩存值集合
+        /// </summary>
+        /// <typeparam name="TKey"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
+        /// <param name="redisKey"></param>
+        /// <returns></returns>
+        public async Task<Dictionary<TKey, TValue>> HashGetAsync<TKey, TValue>(string redisKey)
+        {
+            return (await _redisConnection.GetDatabase().HashGetAllAsync(redisKey)).ToDictionary(e => (TKey)Convert.ChangeType(e.Name, typeof(TKey)), e => JsonConvert.DeserializeObject<TValue>(e.Value));
+        }
+
+        /// <summary>
+        /// 獲取Hash緩存值
+        /// </summary>
+        /// <typeparam name="TKey"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
+        /// <param name="redisKey"></param>
+        /// <param name="dictKey"></param>
+        /// <returns></returns>
+        public TValue HashGet<TKey, TValue>(string redisKey, TKey dictKey)
+        {
+            return JsonConvert.DeserializeObject<TValue>(_redisConnection.GetDatabase().HashGet(redisKey, dictKey.ToString()));
+        }
+
+        /// <summary>
+        /// 異步獲取Hash緩存值
+        /// </summary>
+        /// <typeparam name="TKey"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
+        /// <param name="redisKey"></param>
+        /// <param name="dictKey"></param>
+        /// <returns></returns>
+        public async Task<TValue> HashGetAsync<TKey, TValue>(string redisKey, TKey dictKey)
+        {
+            return JsonConvert.DeserializeObject<TValue>(await _redisConnection.GetDatabase().HashGetAsync(redisKey, dictKey.ToString()));
+        }
+
+        /// <summary>
+        /// 設置Hash緩存值
+        /// </summary>
+        /// <typeparam name="TKey"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
+        /// <param name="redisKey"></param>
+        /// <param name="dictKeyValue"></param>
+        /// <param name="ts"></param>
+        public void HashSet<TKey, TValue>(string redisKey, Dictionary<TKey, TValue> dictKeyValue, TimeSpan ts)
+        {
+            if (dictKeyValue != null)
+            {
+                _redisConnection.GetDatabase().HashSet(redisKey, dictKeyValue.Select(e => new HashEntry(e.Key.ToString(), JsonConvert.SerializeObject(e.Value))).ToArray());
+                _redisConnection.GetDatabase().KeyExpire(redisKey, ts);
+            }
+        }
+
+        /// <summary>
+        /// 異步設置Hash緩存值
+        /// </summary>
+        /// <typeparam name="TKey"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
+        /// <param name="redisKey"></param>
+        /// <param name="dictKeyValue"></param>
+        /// <param name="ts"></param>
+        /// <returns></returns>
+        public async Task HashSetAsync<TKey, TValue>(string redisKey, Dictionary<TKey, TValue> dictKeyValue, TimeSpan ts)
+        {
+            if (dictKeyValue != null)
+            {
+                await _redisConnection.GetDatabase().HashSetAsync(redisKey, dictKeyValue.Select(e => new HashEntry(e.Key.ToString(), JsonConvert.SerializeObject(e.Value))).ToArray());
+                await _redisConnection.GetDatabase().KeyExpireAsync(redisKey, ts);
+            }
+        }
+
+        /// <summary>
+        /// 移除Hash緩存值
+        /// </summary>
+        /// <typeparam name="TKey"></typeparam>
+        /// <param name="redisKey"></param>
+        /// <param name="dictKey"></param>
+        public void HashDelete<TKey>(string redisKey, TKey dictKey)
+        {
+            _redisConnection.GetDatabase().HashDelete(redisKey, dictKey.ToString());
+        }
+
+        /// <summary>
+        /// 異步移除Hash緩存值
+        /// </summary>
+        /// <typeparam name="TKey"></typeparam>
+        /// <param name="redisKey"></param>
+        /// <param name="dictKey"></param>
+        /// <returns></returns>
+        public async Task HashDeleteAsync<TKey>(string redisKey, TKey dictKey)
+        {
+            await _redisConnection.GetDatabase().HashDeleteAsync(redisKey, dictKey.ToString());
+        }
+
+        /// <summary>
+        /// 移除Hash緩存值集合
+        /// </summary>
+        /// <typeparam name="TKey"></typeparam>
+        /// <param name="redisKey"></param>
+        /// <param name="dictKeys"></param>
+        public void HashDelete<TKey>(string redisKey, IEnumerable<TKey> dictKeys)
+        {
+            _redisConnection.GetDatabase().HashDelete(redisKey, dictKeys.Select(e => new RedisValue(e.ToString())).ToArray());
+        }
+
+        /// <summary>
+        /// 異步移除Hash緩存值集合
+        /// </summary>
+        /// <typeparam name="TKey"></typeparam>
+        /// <param name="redisKey"></param>
+        /// <param name="dictKeys"></param>
+        /// <returns></returns>
+        public async Task HashDeleteAsync<TKey>(string redisKey, IEnumerable<TKey> dictKeys)
+        {
+            await _redisConnection.GetDatabase().HashDeleteAsync(redisKey, dictKeys.Select(e => new RedisValue(e.ToString())).ToArray());
+        }
+        #endregion
     }
 }

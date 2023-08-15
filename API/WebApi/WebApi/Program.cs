@@ -123,7 +123,17 @@ switch (dbType)
 #region µù¥UCommand
 if (isUseRedis)
 {
-    builder.Services.AddScoped<IContactInfoCommand, ContactInfoRedisCommand>();
+    var redisType = builder.Configuration.GetValue(typeof(string), "RedisType");
+    switch (redisType)
+    {
+        case "String":
+            builder.Services.AddScoped<IContactInfoCommand, ContactInfoRedisCommand>();
+            break;
+
+        case "Hash":
+            builder.Services.AddScoped<IContactInfoCommand, ContactInfoRedisHashCommand>();
+            break;
+    }
 }
 else
 {

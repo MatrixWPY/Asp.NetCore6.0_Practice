@@ -32,7 +32,7 @@ namespace WebApi.Controllers
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpGet, Route("{id}")]
-        public ApiResultRP<ContactInfo> Get(long id)
+        public ApiResultRP<ContactInfo> Get([FromRoute] long id)
         {
             return _contactInfoCommand.QueryByID(id);
         }
@@ -66,7 +66,7 @@ namespace WebApi.Controllers
         /// <param name="objRQ"></param>
         /// <returns></returns>
         [HttpPut, Route("{id}")]
-        public ApiResultRP<ContactInfo> Put(long id, [FromBody] ContactInfoRestfulEditRQ objRQ)
+        public ApiResultRP<ContactInfo> Put([FromRoute] long id, [FromBody] ContactInfoRestfulEditRQ objRQ)
         {
             return _contactInfoCommand.Edit(new ContactInfoEditRQ()
             {
@@ -87,7 +87,7 @@ namespace WebApi.Controllers
         /// <param name="objRQ"></param>
         /// <returns></returns>
         [HttpPatch, Route("{id}")]
-        public ApiResultRP<ContactInfo> Patch(long id, [FromBody] ContactInfoRestfulEditPartialRQ objRQ)
+        public ApiResultRP<ContactInfo> Patch([FromRoute] long id, [FromBody] ContactInfoRestfulEditPartialRQ objRQ)
         {
             return _contactInfoCommand.EditPartial(new ContactInfoEditPartialRQ()
             {
@@ -107,7 +107,7 @@ namespace WebApi.Controllers
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpDelete, Route("{id}")]
-        public ApiResultRP<bool> Delete(long id)
+        public ApiResultRP<bool> Delete([FromRoute] long id)
         {
             return _contactInfoCommand.DeleteByID(new List<long>() { id });
         }

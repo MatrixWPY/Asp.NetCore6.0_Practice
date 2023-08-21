@@ -9,17 +9,19 @@ namespace WebApi.Commands.Instance
     /// <summary>
     /// 
     /// </summary>
-    public class ContactInfoRedisCommand : BaseCommand, IContactInfoCommand
+    public class ContactInfoRedisStringCommand : BaseCommand, IContactInfoCommand
     {
         private readonly IContactInfoService _contactInfoService;
         private readonly IRedisService _redisService;
+        private const string _redisQueryByID = $"{nameof(ContactInfo)}:{nameof(QueryByID)}";
+        private const string _redisQueryByCondition = $"{nameof(ContactInfo)}:{nameof(QueryByCondition)}";
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="contactInfoService"></param>
         /// <param name="redisService"></param>
-        public ContactInfoRedisCommand(IContactInfoService contactInfoService, IRedisService redisService)
+        public ContactInfoRedisStringCommand(IContactInfoService contactInfoService, IRedisService redisService)
         {
             _contactInfoService = contactInfoService;
             _redisService = redisService;
@@ -32,10 +34,10 @@ namespace WebApi.Commands.Instance
         /// <returns></returns>
         public ApiResultRP<ContactInfo> QueryByID(long id)
         {
-            var redisKey = $"{nameof(ContactInfo)}:{nameof(QueryByID)}:{id}";
+            var redisKey = $"{_redisQueryByID}:{id}";
             if (_redisService.Exist(redisKey))
             {
-                var res = _redisService.Get<ContactInfo>(redisKey);
+                var res = _redisService.GetObject<ContactInfo>(redisKey);
                 return SuccessRP(res);
             }
             else
@@ -47,7 +49,7 @@ namespace WebApi.Commands.Instance
                 }
                 else
                 {
-                    _redisService.SetAsync(redisKey, res, TimeSpan.FromMinutes(5));
+                    _redisService.SetObjectAsync(redisKey, res, TimeSpan.FromMinutes(5));
                     return SuccessRP(res);
                 }
             }
@@ -76,10 +78,10 @@ namespace WebApi.Commands.Instance
             dicParams["RowStart"] = (objRQ.PageIndex - 1) * objRQ.PageSize;
             dicParams["RowLength"] = objRQ.PageSize;
 
-            var redisKey = $"{nameof(ContactInfo)}:{nameof(QueryByCondition)}:{string.Join(',', dicParams.Select(e => e.Value?.ToString()))}";
+            var redisKey = $"{_redisQueryByCondition}:{string.Join('&', dicParams.Select(e => e.Key + "=" + e.Value?.ToString()))}";
             if (_redisService.Exist(redisKey))
             {
-                var res = _redisService.Get<(int, IEnumerable<ContactInfo>)>(redisKey);
+                var res = _redisService.GetObject<(int, IEnumerable<ContactInfo>)>(redisKey);
                 return SuccessRP(new PageDataRP<IEnumerable<ContactInfo>>()
                 {
                     PageInfo = new PageInfoRP()
@@ -101,7 +103,7 @@ namespace WebApi.Commands.Instance
                 }
                 else
                 {
-                    _redisService.SetAsync(redisKey, res, TimeSpan.FromMinutes(5));
+                    _redisService.SetObjectAsync(redisKey, res, TimeSpan.FromMinutes(5));
                     return SuccessRP(new PageDataRP<IEnumerable<ContactInfo>>()
                     {
                         PageInfo = new PageInfoRP()
@@ -137,8 +139,10 @@ namespace WebApi.Commands.Instance
             var res = _contactInfoService.Insert(objInsert);
             if (res)
             {
-                _redisService.RemoveByKeyAsync($"{nameof(ContactInfo)}");
-                return SuccessRP(_contactInfoService.Query(objInsert.ContactInfoID));
+                var objCache = _contactInfoService.Query(objInsert.ContactInfoID);
+                _redisService.SetObjectAsync($"{_redisQueryByID}:{objCache.ContactInfoID}", objCache, TimeSpan.FromMinutes(5));
+                _redisService.RemoveByKeyAsync($"{_redisQueryByCondition}");
+                return SuccessRP(objCache);
             }
             else
             {
@@ -172,8 +176,10 @@ namespace WebApi.Commands.Instance
             var res = _contactInfoService.Update(objUpdate);
             if (res)
             {
-                _redisService.RemoveByKeyAsync($"{nameof(ContactInfo)}");
-                return SuccessRP(_contactInfoService.Query(objUpdate.ContactInfoID));
+                var objCache = _contactInfoService.Query(objUpdate.ContactInfoID);
+                _redisService.SetObjectAsync($"{_redisQueryByID}:{objCache.ContactInfoID}", objCache, TimeSpan.FromMinutes(5));
+                _redisService.RemoveByKeyAsync($"{_redisQueryByCondition}");
+                return SuccessRP(objCache);
             }
             else
             {
@@ -207,8 +213,10 @@ namespace WebApi.Commands.Instance
             var res = _contactInfoService.Update(objUpdate);
             if (res)
             {
-                _redisService.RemoveByKeyAsync($"{nameof(ContactInfo)}");
-                return SuccessRP(_contactInfoService.Query(objUpdate.ContactInfoID));
+                var objCache = _contactInfoService.Query(objUpdate.ContactInfoID);
+                _redisService.SetObjectAsync($"{_redisQueryByID}:{objCache.ContactInfoID}", objCache, TimeSpan.FromMinutes(5));
+                _redisService.RemoveByKeyAsync($"{_redisQueryByCondition}");
+                return SuccessRP(objCache);
             }
             else
             {
@@ -226,7 +234,8 @@ namespace WebApi.Commands.Instance
             var res = _contactInfoService.Delete(liID);
             if (res)
             {
-                _redisService.RemoveByKeyAsync($"{nameof(ContactInfo)}");
+                _redisService.RemoveAsync(liID.Select(e => $"{_redisQueryByID}:{e}"));
+                _redisService.RemoveByKeyAsync($"{_redisQueryByCondition}");
                 return SuccessRP(res);
             }
             else

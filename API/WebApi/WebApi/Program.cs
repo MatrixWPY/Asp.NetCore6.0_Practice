@@ -127,7 +127,7 @@ if (isUseRedis)
     switch (redisType)
     {
         case "String":
-            builder.Services.AddScoped<IContactInfoCommand, ContactInfoRedisCommand>();
+            builder.Services.AddScoped<IContactInfoCommand, ContactInfoRedisStringCommand>();
             break;
 
         case "Hash":

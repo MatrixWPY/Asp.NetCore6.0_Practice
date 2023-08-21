@@ -7,98 +7,136 @@
     {
         #region Common
         /// <summary>
-        /// 清空
+        /// 清空緩存值
         /// </summary>
         void Clear();
 
         /// <summary>
-        /// 異步清空
+        /// 異步清空緩存值
         /// </summary>
         /// <returns></returns>
         Task ClearAsync();
 
         /// <summary>
-        /// 移除某個Key
+        /// 移除緩存值
         /// </summary>
-        /// <param name="key"></param>
-        void Remove(string key);
+        /// <param name="redisKey"></param>
+        void Remove(string redisKey);
 
         /// <summary>
-        /// 異步移除某個Key
+        /// 異步移除緩存值
         /// </summary>
-        /// <param name="key"></param>
+        /// <param name="redisKey"></param>
         /// <returns></returns>
-        Task RemoveAsync(string key);
+        Task RemoveAsync(string redisKey);
 
         /// <summary>
-        /// 異步移除模糊查詢到的key
+        /// 移除緩存值集合
         /// </summary>
-        /// <param name="key"></param>
-        /// <returns></returns>
-        Task RemoveByKeyAsync(string key);
+        /// <param name="redisKeys"></param>
+        void Remove(IEnumerable<string> redisKeys);
 
         /// <summary>
-        /// 判斷Key是否存在
+        /// 異步移除緩存值集合
         /// </summary>
-        /// <param name="key"></param>
+        /// <param name="redisKeys"></param>
         /// <returns></returns>
-        bool Exist(string key);
+        Task RemoveAsync(IEnumerable<string> redisKeys);
 
         /// <summary>
-        /// 異步判斷Key是否存在
+        /// 移除模糊查詢到的緩存值
         /// </summary>
-        /// <param name="key"></param>
+        /// <param name="keyPrefix"></param>
+        void RemoveByKey(string keyPrefix);
+
+        /// <summary>
+        /// 異步移除模糊查詢到的緩存值
+        /// </summary>
+        /// <param name="keyPrefix"></param>
         /// <returns></returns>
-        Task<bool> ExistAsync(string key);
+        Task RemoveByKeyAsync(string keyPrefix);
+
+        /// <summary>
+        /// 判斷緩存值是否存在
+        /// </summary>
+        /// <param name="redisKey"></param>
+        /// <returns></returns>
+        bool Exist(string redisKey);
+
+        /// <summary>
+        /// 異步判斷緩存值是否存在
+        /// </summary>
+        /// <param name="redisKey"></param>
+        /// <returns></returns>
+        Task<bool> ExistAsync(string redisKey);
         #endregion
 
         #region String
         /// <summary>
-        /// 獲取緩存值
+        /// 獲取String緩存值
         /// </summary>
-        /// <param name="key"></param>
+        /// <param name="redisKey"></param>
         /// <returns></returns>
-        string GetValue(string key);
+        string GetString(string redisKey);
 
         /// <summary>
-        /// 異步獲取緩存值
+        /// 異步獲取String緩存值
         /// </summary>
-        /// <param name="key"></param>
+        /// <param name="redisKey"></param>
         /// <returns></returns>
-        Task<string> GetValueAsync(string key);
+        Task<string> GetStringAsync(string redisKey);
 
         /// <summary>
-        /// 獲取序列化值
+        /// 設置String緩存值
         /// </summary>
-        /// <typeparam name="TEntity"></typeparam>
-        /// <param name="key"></param>
-        /// <returns></returns>
-        TEntity Get<TEntity>(string key);
+        /// <param name="redisKey"></param>
+        /// <param name="redisValue"></param>
+        /// <param name="tsExpiry"></param>
+        void SetString(string redisKey, string redisValue, TimeSpan tsExpiry);
 
         /// <summary>
-        /// 異步獲取序列化值
+        /// 異步設置String緩存值
         /// </summary>
-        /// <typeparam name="TEntity"></typeparam>
-        /// <param name="key"></param>
+        /// <param name="redisKey"></param>
+        /// <param name="redisValue"></param>
+        /// <param name="tsExpiry"></param>
         /// <returns></returns>
-        Task<TEntity> GetAsync<TEntity>(string key);
+        Task SetStringAsync(string redisKey, string redisValue, TimeSpan tsExpiry);
 
         /// <summary>
-        /// 設置緩存值
+        /// 獲取Deserialize緩存值
         /// </summary>
-        /// <param name="key"></param>
-        /// <param name="value"></param>
-        /// <param name="ts"></param>
-        void Set(string key, object value, TimeSpan ts);
+        /// <typeparam name="T"></typeparam>
+        /// <param name="redisKey"></param>
+        /// <returns></returns>
+        T GetObject<T>(string redisKey);
 
         /// <summary>
-        /// 異步設置緩存值
+        /// 異步獲取Deserialize緩存值
         /// </summary>
-        /// <param name="key"></param>
-        /// <param name="value"></param>
-        /// <param name="ts"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="redisKey"></param>
         /// <returns></returns>
-        Task SetAsync(string key, object value, TimeSpan ts);
+        Task<T> GetObjectAsync<T>(string redisKey);
+
+        /// <summary>
+        /// 設置Serialize緩存值
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="redisKey"></param>
+        /// <param name="redisValue"></param>
+        /// <param name="tsExpiry"></param>
+        void SetObject<T>(string redisKey, T redisValue, TimeSpan tsExpiry);
+
+        /// <summary>
+        /// 異步設置Serialize緩存值
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="redisKey"></param>
+        /// <param name="redisValue"></param>
+        /// <param name="tsExpiry"></param>
+        /// <returns></returns>
+        Task SetObjectAsync<T>(string redisKey, T redisValue, TimeSpan tsExpiry);
         #endregion
 
         #region Hash
@@ -107,111 +145,150 @@
         /// </summary>
         /// <typeparam name="TKey"></typeparam>
         /// <param name="redisKey"></param>
-        /// <param name="dictKey"></param>
+        /// <param name="hashKey"></param>
         /// <returns></returns>
-        bool HashExist<TKey>(string redisKey, TKey dictKey);
+        bool ExistHash<TKey>(string redisKey, TKey hashKey);
 
         /// <summary>
         /// 異步判斷Hash緩存值是否存在
         /// </summary>
         /// <typeparam name="TKey"></typeparam>
         /// <param name="redisKey"></param>
-        /// <param name="dictKey"></param>
+        /// <param name="hashKey"></param>
         /// <returns></returns>
-        Task<bool> HashExistAsync<TKey>(string redisKey, TKey dictKey);
-
-        /// <summary>
-        /// 獲取Hash緩存值集合
-        /// </summary>
-        /// <typeparam name="TKey"></typeparam>
-        /// <typeparam name="TValue"></typeparam>
-        /// <param name="redisKey"></param>
-        /// <returns></returns>
-        Dictionary<TKey, TValue> HashGet<TKey, TValue>(string redisKey);
-
-        /// <summary>
-        /// 異步獲取Hash緩存值集合
-        /// </summary>
-        /// <typeparam name="TKey"></typeparam>
-        /// <typeparam name="TValue"></typeparam>
-        /// <param name="redisKey"></param>
-        /// <returns></returns>
-        Task<Dictionary<TKey, TValue>> HashGetAsync<TKey, TValue>(string redisKey);
+        Task<bool> ExistHashAsync<TKey>(string redisKey, TKey hashKey);
 
         /// <summary>
         /// 獲取Hash緩存值
         /// </summary>
         /// <typeparam name="TKey"></typeparam>
-        /// <typeparam name="TValue"></typeparam>
         /// <param name="redisKey"></param>
-        /// <param name="dictKey"></param>
+        /// <param name="hashKey"></param>
         /// <returns></returns>
-        TValue HashGet<TKey, TValue>(string redisKey, TKey dictKey);
+        string GetHash<TKey>(string redisKey, TKey hashKey);
 
         /// <summary>
         /// 異步獲取Hash緩存值
         /// </summary>
         /// <typeparam name="TKey"></typeparam>
-        /// <typeparam name="TValue"></typeparam>
         /// <param name="redisKey"></param>
-        /// <param name="dictKey"></param>
+        /// <param name="hashKey"></param>
         /// <returns></returns>
-        Task<TValue> HashGetAsync<TKey, TValue>(string redisKey, TKey dictKey);
+        Task<string> GetHashAsync<TKey>(string redisKey, TKey hashKey);
 
         /// <summary>
         /// 設置Hash緩存值
         /// </summary>
         /// <typeparam name="TKey"></typeparam>
-        /// <typeparam name="TValue"></typeparam>
         /// <param name="redisKey"></param>
-        /// <param name="dictKeyValue"></param>
-        /// <param name="ts"></param>
-        void HashSet<TKey, TValue>(string redisKey, Dictionary<TKey, TValue> dictKeyValue, TimeSpan ts);
+        /// <param name="hashKey"></param>
+        /// <param name="hashValue"></param>
+        /// <param name="tsExpiry"></param>
+        void SetHash<TKey>(string redisKey, TKey hashKey, string hashValue, TimeSpan tsExpiry);
 
         /// <summary>
         /// 異步設置Hash緩存值
         /// </summary>
         /// <typeparam name="TKey"></typeparam>
+        /// <param name="redisKey"></param>
+        /// <param name="hashKey"></param>
+        /// <param name="hashValue"></param>
+        /// <param name="tsExpiry"></param>
+        /// <returns></returns>
+        Task SetHashAsync<TKey>(string redisKey, TKey hashKey, string hashValue, TimeSpan tsExpiry);
+
+        /// <summary>
+        /// 獲取Hash Deserialize緩存值集合
+        /// </summary>
+        /// <typeparam name="TKey"></typeparam>
         /// <typeparam name="TValue"></typeparam>
         /// <param name="redisKey"></param>
-        /// <param name="dictKeyValue"></param>
-        /// <param name="ts"></param>
         /// <returns></returns>
-        Task HashSetAsync<TKey, TValue>(string redisKey, Dictionary<TKey, TValue> dictKeyValue, TimeSpan ts);
+        IDictionary<TKey, TValue> GetHashObject<TKey, TValue>(string redisKey);
+
+        /// <summary>
+        /// 異步獲取Hash Deserialize緩存值集合
+        /// </summary>
+        /// <typeparam name="TKey"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
+        /// <param name="redisKey"></param>
+        /// <returns></returns>
+        Task<IDictionary<TKey, TValue>> GetHashObjectAsync<TKey, TValue>(string redisKey);
+
+        /// <summary>
+        /// 獲取Hash Deserialize緩存值
+        /// </summary>
+        /// <typeparam name="TKey"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
+        /// <param name="redisKey"></param>
+        /// <param name="hashKey"></param>
+        /// <returns></returns>
+        TValue GetHashObject<TKey, TValue>(string redisKey, TKey hashKey);
+
+        /// <summary>
+        /// 異步獲取Hash Deserialize緩存值
+        /// </summary>
+        /// <typeparam name="TKey"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
+        /// <param name="redisKey"></param>
+        /// <param name="hashKey"></param>
+        /// <returns></returns>
+        Task<TValue> GetHashObjectAsync<TKey, TValue>(string redisKey, TKey hashKey);
+
+        /// <summary>
+        /// 設置Hash Serialize緩存值
+        /// </summary>
+        /// <typeparam name="TKey"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
+        /// <param name="redisKey"></param>
+        /// <param name="hashKeyValue"></param>
+        /// <param name="tsExpiry"></param>
+        void SetHashObject<TKey, TValue>(string redisKey, IDictionary<TKey, TValue> hashKeyValue, TimeSpan tsExpiry);
+
+        /// <summary>
+        /// 異步設置Hash Serialize緩存值
+        /// </summary>
+        /// <typeparam name="TKey"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
+        /// <param name="redisKey"></param>
+        /// <param name="hashKeyValue"></param>
+        /// <param name="tsExpiry"></param>
+        /// <returns></returns>
+        Task SetHashObjectAsync<TKey, TValue>(string redisKey, IDictionary<TKey, TValue> hashKeyValue, TimeSpan tsExpiry);
 
         /// <summary>
         /// 移除Hash緩存值
         /// </summary>
         /// <typeparam name="TKey"></typeparam>
         /// <param name="redisKey"></param>
-        /// <param name="dictKey"></param>
-        void HashDelete<TKey>(string redisKey, TKey dictKey);
+        /// <param name="hashKey"></param>
+        void DeleteHash<TKey>(string redisKey, TKey hashKey);
 
         /// <summary>
         /// 異步移除Hash緩存值
         /// </summary>
         /// <typeparam name="TKey"></typeparam>
         /// <param name="redisKey"></param>
-        /// <param name="dictKey"></param>
+        /// <param name="hashKey"></param>
         /// <returns></returns>
-        Task HashDeleteAsync<TKey>(string redisKey, TKey dictKey);
+        Task DeleteHashAsync<TKey>(string redisKey, TKey hashKey);
 
         /// <summary>
         /// 移除Hash緩存值集合
         /// </summary>
         /// <typeparam name="TKey"></typeparam>
         /// <param name="redisKey"></param>
-        /// <param name="dictKeys"></param>
-        void HashDelete<TKey>(string redisKey, IEnumerable<TKey> dictKeys);
+        /// <param name="hashKeys"></param>
+        void DeleteHash<TKey>(string redisKey, IEnumerable<TKey> hashKeys);
 
         /// <summary>
         /// 異步移除Hash緩存值集合
         /// </summary>
         /// <typeparam name="TKey"></typeparam>
         /// <param name="redisKey"></param>
-        /// <param name="dictKeys"></param>
+        /// <param name="hashKeys"></param>
         /// <returns></returns>
-        Task HashDeleteAsync<TKey>(string redisKey, IEnumerable<TKey> dictKeys);
+        Task DeleteHashAsync<TKey>(string redisKey, IEnumerable<TKey> hashKeys);
         #endregion
     }
 }

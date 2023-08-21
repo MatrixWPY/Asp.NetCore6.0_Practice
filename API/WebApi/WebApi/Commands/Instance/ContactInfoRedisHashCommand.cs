@@ -13,7 +13,7 @@ namespace WebApi.Commands.Instance
     {
         private readonly IContactInfoService _contactInfoService;
         private readonly IRedisService _redisService;
-        private const string _redisHash = $"{nameof(ContactInfo)}:Hash";
+        private const string _redisQueryByID = $"{nameof(ContactInfo)}:{nameof(QueryByID)}";
         private const string _redisQueryByCondition = $"{nameof(ContactInfo)}:{nameof(QueryByCondition)}";
 
         /// <summary>
@@ -34,9 +34,9 @@ namespace WebApi.Commands.Instance
         /// <returns></returns>
         public ApiResultRP<ContactInfo> QueryByID(long id)
         {
-            if (_redisService.HashExist(_redisHash, id))
+            if (_redisService.ExistHash(_redisQueryByID, id))
             {
-                var res = _redisService.HashGet<long, ContactInfo>(_redisHash, id);
+                var res = _redisService.GetHashObject<long, ContactInfo>(_redisQueryByID, id);
                 return SuccessRP(res);
             }
             else
@@ -48,7 +48,7 @@ namespace WebApi.Commands.Instance
                 }
                 else
                 {
-                    _redisService.HashSetAsync(_redisHash, new Dictionary<long, ContactInfo> { { id, res } }, TimeSpan.FromMinutes(5));
+                    _redisService.SetHashObjectAsync(_redisQueryByID, new Dictionary<long, ContactInfo> { { id, res } }, TimeSpan.FromMinutes(5));
                     return SuccessRP(res);
                 }
             }
@@ -77,10 +77,10 @@ namespace WebApi.Commands.Instance
             dicParams["RowStart"] = (objRQ.PageIndex - 1) * objRQ.PageSize;
             dicParams["RowLength"] = objRQ.PageSize;
 
-            var redisQueryByCondition = $"{_redisQueryByCondition}:{string.Join('&', dicParams.Select(e => e.Key + "=" + e.Value?.ToString()))}";
-            if (_redisService.Exist(redisQueryByCondition))
+            var hashKey = $"{string.Join('&', dicParams.Select(e => e.Key + "=" + e.Value?.ToString()))}";
+            if (_redisService.ExistHash(_redisQueryByCondition, hashKey))
             {
-                var res = _redisService.Get<(int, IEnumerable<ContactInfo>)>(redisQueryByCondition);
+                var res = _redisService.GetHashObject<string, (int, IEnumerable<ContactInfo>)>(_redisQueryByCondition, hashKey);
                 return SuccessRP(new PageDataRP<IEnumerable<ContactInfo>>()
                 {
                     PageInfo = new PageInfoRP()
@@ -102,7 +102,7 @@ namespace WebApi.Commands.Instance
                 }
                 else
                 {
-                    _redisService.SetAsync(redisQueryByCondition, res, TimeSpan.FromMinutes(5));
+                    _redisService.SetHashObjectAsync(_redisQueryByCondition, new Dictionary<string, (int, IEnumerable<ContactInfo>)> { { hashKey, res } }, TimeSpan.FromMinutes(5));
                     return SuccessRP(new PageDataRP<IEnumerable<ContactInfo>>()
                     {
                         PageInfo = new PageInfoRP()
@@ -139,8 +139,8 @@ namespace WebApi.Commands.Instance
             if (res)
             {
                 var objCache = _contactInfoService.Query(objInsert.ContactInfoID);
-                _redisService.HashSetAsync(_redisHash, new Dictionary<long, ContactInfo> { { objCache.ContactInfoID, objCache } }, TimeSpan.FromMinutes(5));
-                _redisService.RemoveByKeyAsync(_redisQueryByCondition);
+                _redisService.SetHashObjectAsync(_redisQueryByID, new Dictionary<long, ContactInfo> { { objCache.ContactInfoID, objCache } }, TimeSpan.FromMinutes(5));
+                _redisService.RemoveAsync(_redisQueryByCondition);
                 return SuccessRP(objCache);
             }
             else
@@ -176,8 +176,8 @@ namespace WebApi.Commands.Instance
             if (res)
             {
                 var objCache = _contactInfoService.Query(objUpdate.ContactInfoID);
-                _redisService.HashSetAsync(_redisHash, new Dictionary<long, ContactInfo> { { objCache.ContactInfoID, objCache } }, TimeSpan.FromMinutes(5));
-                _redisService.RemoveByKeyAsync(_redisQueryByCondition);
+                _redisService.SetHashObjectAsync(_redisQueryByID, new Dictionary<long, ContactInfo> { { objCache.ContactInfoID, objCache } }, TimeSpan.FromMinutes(5));
+                _redisService.RemoveAsync(_redisQueryByCondition);
                 return SuccessRP(objCache);
             }
             else
@@ -213,8 +213,8 @@ namespace WebApi.Commands.Instance
             if (res)
             {
                 var objCache = _contactInfoService.Query(objUpdate.ContactInfoID);
-                _redisService.HashSetAsync(_redisHash, new Dictionary<long, ContactInfo> { { objCache.ContactInfoID, objCache } }, TimeSpan.FromMinutes(5));
-                _redisService.RemoveByKeyAsync(_redisQueryByCondition);
+                _redisService.SetHashObjectAsync(_redisQueryByID, new Dictionary<long, ContactInfo> { { objCache.ContactInfoID, objCache } }, TimeSpan.FromMinutes(5));
+                _redisService.RemoveAsync(_redisQueryByCondition);
                 return SuccessRP(objCache);
             }
             else
@@ -233,8 +233,8 @@ namespace WebApi.Commands.Instance
             var res = _contactInfoService.Delete(liID);
             if (res)
             {
-                _redisService.HashDeleteAsync(_redisHash, liID);
-                _redisService.RemoveByKeyAsync(_redisQueryByCondition);
+                _redisService.DeleteHashAsync(_redisQueryByID, liID);
+                _redisService.RemoveAsync(_redisQueryByCondition);
                 return SuccessRP(res);
             }
             else

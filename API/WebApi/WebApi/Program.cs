@@ -149,12 +149,12 @@ var app = builder.Build();
 
 app.UseHttpsRedirection();
 
-#region 癘魁肚把计
-app.UseLogRequestMiddleware();
-#endregion
-
 #region 癘魁肚把计
 app.UseLogResponseMiddleware();
+#endregion
+
+#region 癘魁肚把计
+app.UseLogRequestMiddleware();
 #endregion
 
 app.UseAuthorization();

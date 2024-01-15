@@ -72,6 +72,14 @@ if (isUseRedis)
 }
 #endregion
 
+#region µù¥URabbitMQ
+var isUseRabbitMQ = (bool)builder.Configuration.GetValue(typeof(bool), "IsUseRabbitMQ");
+if (isUseRabbitMQ)
+{
+    builder.Services.AddSingleton<IRabbitMQService, RabbitMQService>();
+}
+#endregion
+
 #region µù¥UDB³s½u
 var dbType = builder.Configuration.GetValue(typeof(string), "DbType");
 var dbConnectString = string.Empty;

@@ -31,9 +31,9 @@ namespace WebApi.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        public ApiResultRP<List<ContactInfo>> Get(int cnt)
+        public ApiResultRP<IEnumerable<ContactInfo>> Get(int cnt)
         {
-            return _queueCommand.Receive(cnt);
+            return _queueCommand.Receive<ContactInfo>(cnt);
         }
 
         /// <summary>
@@ -44,7 +44,16 @@ namespace WebApi.Controllers
         [HttpPost]
         public ApiResultRP<bool> Post([FromBody] ContactInfoAddRQ objRQ)
         {
-            return _queueCommand.Send(objRQ);
+            var objInsert = new ContactInfo()
+            {
+                Name = objRQ.Name,
+                Nickname = objRQ.Nickname,
+                Gender = (ContactInfo.EnumGender?)objRQ.Gender,
+                Age = objRQ.Age,
+                PhoneNo = objRQ.PhoneNo,
+                Address = objRQ.Address
+            };
+            return _queueCommand.Send(objInsert);
         }
     }
 }

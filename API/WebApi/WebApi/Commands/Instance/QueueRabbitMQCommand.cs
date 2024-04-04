@@ -1,6 +1,4 @@
 ﻿using WebApi.Commands.Interface;
-using WebApi.Models.Data;
-using WebApi.Models.Request;
 using WebApi.Models.Response;
 using WebApi.Services.Interface;
 
@@ -22,31 +20,22 @@ namespace WebApi.Commands.Instance
             _rabbitMQService = rabbitMQService;
         }
 
-        public ApiResultRP<List<ContactInfo>> Receive(int cnt)
+        public ApiResultRP<IEnumerable<T>> Receive<T>(int cnt)
         {
-            List<ContactInfo> res = new List<ContactInfo>();
+            List<T> res = new List<T>();
 
-            _rabbitMQService.ReceiveDirect<ContactInfo>("ContactInfo", cnt, 3, (obj) =>
+            _rabbitMQService.ReceiveDirect<T>("ContactInfo", cnt, 3, (obj) =>
             {
                 res.Add(obj);
                 return true;
             });
 
-            return SuccessRP(res);
+            return SuccessRP(res.AsEnumerable());
         }
 
-        public ApiResultRP<bool> Send(ContactInfoAddRQ objRQ)
+        public ApiResultRP<bool> Send<T>(T value)
         {
-            var objInsert = new ContactInfo()
-            {
-                Name = objRQ.Name,
-                Nickname = objRQ.Nickname,
-                Gender = (ContactInfo.EnumGender?)objRQ.Gender,
-                Age = objRQ.Age,
-                PhoneNo = objRQ.PhoneNo,
-                Address = objRQ.Address
-            };
-            _rabbitMQService.SendDirect("QueueCommand", "Send", "ContactInfo", objInsert);
+            _rabbitMQService.SendDirect("QueueCommand", "Send", "ContactInfo", value);
             return SuccessRP(true);
         }
     }

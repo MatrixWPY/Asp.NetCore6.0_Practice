@@ -147,6 +147,7 @@ else
 {
     builder.Services.AddScoped<IContactInfoCommand, ContactInfoCommand>();
 }
+builder.Services.AddScoped<IQueueCommand, QueueRabbitMQCommand>();
 #endregion
 
 #endregion

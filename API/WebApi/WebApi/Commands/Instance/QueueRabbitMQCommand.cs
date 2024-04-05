@@ -37,7 +37,7 @@ namespace WebApi.Commands.Instance
 
         public ApiResultRP<bool> Send<T>(T value)
         {
-            _rabbitMQService.SendDirect("QueueCommand", "Send", "ContactInfo", value);
+            _rabbitMQService.SendDirect("QueueRabbitMQCommand", "Send", "ContactInfo", value);
             return SuccessRP(true);
         }
     }

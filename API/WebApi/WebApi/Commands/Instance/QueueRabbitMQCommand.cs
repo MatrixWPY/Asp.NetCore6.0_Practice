@@ -24,7 +24,7 @@ namespace WebApi.Commands.Instance
         {
             List<T> res = new List<T>();
 
-            _rabbitMQService.ReceiveDirect<T>("ContactInfo", cnt, 3,
+            _rabbitMQService.ReceiveDirect<T>(typeof(T).Name, cnt, 3,
                 (obj) =>
                 {
                     res.Add(obj);
@@ -37,7 +37,7 @@ namespace WebApi.Commands.Instance
 
         public ApiResultRP<bool> Send<T>(T value)
         {
-            _rabbitMQService.SendDirect("QueueRabbitMQCommand", "Send", "ContactInfo", value);
+            _rabbitMQService.SendDirect(nameof(QueueRabbitMQCommand), nameof(Send), typeof(T).Name, value);
             return SuccessRP(true);
         }
     }

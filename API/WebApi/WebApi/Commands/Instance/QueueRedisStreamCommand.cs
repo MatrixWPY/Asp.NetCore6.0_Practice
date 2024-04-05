@@ -1,4 +1,5 @@
-﻿using WebApi.Commands.Interface;
+﻿using System.Diagnostics;
+using WebApi.Commands.Interface;
 using WebApi.Models.Response;
 using WebApi.Services.Interface;
 
@@ -22,14 +23,14 @@ namespace WebApi.Commands.Instance
 
         public ApiResultRP<IEnumerable<T>> Receive<T>(int cnt)
         {
-            var res = _redisService.ReceiveStreamQueue<string,T>("QueueRedisStreamCommand", "ContactInfo", "Receive", cnt);
+            var res = _redisService.ReceiveStreamQueue<string,T>(nameof(QueueRedisStreamCommand), typeof(T).Name, $"{nameof(Receive)}_{Process.GetCurrentProcess().Id}", cnt);
             return SuccessRP(res.Select(e => e.Value));
         }
 
         public ApiResultRP<bool> Send<T>(T value)
         {
             var key = Guid.NewGuid().ToString("N");
-            _redisService.SendStreamQueue("QueueRedisStreamCommand", "ContactInfo", key, value);
+            _redisService.SendStreamQueue(nameof(QueueRedisStreamCommand), typeof(T).Name, key, value);
             return SuccessRP(true);
         }
     }

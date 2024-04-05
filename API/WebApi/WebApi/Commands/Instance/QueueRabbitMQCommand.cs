@@ -24,11 +24,13 @@ namespace WebApi.Commands.Instance
         {
             List<T> res = new List<T>();
 
-            _rabbitMQService.ReceiveDirect<T>("ContactInfo", cnt, 3, (obj) =>
-            {
-                res.Add(obj);
-                return true;
-            });
+            _rabbitMQService.ReceiveDirect<T>("ContactInfo", cnt, 3,
+                (obj) =>
+                {
+                    res.Add(obj);
+                    return true;
+                }
+            );
 
             return SuccessRP(res.AsEnumerable());
         }

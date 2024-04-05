@@ -147,7 +147,18 @@ else
 {
     builder.Services.AddScoped<IContactInfoCommand, ContactInfoCommand>();
 }
-builder.Services.AddScoped<IQueueCommand, QueueRabbitMQCommand>();
+
+var queueType = builder.Configuration.GetValue(typeof(string), "QueueType");
+switch (queueType)
+{
+    case "RabbitMQ":
+        builder.Services.AddScoped<IQueueCommand, QueueRabbitMQCommand>();
+        break;
+
+    case "RedisStream":
+        builder.Services.AddScoped<IQueueCommand, QueueRedisStreamCommand>();
+        break;
+}
 #endregion
 
 #endregion

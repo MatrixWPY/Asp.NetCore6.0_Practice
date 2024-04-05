@@ -548,5 +548,192 @@ namespace WebApi.Services.Instance
             await _redisConnection.GetDatabase().HashDeleteAsync(redisKey, hashKeys.Select(e => new RedisValue(e.ToString())).ToArray());
         }
         #endregion
+
+        #region StreamQueue
+        /// <summary>
+        /// 獲取資料從Stream Queue
+        /// </summary>
+        /// <typeparam name="TKey"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
+        /// <param name="queueName"></param>
+        /// <param name="groupName"></param>
+        /// <param name="consumerName"></param>
+        /// <param name="maxCount"></param>
+        /// <returns></returns>
+        public IDictionary<TKey, TValue> ReceiveStreamQueue<TKey, TValue>(string queueName, string groupName, string consumerName, int maxCount)
+        {
+            IDictionary<TKey, TValue> res = new Dictionary<TKey, TValue>();
+
+            #region 前置判斷
+            var hasKey = _redisConnection.GetDatabase().KeyExists(queueName, CommandFlags.None);
+            if (hasKey == false)
+            {
+                _logger.LogInformation($"不存在 Queue = {queueName}");
+                return res;
+            }
+
+            var groups = _redisConnection.GetDatabase().StreamGroupInfo(queueName, CommandFlags.None);
+            if (groups == null || groups?.Any(x => x.Name.Equals(groupName, StringComparison.OrdinalIgnoreCase)) == false)
+            {
+                _logger.LogInformation($"不存在 Group = {groupName}");
+                return res;
+            }
+            #endregion
+
+            var streamDatas = _redisConnection.GetDatabase().StreamReadGroup(queueName, groupName, consumerName, ">", maxCount, noAck: false);
+            if (streamDatas.Any())
+            {
+                foreach (var streamData in streamDatas)
+                {
+                    var id = streamData.Id;
+                    foreach (var data in streamData.Values)
+                    {
+                        res[(TKey)Convert.ChangeType(data.Name, typeof(TKey))] = JsonConvert.DeserializeObject<TValue>(data.Value);
+                    }
+
+                    _redisConnection.GetDatabase().StreamAcknowledge(queueName, groupName, id);
+                    _redisConnection.GetDatabase().StreamDelete(queueName, new RedisValue[] { id });
+                }
+            }
+
+            return res;
+        }
+
+        /// <summary>
+        /// 異步獲取資料從Stream Queue
+        /// </summary>
+        /// <typeparam name="TKey"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
+        /// <param name="queueName"></param>
+        /// <param name="groupName"></param>
+        /// <param name="consumerName"></param>
+        /// <param name="maxCount"></param>
+        /// <returns></returns>
+        public async Task<IDictionary<TKey, TValue>> ReceiveStreamQueueAsync<TKey, TValue>(string queueName, string groupName, string consumerName, int maxCount)
+        {
+            IDictionary<TKey, TValue> res = new Dictionary<TKey, TValue>();
+
+            #region 前置判斷
+            var hasKey = await _redisConnection.GetDatabase().KeyExistsAsync(queueName, CommandFlags.None);
+            if (hasKey == false)
+            {
+                _logger.LogInformation($"不存在 Queue = {queueName}");
+                return res;
+            }
+
+            var groups = await _redisConnection.GetDatabase().StreamGroupInfoAsync(queueName, CommandFlags.None);
+            if (groups == null || groups?.Any(x => x.Name.Equals(groupName, StringComparison.OrdinalIgnoreCase)) == false)
+            {
+                _logger.LogInformation($"不存在 Group = {groupName}");
+                return res;
+            }
+            #endregion
+
+            var streamDatas = await _redisConnection.GetDatabase().StreamReadGroupAsync(queueName, groupName, consumerName, ">", maxCount, noAck: false);
+            if (streamDatas.Any())
+            {
+                foreach (var streamData in streamDatas)
+                {
+                    var id = streamData.Id;
+                    foreach (var data in streamData.Values)
+                    {
+                        res[(TKey)Convert.ChangeType(data.Name, typeof(TKey))] = JsonConvert.DeserializeObject<TValue>(data.Value);
+                    }
+
+                    await _redisConnection.GetDatabase().StreamAcknowledgeAsync(queueName, groupName, id);
+                    await _redisConnection.GetDatabase().StreamDeleteAsync(queueName, new RedisValue[] { id });
+                }
+            }
+
+            return res;
+        }
+
+        /// <summary>
+        /// 設置資料至Stream Queue
+        /// </summary>
+        /// <typeparam name="TKey"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
+        /// <param name="queueName"></param>
+        /// <param name="groupName"></param>
+        /// <param name="redisKey"></param>
+        /// <param name="redisValue"></param>
+        public void SendStreamQueue<TKey, TValue>(string queueName, string groupName, TKey redisKey, TValue redisValue)
+        {
+            #region 前置設定 Consumer Group
+            // 因需先 StreamCreateConsumerGroup 後再 StreamAdd，後續 StreamReadGroup 才讀的到資料
+            // 故在 Producer 時先行設置 Consumer 會使用的 GroupName
+
+            var hasKey = _redisConnection.GetDatabase().KeyExists(queueName, CommandFlags.None);
+            if (hasKey == false)
+            {
+                // 此時尚未執行 StreamCreateConsumerGroup，故此筆資料不會被 StreamReadGroup 讀出
+                // 此處執行 StreamAdd 目的為使之後的 StreamGroupInfo 可作用
+                _redisConnection.GetDatabase().StreamAdd(queueName, "-1", $"Root_{queueName}");
+            }
+
+            var groups = _redisConnection.GetDatabase().StreamGroupInfo(queueName, CommandFlags.None);
+            if (groups == null || groups?.Any(x => x.Name.Equals(groupName, StringComparison.OrdinalIgnoreCase)) == false)
+            {
+                try
+                {
+                    // 設置 Consumer 會使用的 GroupName
+                    // 之後執行 StreamAdd 的資料已可被 StreamReadGroup 讀出
+                    _redisConnection.GetDatabase().StreamCreateConsumerGroup(queueName, groupName, StreamPosition.NewMessages);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError($"建立 Group 失敗 : {ex.Message}");
+                    throw;
+                }
+            }
+            #endregion
+
+            _redisConnection.GetDatabase().StreamAdd(queueName, redisKey.ToString(), JsonConvert.SerializeObject(redisValue));
+        }
+
+        /// <summary>
+        /// 異步設置資料至Stream Queue
+        /// </summary>
+        /// <typeparam name="TKey"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
+        /// <param name="queueName"></param>
+        /// <param name="groupName"></param>
+        /// <param name="redisKey"></param>
+        /// <param name="redisValue"></param>
+        /// <returns></returns>
+        public async Task SendStreamQueueAsync<TKey, TValue>(string queueName, string groupName, TKey redisKey, TValue redisValue)
+        {
+            #region 前置設定 Consumer Group
+            // 因需先 StreamCreateConsumerGroupAsync 後再 StreamAddAsync，後續 StreamReadGroupAsync 才讀的到資料
+            // 故在 Producer 時先行設置 Consumer 會使用的 GroupName
+
+            var hasKey = await _redisConnection.GetDatabase().KeyExistsAsync(queueName, CommandFlags.None);
+            if (hasKey == false)
+            {
+                // 此時尚未執行 StreamCreateConsumerGroupAsync，故此筆資料不會被 StreamReadGroupAsync 讀出
+                // 此處執行 StreamAddAsync 目的為使之後的 StreamGroupInfoAsync 可作用
+                await _redisConnection.GetDatabase().StreamAddAsync(queueName, "-1", $"Root_{queueName}");
+            }
+
+            var groups = await _redisConnection.GetDatabase().StreamGroupInfoAsync(queueName, CommandFlags.None);
+            if (groups == null || groups?.Any(x => x.Name.Equals(groupName, StringComparison.OrdinalIgnoreCase)) == false)
+            {
+                try
+                {
+                    // 設置 Consumer 會使用的 GroupName
+                    // 之後執行 StreamAddAsync 的資料已可被 StreamReadGroupAsync 讀出
+                    await _redisConnection.GetDatabase().StreamCreateConsumerGroupAsync(queueName, groupName, StreamPosition.NewMessages);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError($"建立 Group 失敗 : {ex.Message}");
+                    throw;
+                }
+            }
+            #endregion
+
+            await _redisConnection.GetDatabase().StreamAddAsync(queueName, redisKey.ToString(), JsonConvert.SerializeObject(redisValue));
+        }
+        #endregion
     }
 }

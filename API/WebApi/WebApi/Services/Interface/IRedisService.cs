@@ -290,5 +290,54 @@
         /// <returns></returns>
         Task DeleteHashAsync<TKey>(string redisKey, IEnumerable<TKey> hashKeys);
         #endregion
+
+        #region StreamQueue
+        /// <summary>
+        /// 獲取資料從Stream Queue
+        /// </summary>
+        /// <typeparam name="TKey"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
+        /// <param name="queueName"></param>
+        /// <param name="groupName"></param>
+        /// <param name="consumerName"></param>
+        /// <param name="maxCount"></param>
+        /// <returns></returns>
+        IDictionary<TKey, TValue> ReceiveStreamQueue<TKey, TValue>(string queueName, string groupName, string consumerName, int maxCount);
+
+        /// <summary>
+        /// 異步獲取資料從Stream Queue
+        /// </summary>
+        /// <typeparam name="TKey"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
+        /// <param name="queueName"></param>
+        /// <param name="groupName"></param>
+        /// <param name="consumerName"></param>
+        /// <param name="maxCount"></param>
+        /// <returns></returns>
+        Task<IDictionary<TKey, TValue>> ReceiveStreamQueueAsync<TKey, TValue>(string queueName, string groupName, string consumerName, int maxCount);
+
+        /// <summary>
+        /// 設置資料至Stream Queue
+        /// </summary>
+        /// <typeparam name="TKey"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
+        /// <param name="queueName"></param>
+        /// <param name="groupName"></param>
+        /// <param name="redisKey"></param>
+        /// <param name="redisValue"></param>
+        void SendStreamQueue<TKey, TValue>(string queueName, string groupName, TKey redisKey, TValue redisValue);
+
+        /// <summary>
+        /// 異步設置資料至Stream Queue
+        /// </summary>
+        /// <typeparam name="TKey"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
+        /// <param name="queueName"></param>
+        /// <param name="groupName"></param>
+        /// <param name="redisKey"></param>
+        /// <param name="redisValue"></param>
+        /// <returns></returns>
+        Task SendStreamQueueAsync<TKey, TValue>(string queueName, string groupName, TKey redisKey, TValue redisValue);
+        #endregion
     }
 }

@@ -151,7 +151,7 @@ namespace WebApi.Services.Instance
                 {
                     while (continueReceiving)
                     {
-                        if (DateTime.Now - lastReceiveTime > TimeSpan.FromSeconds(timeoutSec))
+                        if (DateTime.Now - lastReceiveTime >= TimeSpan.FromSeconds(timeoutSec))
                         {
                             continueReceiving = false;
                             _waitReceived.Set();

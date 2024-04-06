@@ -549,9 +549,80 @@ namespace WebApi.Services.Instance
         }
         #endregion
 
+        #region ListQueue
+        /// <summary>
+        /// 接收資料從 List Queue
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="queueName"></param>
+        /// <param name="maxCount"></param>
+        /// <returns></returns>
+        public IEnumerable<T> ReceiveListQueue<T>(string queueName, int maxCount)
+        {
+            List<T> res = new List<T>();
+
+            var listDatas = _redisConnection.GetDatabase().ListRightPop(queueName, maxCount);
+            if (listDatas?.Any() ?? false)
+            {
+                foreach (var data in listDatas)
+                {
+                    res.Add(JsonConvert.DeserializeObject<T>(data));
+                }
+            }
+
+            return res;
+        }
+
+        /// <summary>
+        /// 異步接收資料從 List Queue
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="queueName"></param>
+        /// <param name="maxCount"></param>
+        /// <returns></returns>
+        public async Task<IEnumerable<T>> ReceiveListQueueAsync<T>(string queueName, int maxCount)
+        {
+            List<T> res = new List<T>();
+
+            var listDatas = await _redisConnection.GetDatabase().ListRightPopAsync(queueName, maxCount);
+            if (listDatas?.Any() ?? false)
+            {
+                foreach (var data in listDatas)
+                {
+                    res.Add(JsonConvert.DeserializeObject<T>(data));
+                }
+            }
+
+            return res;
+        }
+
+        /// <summary>
+        /// 傳送資料至 List Queue
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="queueName"></param>
+        /// <param name="redisValue"></param>
+        public void SendListQueue<T>(string queueName, T redisValue)
+        {
+            _redisConnection.GetDatabase().ListLeftPush(queueName, JsonConvert.SerializeObject(redisValue));
+        }
+
+        /// <summary>
+        /// 異步傳送資料至 List Queue
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="queueName"></param>
+        /// <param name="redisValue"></param>
+        /// <returns></returns>
+        public async Task SendListQueueAsync<T>(string queueName, T redisValue)
+        {
+            await _redisConnection.GetDatabase().ListLeftPushAsync(queueName, JsonConvert.SerializeObject(redisValue));
+        }
+        #endregion
+
         #region StreamQueue
         /// <summary>
-        /// 獲取資料從Stream Queue
+        /// 接收資料從 Stream Queue
         /// </summary>
         /// <typeparam name="TKey"></typeparam>
         /// <typeparam name="TValue"></typeparam>
@@ -600,7 +671,7 @@ namespace WebApi.Services.Instance
         }
 
         /// <summary>
-        /// 異步獲取資料從Stream Queue
+        /// 異步接收資料從 Stream Queue
         /// </summary>
         /// <typeparam name="TKey"></typeparam>
         /// <typeparam name="TValue"></typeparam>
@@ -649,7 +720,7 @@ namespace WebApi.Services.Instance
         }
 
         /// <summary>
-        /// 設置資料至Stream Queue
+        /// 傳送資料至 Stream Queue
         /// </summary>
         /// <typeparam name="TKey"></typeparam>
         /// <typeparam name="TValue"></typeparam>
@@ -692,7 +763,7 @@ namespace WebApi.Services.Instance
         }
 
         /// <summary>
-        /// 異步設置資料至Stream Queue
+        /// 異步傳送資料至 Stream Queue
         /// </summary>
         /// <typeparam name="TKey"></typeparam>
         /// <typeparam name="TValue"></typeparam>

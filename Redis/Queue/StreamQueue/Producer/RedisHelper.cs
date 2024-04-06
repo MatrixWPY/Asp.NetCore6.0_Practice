@@ -1,6 +1,6 @@
 ﻿using StackExchange.Redis;
 
-namespace Publish
+namespace Producer
 {
     public class RedisHelper
     {

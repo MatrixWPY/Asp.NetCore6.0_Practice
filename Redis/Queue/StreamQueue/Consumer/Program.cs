@@ -1,5 +1,5 @@
 ﻿using StackExchange.Redis;
-using static Publish.RedisHelper;
+using static Consumer.RedisHelper;
 
 RedisConnection.Init("127.0.0.1:6379");
 var redis = RedisConnection.Instance.ConnectionMultiplexer;

@@ -155,6 +155,10 @@ switch (queueType)
         builder.Services.AddScoped<IQueueCommand, QueueRabbitMQCommand>();
         break;
 
+    case "RedisList":
+        builder.Services.AddScoped<IQueueCommand, QueueRedisListCommand>();
+        break;
+
     case "RedisStream":
         builder.Services.AddScoped<IQueueCommand, QueueRedisStreamCommand>();
         break;

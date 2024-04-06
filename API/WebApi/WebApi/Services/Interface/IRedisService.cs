@@ -291,9 +291,46 @@
         Task DeleteHashAsync<TKey>(string redisKey, IEnumerable<TKey> hashKeys);
         #endregion
 
+        #region ListQueue
+        /// <summary>
+        /// 接收資料從 List Queue
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="queueName"></param>
+        /// <param name="maxCount"></param>
+        /// <returns></returns>
+        IEnumerable<T> ReceiveListQueue<T>(string queueName, int maxCount);
+
+        /// <summary>
+        /// 異步接收資料從 List Queue
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="queueName"></param>
+        /// <param name="maxCount"></param>
+        /// <returns></returns>
+        Task<IEnumerable<T>> ReceiveListQueueAsync<T>(string queueName, int maxCount);
+
+        /// <summary>
+        /// 傳送資料至 List Queue
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="queueName"></param>
+        /// <param name="redisValue"></param>
+        void SendListQueue<T>(string queueName, T redisValue);
+
+        /// <summary>
+        /// 異步傳送資料至 List Queue
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="queueName"></param>
+        /// <param name="redisValue"></param>
+        /// <returns></returns>
+        Task SendListQueueAsync<T>(string queueName, T redisValue);
+        #endregion
+
         #region StreamQueue
         /// <summary>
-        /// 獲取資料從Stream Queue
+        /// 接收資料從 Stream Queue
         /// </summary>
         /// <typeparam name="TKey"></typeparam>
         /// <typeparam name="TValue"></typeparam>
@@ -305,7 +342,7 @@
         IDictionary<TKey, TValue> ReceiveStreamQueue<TKey, TValue>(string queueName, string groupName, string consumerName, int maxCount);
 
         /// <summary>
-        /// 異步獲取資料從Stream Queue
+        /// 異步接收資料從 Stream Queue
         /// </summary>
         /// <typeparam name="TKey"></typeparam>
         /// <typeparam name="TValue"></typeparam>
@@ -317,7 +354,7 @@
         Task<IDictionary<TKey, TValue>> ReceiveStreamQueueAsync<TKey, TValue>(string queueName, string groupName, string consumerName, int maxCount);
 
         /// <summary>
-        /// 設置資料至Stream Queue
+        /// 傳送資料至 Stream Queue
         /// </summary>
         /// <typeparam name="TKey"></typeparam>
         /// <typeparam name="TValue"></typeparam>
@@ -328,7 +365,7 @@
         void SendStreamQueue<TKey, TValue>(string queueName, string groupName, TKey redisKey, TValue redisValue);
 
         /// <summary>
-        /// 異步設置資料至Stream Queue
+        /// 異步傳送資料至 Stream Queue
         /// </summary>
         /// <typeparam name="TKey"></typeparam>
         /// <typeparam name="TValue"></typeparam>

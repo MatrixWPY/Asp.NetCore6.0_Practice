@@ -1,10 +1,11 @@
 ﻿using StackExchange.Redis;
-using static Producer.RedisHelper;
+using static ProducerPublish.RedisHelper;
 
 RedisConnection.Init("127.0.0.1:6379");
 var redis = RedisConnection.Instance.ConnectionMultiplexer;
 var db = redis.GetDatabase();
 
+string channelName = "StreamChannel";
 string queueName = "StreamQueue";
 string groupName = "QueueGroup";
 
@@ -45,5 +46,8 @@ for (int i = 0; i < 10; i++)
     db.StreamAdd(queueName, $"{i + 1}", $"Test_{i + 1}");
 }
 Console.WriteLine("Produce Finish");
+
+Console.WriteLine("Publish to StreamChannel");
+db.Publish(channelName, string.Empty);
 
 Console.ReadKey();

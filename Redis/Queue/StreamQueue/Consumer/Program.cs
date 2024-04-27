@@ -1,4 +1,5 @@
 ﻿using StackExchange.Redis;
+using System.Diagnostics;
 using static Consumer.RedisHelper;
 
 RedisConnection.Init("127.0.0.1:6379");
@@ -7,7 +8,7 @@ var db = redis.GetDatabase();
 
 string queueName = "StreamQueue";
 string groupName = "QueueGroup";
-string consumerName = "GroupConsumer";
+string consumerName = $"GroupConsumer_{Process.GetCurrentProcess().Id}";
 
 #region 前置判斷
 var hasKey = db.KeyExists(queueName, CommandFlags.None);
@@ -42,6 +43,6 @@ if (data.Any())
         db.StreamDelete(queueName, new[] { item.Id } );
     }
 }
-
 Console.WriteLine("Consume Finish");
+
 Console.ReadKey();

@@ -1,6 +1,6 @@
 ﻿using StackExchange.Redis;
 
-namespace Consumer_2
+namespace ConsumerListener
 {
     public class RedisHelper
     {

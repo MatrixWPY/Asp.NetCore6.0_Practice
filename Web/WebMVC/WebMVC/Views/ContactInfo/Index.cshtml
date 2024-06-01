@@ -1,0 +1,51 @@
+﻿@model IEnumerable<WebMVC.ViewModels.ContactInfo.QueryRes>
+
+<form method="post" action="/ContactInfo/Index">
+    <div class="col-lg-3">
+        <input type="text" placeholder="Name" id="txtName" name="Name" class="form-control">
+    </div>
+    <div class="col-lg-3">
+        <input type="text" placeholder="Nickname" id="txtNickname" name="Nickname" class="form-control">
+    </div>
+    <div class="col-lg-2">
+        <button id="btnSearch" class="btn btn-warning pull-right" type="submit"><i class="fa fa-search"></i>Search</button>
+    </div>
+</form>
+
+<p>
+    <a asp-action="Create">Create</a>
+</p>
+
+<table class="table" width="100%">
+    <thead>
+        <tr>
+            <th>@Html.DisplayNameFor(e => e.ContactInfoID)</th>
+            <th>@Html.DisplayNameFor(e => e.Name)</th>
+            <th>@Html.DisplayNameFor(e => e.Nickname)</th>
+            <th>@Html.DisplayNameFor(e => e.Gender)</th>
+            <th>@Html.DisplayNameFor(e => e.Age)</th>
+            <th>@Html.DisplayNameFor(e => e.PhoneNo)</th>
+            <th>@Html.DisplayNameFor(e => e.Address)</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var item in Model)
+    {
+        <tr>
+            <td>@Html.DisplayFor(e => item.ContactInfoID)</td>
+            <td>@Html.DisplayFor(e => item.Name)</td>
+            <td>@Html.DisplayFor(e => item.Nickname)</td>
+            <td>@Html.DisplayFor(e => item.Gender)</td>
+            <td>@Html.DisplayFor(e => item.Age)</td>
+            <td>@Html.DisplayFor(e => item.PhoneNo)</td>
+            <td>@Html.DisplayFor(e => item.Address)</td>
+            <td>
+                <a asp-action="Details" asp-route-id="@item.ContactInfoID">Details</a> |
+                <a asp-action="Edit" asp-route-id="@item.ContactInfoID">Edit</a> |
+                <a asp-action="Remove" asp-route-id="@item.ContactInfoID">Remove</a>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>

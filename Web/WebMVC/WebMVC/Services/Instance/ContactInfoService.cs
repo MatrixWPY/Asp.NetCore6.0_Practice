@@ -45,7 +45,7 @@ namespace WebMVC.Services.Instance
             }
             if (string.IsNullOrWhiteSpace(req.Nickname) == false)
             {
-                dicParams["Nickname"] = $"%{req.Nickname}%";
+                dicParams["Nickname"] = req.Nickname;
             }
             if (req.Gender.HasValue)
             {
@@ -86,15 +86,15 @@ namespace WebMVC.Services.Instance
                 return false;
             }
 
-            _contactInfoModel.ContactInfoID = req.Id ?? 0;
-            _contactInfoModel.Name = string.IsNullOrWhiteSpace(req.Name) ? origin.Name : req.Name;
-            _contactInfoModel.Nickname = string.IsNullOrWhiteSpace(req.Nickname) ? origin.Nickname : req.Nickname;
-            _contactInfoModel.Gender = (EnumGender?)req.Gender ?? origin.Gender;
-            _contactInfoModel.Age = req.Age ?? origin.Age;
-            _contactInfoModel.PhoneNo = string.IsNullOrWhiteSpace(req.PhoneNo) ? origin.PhoneNo : req.PhoneNo;
-            _contactInfoModel.Address = string.IsNullOrWhiteSpace(req.Address) ? origin.Address : req.Address;
+            origin.Name = string.IsNullOrWhiteSpace(req.Name) ? origin.Name : req.Name;
+            origin.Nickname = string.IsNullOrWhiteSpace(req.Nickname) ? origin.Nickname : req.Nickname;
+            origin.Gender = (EnumGender?)req.Gender ?? origin.Gender;
+            origin.Age = req.Age ?? origin.Age;
+            origin.PhoneNo = string.IsNullOrWhiteSpace(req.PhoneNo) ? origin.PhoneNo : req.PhoneNo;
+            origin.Address = string.IsNullOrWhiteSpace(req.Address) ? origin.Address : req.Address;
+            origin.UpdateTime = DateTime.Now;
 
-            return await _contactInfoRepository.UpdateAsync(_contactInfoModel);
+            return await _contactInfoRepository.UpdateAsync(origin);
         }
 
         public async Task<bool> RemoveAsync(IEnumerable<long> ids)

@@ -1,4 +1,5 @@
 using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using System.Data;
 using WebMVC.Models.Interface;
 using WebMVC.Repositories.Interface;
@@ -14,7 +15,16 @@ var ormType = builder.Configuration["OrmType"];
 #endregion
 
 #region µù¥UDB³s½u
-builder.Services.AddScoped<IDbConnection, SqlConnection>(e => new SqlConnection(dbConnectString));
+switch (ormType)
+{
+    case "Dapper":
+        builder.Services.AddScoped<IDbConnection, SqlConnection>(e => new SqlConnection(dbConnectString));
+        break;
+
+    case "EFCore":
+        builder.Services.AddDbContext<WebMVC.Models.Instance.EFCore.WebMvcDbContext>(options => options.UseSqlServer(dbConnectString));
+        break;
+}
 #endregion
 
 #region µù¥UModel
@@ -22,6 +32,10 @@ switch (ormType)
 {
     case "Dapper":
         builder.Services.AddTransient<IContactInfoModel, WebMVC.Models.Instance.Dapper.ContactInfoModel>();
+        break;
+
+    case "EFCore":
+        builder.Services.AddTransient<IContactInfoModel, WebMVC.Models.Instance.EFCore.ContactInfoModel>();
         break;
 }
 #endregion
@@ -31,6 +45,10 @@ switch (ormType)
 {
     case "Dapper":
         builder.Services.AddScoped<IContactInfoRepository, WebMVC.Repositories.Instance.Dapper.ContactInfoRepository>();
+        break;
+
+    case "EFCore":
+        builder.Services.AddScoped<IContactInfoRepository, WebMVC.Repositories.Instance.EFCore.ContactInfoRepository>();
         break;
 }
 #endregion

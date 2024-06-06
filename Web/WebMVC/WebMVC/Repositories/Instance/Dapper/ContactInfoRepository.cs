@@ -28,8 +28,6 @@ namespace WebMVC.Repositories.Instance.Dapper
                         dbo.Tbl_ContactInfo
                     WHERE
                         ContactInfoID = @ContactInfoID
-                    ORDER BY
-                        ContactInfoID DESC
                 ");
 
                 return await _dbConnection.QueryFirstOrDefaultAsync<ContactInfoModel>(sbSQL.ToString(), new { ContactInfoID = id });
@@ -65,6 +63,7 @@ namespace WebMVC.Repositories.Instance.Dapper
 
                         case "Nickname":
                             sbSQL.AppendLine("AND Nickname LIKE @Nickname");
+                            dicParams[key] = $"%{dicParams[key]}%";
                             break;
 
                         case "Gender":
@@ -115,7 +114,7 @@ namespace WebMVC.Repositories.Instance.Dapper
                 var sbSQL = new StringBuilder();
                 sbSQL.AppendLine(@"
                     UPDATE dbo.Tbl_ContactInfo SET
-                        Name = @Name, Nickname = @Nickname, Gender = @Gender, Age = @Age, PhoneNo = @PhoneNo, Address = @Address, UpdateTime = GETDATE()
+                        Name = @Name, Nickname = @Nickname, Gender = @Gender, Age = @Age, PhoneNo = @PhoneNo, Address = @Address, UpdateTime = @UpdateTime
                     WHERE
                         ContactInfoID = @ContactInfoID
                 ");

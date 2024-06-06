@@ -69,7 +69,7 @@ namespace WebMVC.Repositories.Instance.EFCore
         {
             try
             {
-                _dbContext.Add((ContactInfoModel)contactInfo);
+                _dbContext.Add(contactInfo);
                 await _dbContext.SaveChangesAsync();
 
                 return true;
@@ -84,6 +84,7 @@ namespace WebMVC.Repositories.Instance.EFCore
         {
             try
             {
+                _dbContext.Update(contactInfo);
                 await _dbContext.SaveChangesAsync();
 
                 return true;

@@ -1,4 +1,5 @@
-﻿using WebMVC.ViewModels.ContactInfo;
+﻿using WebMVC.ViewModels.Common;
+using WebMVC.ViewModels.ContactInfo;
 
 namespace WebMVC.Services.Interface
 {
@@ -6,7 +7,7 @@ namespace WebMVC.Services.Interface
     {
         Task<QueryRes> QueryByIdAsync(long id);
 
-        Task<IEnumerable<QueryRes>> QueryByConditionAsync(QueryReq req);
+        Task<PageDataRes<IEnumerable<QueryRes>>> QueryByConditionAsync(QueryReq req);
 
         Task<bool> CreateAsync(CreateReq req);
 

@@ -6,7 +6,7 @@ namespace WebMVC.Repositories.Interface
     {
         Task<IContactInfoModel?> QueryAsync(long id);
 
-        Task<IEnumerable<IContactInfoModel>> QueryAsync(Dictionary<string, object> dicParams);
+        Task<(int totalCnt,IEnumerable<IContactInfoModel> data)> QueryAsync(Dictionary<string, object> dicParams);
 
         Task<bool> InsertAsync(IContactInfoModel contactInfo);
 

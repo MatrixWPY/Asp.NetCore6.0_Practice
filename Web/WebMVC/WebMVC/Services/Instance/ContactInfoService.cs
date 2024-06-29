@@ -2,6 +2,7 @@
 using WebMVC.Models.Interface;
 using WebMVC.Repositories.Interface;
 using WebMVC.Services.Interface;
+using WebMVC.ViewModels.Common;
 using WebMVC.ViewModels.ContactInfo;
 
 namespace WebMVC.Services.Instance
@@ -36,7 +37,7 @@ namespace WebMVC.Services.Instance
             };
         }
 
-        public async Task<IEnumerable<QueryRes>> QueryByConditionAsync(QueryReq req)
+        public async Task<PageDataRes<IEnumerable<QueryRes>>> QueryByConditionAsync(QueryReq req)
         {
             Dictionary<string, object> dicParams = new Dictionary<string, object>();
             if (string.IsNullOrWhiteSpace(req.Name) == false)
@@ -51,19 +52,31 @@ namespace WebMVC.Services.Instance
             {
                 dicParams["Gender"] = req.Gender;
             }
+            dicParams["RowStart"] = (req.PageIndex - 1) * req.PageSize;
+            dicParams["RowLength"] = req.PageSize;
 
             var res = await _contactInfoRepository.QueryAsync(dicParams);
 
-            return res.Select(e => new QueryRes
+            return new PageDataRes<IEnumerable<QueryRes>>()
             {
-                ContactInfoID = e.ContactInfoID,
-                Name = e.Name,
-                Nickname = e.Nickname,
-                Gender = (short?)e.Gender,
-                Age = e.Age,
-                PhoneNo = e.PhoneNo,
-                Address = e.Address
-            });
+                PageInfo = new PageInfoRes()
+                {
+                    CurrentIndex = req.PageIndex,
+                    CurrentSize = res.data.Count(),
+                    PageCnt = (res.totalCnt % req.PageSize == 0 ? res.totalCnt / req.PageSize : res.totalCnt / req.PageSize + 1),
+                    TotalCnt = res.totalCnt
+                },
+                Data = res.data.Select(e => new QueryRes
+                {
+                    ContactInfoID = e.ContactInfoID,
+                    Name = e.Name,
+                    Nickname = e.Nickname,
+                    Gender = (short?)e.Gender,
+                    Age = e.Age,
+                    PhoneNo = e.PhoneNo,
+                    Address = e.Address
+                })
+            };
         }
 
         public async Task<bool> CreateAsync(CreateReq req)

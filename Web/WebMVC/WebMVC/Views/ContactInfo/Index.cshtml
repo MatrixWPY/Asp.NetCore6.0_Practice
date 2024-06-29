@@ -1,12 +1,16 @@
-﻿@model IEnumerable<WebMVC.ViewModels.ContactInfo.QueryRes>
+﻿@using X.PagedList;
+@using X.PagedList.Mvc.Bootstrap4.Core;
+@using X.PagedList.Mvc.Core;
+@model IPagedList<QueryRes>
 
-<form method="post" action="/ContactInfo/Index">
+<form id="searchForm" method="post" action="/ContactInfo/Index">
     <div class="col-lg-3">
-        <input type="text" placeholder="Name" id="txtName" name="Name" class="form-control">
+        <input type="text" placeholder="Name" id="txtName" name="Name" class="form-control" value="@ViewBag.Name">
     </div>
     <div class="col-lg-3">
-        <input type="text" placeholder="Nickname" id="txtNickname" name="Nickname" class="form-control">
+        <input type="text" placeholder="Nickname" id="txtNickname" name="Nickname" class="form-control" value="@ViewBag.Nickname">
     </div>
+    <input type="hidden" id="hidPageIndex" name="PageIndex" value="1" />
     <div class="col-lg-2">
         <button id="btnSearch" class="btn btn-warning pull-right" type="submit"><i class="fa fa-search"></i>Search</button>
     </div>
@@ -19,13 +23,13 @@
 <table class="table" width="100%">
     <thead>
         <tr>
-            <th>@Html.DisplayNameFor(e => e.ContactInfoID)</th>
-            <th>@Html.DisplayNameFor(e => e.Name)</th>
-            <th>@Html.DisplayNameFor(e => e.Nickname)</th>
-            <th>@Html.DisplayNameFor(e => e.Gender)</th>
-            <th>@Html.DisplayNameFor(e => e.Age)</th>
-            <th>@Html.DisplayNameFor(e => e.PhoneNo)</th>
-            <th>@Html.DisplayNameFor(e => e.Address)</th>
+            <th>@Html.DisplayNameFor(e => e.First().ContactInfoID)</th>
+            <th>@Html.DisplayNameFor(e => e.First().Name)</th>
+            <th>@Html.DisplayNameFor(e => e.First().Nickname)</th>
+            <th>@Html.DisplayNameFor(e => e.First().Gender)</th>
+            <th>@Html.DisplayNameFor(e => e.First().Age)</th>
+            <th>@Html.DisplayNameFor(e => e.First().PhoneNo)</th>
+            <th>@Html.DisplayNameFor(e => e.First().Address)</th>
             <th></th>
         </tr>
     </thead>
@@ -48,4 +52,24 @@
         </tr>
     }
     </tbody>
+    <tfoot>
+        <tr>
+            <td class="text-muted" colspan="5">
+                第 @(Model.PageCount < Model.PageNumber ? 0 : Model.PageNumber) 頁，共 @Model.PageCount 頁。
+                每頁 @Model.PageSize 筆資料，全部共有 @Model.TotalItemCount 筆資料。
+            </td>
+        </tr>
+    </tfoot>
 </table>
+
+<div>
+    @Html.PagedListPager(Model, page => "javascript:PageChange(" + page + ")", Bootstrap4PagedListRenderOptions.ClassicPlusFirstAndLast)
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    function PageChange(pageNumber) {
+        $("#hidPageIndex").val(pageNumber);
+        $("#searchForm").submit();
+    }
+</script>

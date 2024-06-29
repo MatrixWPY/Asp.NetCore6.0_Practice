@@ -2,6 +2,7 @@
 using WebMVC.Services.Interface;
 using WebMVC.ViewModels.Common;
 using WebMVC.ViewModels.ContactInfo;
+using X.PagedList;
 
 namespace WebMVC.Controllers
 {
@@ -16,14 +17,18 @@ namespace WebMVC.Controllers
 
         public IActionResult Index()
         {
-            return View(new List<QueryRes>());
+            return View(new StaticPagedList<QueryRes>( new List<QueryRes>(), 1, 10, 0));
         }
 
         [HttpPost]
         public async Task<IActionResult> Index(QueryReq req)
         {
+            ViewBag.Name = req.Name;
+            ViewBag.Nickname = req.Nickname;
+
             var res = await _contactInfoService.QueryByConditionAsync(req);
-            return View(res);
+            var paged = new StaticPagedList<QueryRes>(res.Data, req.PageIndex, req.PageSize, res.PageInfo.TotalCnt);
+            return View(paged);
         }
 
         public async Task<IActionResult> Details(long? id)

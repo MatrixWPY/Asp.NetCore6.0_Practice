@@ -38,12 +38,21 @@ namespace WebMVC.Repositories.Instance.Dapper
             }
         }
 
-        public async Task<IEnumerable<IContactInfoModel>> QueryAsync(Dictionary<string, object> dicParams)
+        public async Task<(int totalCnt,IEnumerable<IContactInfoModel> data)> QueryAsync(Dictionary<string, object> dicParams)
         {
             try
             {
-                var sbSQL = new StringBuilder();
-                sbSQL.AppendLine(@"
+                var sbCnt = new StringBuilder();
+                sbCnt.AppendLine(@"
+                    SELECT
+                        COUNT(1)
+                    FROM
+                        dbo.Tbl_ContactInfo
+                    WHERE
+                        1=1
+                ");
+                var sbData = new StringBuilder();
+                sbData.AppendLine(@"
                     SELECT
                         *
                     FROM
@@ -58,26 +67,34 @@ namespace WebMVC.Repositories.Instance.Dapper
                     switch (key)
                     {
                         case "Name":
-                            sbSQL.AppendLine("AND Name = @Name");
+                            sbCnt.AppendLine("AND Name = @Name");
+                            sbData.AppendLine("AND Name = @Name");
                             break;
 
                         case "Nickname":
-                            sbSQL.AppendLine("AND Nickname LIKE @Nickname");
+                            sbCnt.AppendLine("AND Nickname LIKE @Nickname");
+                            sbData.AppendLine("AND Nickname LIKE @Nickname");
                             dicParams[key] = $"%{dicParams[key]}%";
                             break;
 
                         case "Gender":
-                            sbSQL.AppendLine("AND Gender = @Gender");
+                            sbCnt.AppendLine("AND Gender = @Gender");
+                            sbData.AppendLine("AND Gender = @Gender");
                             break;
                     }
                 }
                 #endregion
 
                 #region [Order]
-                sbSQL.AppendLine("ORDER BY ContactInfoID DESC");
+                sbData.AppendLine("ORDER BY ContactInfoID DESC");
                 #endregion
 
-                return await _dbConnection.QueryAsync<ContactInfoModel>(sbSQL.ToString(), dicParams);
+                #region [Paging]
+                sbData.AppendLine("OFFSET @RowStart ROWS FETCH NEXT @RowLength ROWS ONLY");
+                #endregion
+
+                var res = await _dbConnection.QueryMultipleAsync(sbCnt.ToString() + sbData.ToString(), dicParams);
+                return (res.Read<int>().FirstOrDefault(), res.Read<ContactInfoModel>());
             }
             catch
             {

@@ -3,7 +3,7 @@ using WebMVC.ViewModels.Common;
 
 namespace WebMVC.ViewModels.ContactInfo
 {
-    public class QueryReq
+    public class QueryReq : PageInfoReq
     {
         /// <summary>
         /// 姓名

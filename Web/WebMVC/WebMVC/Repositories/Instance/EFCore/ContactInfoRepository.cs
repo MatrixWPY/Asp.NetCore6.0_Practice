@@ -27,11 +27,12 @@ namespace WebMVC.Repositories.Instance.EFCore
             }
         }
 
-        public async Task<IEnumerable<IContactInfoModel>> QueryAsync(Dictionary<string, object> dicParams)
+        public async Task<(int totalCnt,IEnumerable<IContactInfoModel> data)> QueryAsync(Dictionary<string, object> dicParams)
         {
             try
             {
-                var filter = _dbContext.ContactInfoModels.AsQueryable();
+                var filterCnt = _dbContext.ContactInfoModels.AsQueryable();
+                var filterData = _dbContext.ContactInfoModels.AsQueryable();
 
                 #region [Query Condition]
                 foreach (var key in dicParams.Keys)
@@ -39,25 +40,32 @@ namespace WebMVC.Repositories.Instance.EFCore
                     switch (key)
                     {
                         case "Name":
-                            filter = filter.Where(e => e.Name == (string)dicParams[key]);
+                            filterCnt = filterCnt.Where(e => e.Name == (string)dicParams[key]);
+                            filterData = filterData.Where(e => e.Name == (string)dicParams[key]);
                             break;
 
                         case "Nickname":
-                            filter = filter.Where(e => e.Nickname.Contains((string)dicParams[key]));
+                            filterCnt = filterCnt.Where(e => e.Nickname.Contains((string)dicParams[key]));
+                            filterData = filterData.Where(e => e.Nickname.Contains((string)dicParams[key]));
                             break;
 
                         case "Gender":
-                            filter = filter.Where(e => e.Gender == (EnumGender)dicParams[key]);
+                            filterCnt = filterCnt.Where(e => e.Gender == (EnumGender)dicParams[key]);
+                            filterData = filterData.Where(e => e.Gender == (EnumGender)dicParams[key]);
                             break;
                     }
                 }
                 #endregion
 
                 #region [Order]
-                filter = filter.OrderByDescending(e => e.ContactInfoID);
+                filterData = filterData.OrderByDescending(e => e.ContactInfoID);
                 #endregion
 
-                return await filter.ToListAsync();
+                #region [Paging]
+                filterData = filterData.Skip((int)dicParams["RowStart"]).Take((int)dicParams["RowLength"]);
+                #endregion
+
+                return (await filterCnt.CountAsync(), await filterData.ToListAsync());
             }
             catch
             {

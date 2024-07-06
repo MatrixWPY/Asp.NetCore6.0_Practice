@@ -15,7 +15,12 @@
         </div>
         <div class="col-lg-3">
             <label class="control-label">@Html.DisplayNameFor(model => model.First().Gender)</label>
-            @Html.DropDownList("Gender", (IEnumerable<SelectListItem>)ViewBag.GenderOptions, "ALL", new { @class = "form-control" })
+            @Html.DropDownList("Gender",
+            new List<SelectListItem>
+            {
+                new SelectListItem { Text = "Female", Value = "0" },
+                new SelectListItem { Text = "Male", Value = "1" }
+            }, "ALL", new { @class = "form-control" })
         </div>
         <div class="col-lg-3">
             <button id="btnSearch" class="btn btn-warning" type="submit"><i class="fa fa-search"></i> Search</button>
@@ -24,13 +29,15 @@
     <input type="hidden" id="hidPageIndex" name="PageIndex" value="1" />
 </form>
 
-<p>
-    <a asp-action="Create">Create</a>
-</p>
+<div>
+    <button type="button" class="btn btn-primary" onclick="location.href='@Url.Action("Create")'">Create</button>
+    <button id="btnDelete" class="btn btn-danger">Delete</button>
+</div>
 
 <table class="table" width="100%">
     <thead>
         <tr>
+            <th><input type="checkbox" id="checkAll" /></th>
             <th>@Html.DisplayNameFor(model => model.First().ContactInfoID)</th>
             <th>@Html.DisplayNameFor(model => model.First().Name)</th>
             <th>@Html.DisplayNameFor(model => model.First().Nickname)</th>
@@ -45,6 +52,7 @@
     @foreach (var item in Model)
     {
         <tr>
+            <td><input type="checkbox" class="checkbox" data-contactinfoid="@item.ContactInfoID"/></td>
             <td>@Html.DisplayFor(modelItem => item.ContactInfoID)</td>
             <td>@Html.DisplayFor(modelItem => item.Name)</td>
             <td>@Html.DisplayFor(modelItem => item.Nickname)</td>
@@ -54,15 +62,14 @@
             <td>@Html.DisplayFor(modelItem => item.Address)</td>
             <td>
                 <a asp-action="Details" asp-route-id="@item.ContactInfoID">Details</a> |
-                <a asp-action="Edit" asp-route-id="@item.ContactInfoID">Edit</a> |
-                <a asp-action="Remove" asp-route-id="@item.ContactInfoID">Remove</a>
+                <a asp-action="Edit" asp-route-id="@item.ContactInfoID">Edit</a>
             </td>
         </tr>
     }
     </tbody>
     <tfoot>
         <tr>
-            <td class="text-muted" colspan="7">
+            <td class="text-muted" colspan="8">
                 本頁小計 @Model.Count 筆資料，全部總計 @Model.TotalItemCount 筆資料。
             </td>
         </tr>
@@ -80,6 +87,38 @@
         if (isAutoPost) {
             $("#searchForm").submit();
         }
+
+        $('#checkAll').click(function () {
+            $('.checkbox').prop('checked', $(this).prop('checked'));
+        });
+
+        $('#btnDelete').click(function () {
+            var checkedCount = $('.checkbox:checked').length;
+            if (checkedCount === 0) {
+                alert('Please select items to delete.');
+                return;
+            }
+
+            if (confirm('Are you sure you want to delete selected items?')) {
+                var selectedItems = [];
+                $('.checkbox:checked').each(function () {
+                    selectedItems.push($(this).data('contactinfoid'));
+                });
+
+                $.ajax({
+                    url: '/ContactInfo/Remove',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ Ids: selectedItems }),
+                    success: function (data) {
+                        location.reload();
+                    },
+                    error: function (xhr, status, error) {
+                        console.error(error);
+                    }
+                });
+            }
+        });
     })
 
     function PageChange(pageNumber) {

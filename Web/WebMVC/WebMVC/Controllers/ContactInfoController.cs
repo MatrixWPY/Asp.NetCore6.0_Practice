@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using WebMVC.Services.Interface;
 using WebMVC.ViewModels.Common;
 using WebMVC.ViewModels.ContactInfo;
@@ -19,11 +18,6 @@ namespace WebMVC.Controllers
         public IActionResult Index()
         {
             ViewBag.AutoPost = true;
-            ViewBag.GenderOptions = new List<SelectListItem>
-            {
-                new SelectListItem { Value = "0", Text = "Female" },
-                new SelectListItem { Value = "1", Text = "Male" }
-            };
 
             return View(new StaticPagedList<QueryRes>( new List<QueryRes>(), 1, 10, 0));
         }
@@ -32,11 +26,6 @@ namespace WebMVC.Controllers
         public async Task<IActionResult> Index(QueryReq req)
         {
             ViewBag.AutoPost = false;
-            ViewBag.GenderOptions = new List<SelectListItem>
-            {
-                new SelectListItem { Value = "0", Text = "Female" },
-                new SelectListItem { Value = "1", Text = "Male" }
-            };
             ViewBag.Name = req.Name;
             ViewBag.Nickname = req.Nickname;
             ViewBag.Gender = req.Gender;
@@ -128,21 +117,10 @@ namespace WebMVC.Controllers
             }
         }
 
-        public async Task<IActionResult> Remove(long? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var res = await _contactInfoService.QueryByIdAsync(id ?? 0);
-            return View(res);
-        }
-
         [HttpPost]
-        public async Task<IActionResult> Remove([FromRoute]IdReq req)
+        public async Task<IActionResult> Remove([FromBody] IdsReq req)
         {
-            var res = await _contactInfoService.RemoveAsync(new List<long> { req.Id ?? 0 });
+            var res = await _contactInfoService.RemoveAsync(req.Ids);
             if (res)
             {
                 return RedirectToAction("Index");

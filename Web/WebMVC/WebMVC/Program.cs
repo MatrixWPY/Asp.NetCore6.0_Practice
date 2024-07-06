@@ -8,13 +8,13 @@ using WebMVC.Services.Interface;
 
 var builder = WebApplication.CreateBuilder(args);
 
-#region Åª¨úappsettings.json³]©w
+#region è®€å–appsettings.jsonè¨­å®š
 builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
 var dbConnectString = builder.Configuration["ConnectionStrings:MsSql"];
 var ormType = builder.Configuration["OrmType"];
 #endregion
 
-#region µù¥UDB³s½u
+#region è¨»å†ŠDBé€£ç·š
 switch (ormType)
 {
     case "Dapper":
@@ -27,7 +27,7 @@ switch (ormType)
 }
 #endregion
 
-#region µù¥UModel
+#region è¨»å†ŠModel
 switch (ormType)
 {
     case "Dapper":
@@ -40,7 +40,7 @@ switch (ormType)
 }
 #endregion
 
-#region µù¥URepository
+#region è¨»å†ŠRepository
 switch (ormType)
 {
     case "Dapper":
@@ -53,7 +53,7 @@ switch (ormType)
 }
 #endregion
 
-#region µù¥UService
+#region è¨»å†ŠService
 builder.Services.AddScoped<IContactInfoService, ContactInfoService>();
 #endregion
 

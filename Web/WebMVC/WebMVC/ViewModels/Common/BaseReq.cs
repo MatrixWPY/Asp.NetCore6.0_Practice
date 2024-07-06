@@ -15,6 +15,18 @@ namespace WebMVC.ViewModels.Common
     }
 
     /// <summary>
+    /// 傳入參數 - PKeys
+    /// </summary>
+    public class IdsReq
+    {
+        /// <summary>
+        /// PKeys
+        /// </summary>
+        [Required(ErrorMessage = "{0} 為必填欄位。")]
+        public IEnumerable<long> Ids { get; set; }
+    }
+
+    /// <summary>
     /// 傳入參數 - 分頁資訊
     /// </summary>
     public class PageInfoReq

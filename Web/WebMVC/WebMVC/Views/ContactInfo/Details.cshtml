@@ -30,7 +30,7 @@
             @Html.DisplayNameFor(model => model.Gender)
         </dt>
         <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Gender)
+            @(Model.Gender.HasValue ? (Model.Gender == 0 ? "Female" : Model.Gender == 1 ? "Male" : "") : "")
         </dd>
         <dt class = "col-sm-2">
             @Html.DisplayNameFor(model => model.Age)
@@ -53,6 +53,6 @@
     </dl>
 </div>
 <div>
-    @Html.ActionLink("Edit", "Edit", new { id = Model.ContactInfoID }) |
-    <a asp-action="Index">Back to List</a>
+    <button type="button" class="btn btn-primary" onclick="location.href='@Url.Action("Edit", new { id = Model.ContactInfoID })'">Edit</button>
+    <button type="button" class="btn btn-warning" onclick="location.href='@Url.Action("Index")'">Back</button>
 </div>

@@ -87,6 +87,7 @@ namespace WebMVC.Services.Instance
             _contactInfoModel.Age = req.Age;
             _contactInfoModel.PhoneNo = req.PhoneNo;
             _contactInfoModel.Address = req.Address;
+            _contactInfoModel.CreateTime = DateTime.Now;
 
             return await _contactInfoRepository.InsertAsync(_contactInfoModel);
         }

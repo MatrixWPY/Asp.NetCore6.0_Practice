@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using WebMVC.Services.Interface;
 using WebMVC.ViewModels.Common;
 using WebMVC.ViewModels.ContactInfo;
@@ -17,14 +18,28 @@ namespace WebMVC.Controllers
 
         public IActionResult Index()
         {
+            ViewBag.AutoPost = true;
+            ViewBag.GenderOptions = new List<SelectListItem>
+            {
+                new SelectListItem { Value = "0", Text = "Female" },
+                new SelectListItem { Value = "1", Text = "Male" }
+            };
+
             return View(new StaticPagedList<QueryRes>( new List<QueryRes>(), 1, 10, 0));
         }
 
         [HttpPost]
         public async Task<IActionResult> Index(QueryReq req)
         {
+            ViewBag.AutoPost = false;
+            ViewBag.GenderOptions = new List<SelectListItem>
+            {
+                new SelectListItem { Value = "0", Text = "Female" },
+                new SelectListItem { Value = "1", Text = "Male" }
+            };
             ViewBag.Name = req.Name;
             ViewBag.Nickname = req.Nickname;
+            ViewBag.Gender = req.Gender;
 
             var res = await _contactInfoService.QueryByConditionAsync(req);
             var paged = new StaticPagedList<QueryRes>(res.Data, req.PageIndex, req.PageSize, res.PageInfo.TotalCnt);

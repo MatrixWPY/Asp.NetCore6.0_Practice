@@ -109,9 +109,9 @@ namespace WebMVC.Repositories.Instance.Dapper
                 var sbSQL = new StringBuilder();
                 sbSQL.AppendLine(@"
                     INSERT INTO dbo.Tbl_ContactInfo
-                        (Name, Nickname, Gender, Age, PhoneNo, Address)
+                        (Name, Nickname, Gender, Age, PhoneNo, Address, CreateTime)
                     VALUES
-                        (@Name, @Nickname, @Gender, @Age, @PhoneNo, @Address)
+                        (@Name, @Nickname, @Gender, @Age, @PhoneNo, @Address, @CreateTime)
                     SELECT SCOPE_IDENTITY()
                 ");
 

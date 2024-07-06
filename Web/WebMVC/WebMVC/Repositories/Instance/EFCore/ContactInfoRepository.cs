@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using WebMVC.Models;
 using WebMVC.Models.Instance.EFCore;
 using WebMVC.Models.Interface;
 using WebMVC.Repositories.Interface;
@@ -50,8 +49,8 @@ namespace WebMVC.Repositories.Instance.EFCore
                             break;
 
                         case "Gender":
-                            filterCnt = filterCnt.Where(e => e.Gender == (EnumGender)dicParams[key]);
-                            filterData = filterData.Where(e => e.Gender == (EnumGender)dicParams[key]);
+                            filterCnt = filterCnt.Where(e => (short)e.Gender == (short)dicParams[key]);
+                            filterData = filterData.Where(e => (short)e.Gender == (short)dicParams[key]);
                             break;
                     }
                 }

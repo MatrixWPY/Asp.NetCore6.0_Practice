@@ -18,29 +18,29 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers().AddJsonOptions(opt =>
 {
-    // ¦WºÙ©¿²¤¤j¤p¼g
+    // åç¨±å¿½ç•¥å¤§å°å¯«
     opt.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
-    // §Ç¦C¤Æ©R¦W³W«h
+    // åºåˆ—åŒ–å‘½åè¦å‰‡
     opt.JsonSerializerOptions.PropertyNamingPolicy = null;
-    // ºû«ù­ì¦r¤¸½s½X
+    // ç¶­æŒåŸå­—å…ƒç·¨ç¢¼
     opt.JsonSerializerOptions.Encoder = JavaScriptEncoder.Create(UnicodeRanges.All);
 });
 
 builder.Services.Configure<ApiBehaviorOptions>(opt =>
 {
-    // °±¥ÎModelStateInvalidFilter => ¨Ï¥Î¦Û­qValidFilter:ValidRequest
+    // åœç”¨ModelStateInvalidFilter => ä½¿ç”¨è‡ªè¨‚ValidFilter:ValidRequest
     opt.SuppressModelStateInvalidFilter = true;
 });
 
-#region µù¥USwagger
+#region è¨»å†ŠSwagger
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc(
-        // name: §ñÃö SwaggerDocument ªº URL ¦ì¸m¡C
+        // name: æ”¸é—œ SwaggerDocument çš„ URL ä½ç½®ã€‚
         name: "v1",
-        // info: ¬O¥Î©ó SwaggerDocument ª©¥»¸ê°TªºÅã¥Ü(¤º®e«D¥²¶ñ)¡C
+        // info: æ˜¯ç”¨æ–¼ SwaggerDocument ç‰ˆæœ¬è³‡è¨Šçš„é¡¯ç¤º(å…§å®¹éå¿…å¡«)ã€‚
         info: new OpenApiInfo
         {
             Title = "WebApi",
@@ -54,60 +54,83 @@ builder.Services.AddSwaggerGen(c =>
         }
     );
 
-    // XML ÀÉ®×: ¤å¥óµù¸Ñ¼ĞÅÒ
+    // XML æª”æ¡ˆ: æ–‡ä»¶è¨»è§£æ¨™ç±¤
     var xmlPath = Path.Combine(AppContext.BaseDirectory, "WebApi.xml");
     c.IncludeXmlComments(xmlPath);
 });
 #endregion
 
-#region µù¥UNLog
+#region è¨»å†ŠNLog
 builder.Logging.AddNLog("nlog.config");
 #endregion
 
-#region µù¥URedis
+#region è®€å–appsettings.jsonè¨­å®š
+builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+
 var isUseRedis = (bool)builder.Configuration.GetValue(typeof(bool), "IsUseRedis");
+var redisType = builder.Configuration["RedisType"];
+
+var isUseRabbitMQ = (bool)builder.Configuration.GetValue(typeof(bool), "IsUseRabbitMQ");
+var queueType = builder.Configuration["QueueType"];
+
+var dbType = builder.Configuration["DbType"];
+var dbConnectString = string.Empty;
+switch (dbType)
+{
+    case "MsSql":
+        dbConnectString = builder.Configuration["ConnectionStrings:MsSql"];
+        break;
+
+    case "MsSqlSP":
+        dbConnectString = builder.Configuration["ConnectionStrings:MsSqlSP"];
+        break;
+
+    case "MySql":
+        dbConnectString = builder.Configuration["ConnectionStrings:MySql"];
+        break;
+
+    case "MySqlSP":
+        dbConnectString = builder.Configuration["ConnectionStrings:MySqlSP"];
+        break;
+}
+#endregion
+
+#region è¨»å†ŠRedis
 if (isUseRedis)
 {
     builder.Services.AddSingleton<IRedisService, RedisService>();
 }
 #endregion
 
-#region µù¥URabbitMQ
-var isUseRabbitMQ = (bool)builder.Configuration.GetValue(typeof(bool), "IsUseRabbitMQ");
+#region è¨»å†ŠRabbitMQ
 if (isUseRabbitMQ)
 {
     builder.Services.AddSingleton<IRabbitMQService, RabbitMQService>();
 }
 #endregion
 
-#region µù¥UDB³s½u
-var dbType = builder.Configuration.GetValue(typeof(string), "DbType");
-var dbConnectString = string.Empty;
+#region è¨»å†ŠDBé€£ç·š
 switch (dbType)
 {
     case "MsSql":
-        dbConnectString = (string)builder.Configuration.GetValue(typeof(string), "ConnectionStrings:MsSql");
         builder.Services.AddScoped<IDbConnection, SqlConnection>(db => new SqlConnection(dbConnectString));
         break;
 
     case "MsSqlSP":
-        dbConnectString = (string)builder.Configuration.GetValue(typeof(string), "ConnectionStrings:MsSqlSP");
         builder.Services.AddScoped<IDbConnection, SqlConnection>(db => new SqlConnection(dbConnectString));
         break;
 
     case "MySql":
-        dbConnectString = (string)builder.Configuration.GetValue(typeof(string), "ConnectionStrings:MySql");
         builder.Services.AddScoped<IDbConnection, MySqlConnection>(db => new MySqlConnection(dbConnectString));
         break;
 
     case "MySqlSP":
-        dbConnectString = (string)builder.Configuration.GetValue(typeof(string), "ConnectionStrings:MySqlSP");
         builder.Services.AddScoped<IDbConnection, MySqlConnection>(db => new MySqlConnection(dbConnectString));
         break;
 }
 #endregion
 
-#region µù¥UService
+#region è¨»å†ŠService
 switch (dbType)
 {
     case "MsSql":
@@ -128,10 +151,9 @@ switch (dbType)
 }
 #endregion
 
-#region µù¥UCommand
+#region è¨»å†ŠCommand
 if (isUseRedis)
 {
-    var redisType = builder.Configuration.GetValue(typeof(string), "RedisType");
     switch (redisType)
     {
         case "String":
@@ -148,7 +170,6 @@ else
     builder.Services.AddScoped<IContactInfoCommand, ContactInfoCommand>();
 }
 
-var queueType = builder.Configuration.GetValue(typeof(string), "QueueType");
 switch (queueType)
 {
     case "RabbitMQ":
@@ -173,11 +194,11 @@ var app = builder.Build();
 
 app.UseHttpsRedirection();
 
-#region °O¿ı¶Ç¥X°Ñ¼Æ
+#region è¨˜éŒ„å‚³å‡ºåƒæ•¸
 app.UseLogResponseMiddleware();
 #endregion
 
-#region °O¿ı¶Ç¤J°Ñ¼Æ
+#region è¨˜éŒ„å‚³å…¥åƒæ•¸
 app.UseLogRequestMiddleware();
 #endregion
 
@@ -185,7 +206,7 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-#region ¨Ï¥ÎSwaggerUI
+#region ä½¿ç”¨SwaggerUI
 var isOpenSwagger = (bool)app.Configuration.GetValue(typeof(bool), "IsOpenSwagger");
 if (app.Environment.IsDevelopment() && isOpenSwagger)
 {
@@ -193,9 +214,9 @@ if (app.Environment.IsDevelopment() && isOpenSwagger)
     app.UseSwaggerUI(c =>
     {
         c.SwaggerEndpoint(
-            // url: »İ°t¦X SwaggerDoc ªº name¡C "/swagger/{SwaggerDoc name}/swagger.json"
+            // url: éœ€é…åˆ SwaggerDoc çš„ nameã€‚ "/swagger/{SwaggerDoc name}/swagger.json"
             url: "/swagger/v1/swagger.json",
-            // name: ¥Î©ó Swagger UI ¥k¤W¨¤¿ï¾Ü¤£¦Pª©¥»ªº SwaggerDocument Åã¥Ü¦WºÙ¨Ï¥Î¡C
+            // name: ç”¨æ–¼ Swagger UI å³ä¸Šè§’é¸æ“‡ä¸åŒç‰ˆæœ¬çš„ SwaggerDocument é¡¯ç¤ºåç¨±ä½¿ç”¨ã€‚
             name: "API Document V1"
         );
     });

@@ -80,17 +80,17 @@ namespace WebApi.Commands.Instance
             var hashKey = $"{string.Join('&', dicParams.Select(e => e.Key + "=" + e.Value?.ToString()))}";
             if (_redisService.ExistHash(_redisQueryByCondition, hashKey))
             {
-                var res = _redisService.GetHashObject<string, (int, IEnumerable<ContactInfo>)>(_redisQueryByCondition, hashKey);
+                var res = _redisService.GetHashObject<string, (int totalCnt, IEnumerable<ContactInfo> data)>(_redisQueryByCondition, hashKey);
                 return SuccessRP(new PageDataRP<IEnumerable<ContactInfo>>()
                 {
                     PageInfo = new PageInfoRP()
                     {
-                        PageIndex = objRQ.PageIndex,
-                        PageSize = res.Item2.Count(),
-                        PageCnt = (res.Item1 % objRQ.PageSize == 0 ? res.Item1 / objRQ.PageSize : res.Item1 / objRQ.PageSize + 1),
-                        TotalCnt = res.Item1
+                        CurrentIndex = objRQ.PageIndex,
+                        CurrentSize = res.data.Count(),
+                        PageCnt = (res.totalCnt % objRQ.PageSize == 0 ? res.totalCnt / objRQ.PageSize : res.totalCnt / objRQ.PageSize + 1),
+                        TotalCnt = res.totalCnt
                     },
-                    Data = res.Item2
+                    Data = res.data
                 });
             }
             else
@@ -107,12 +107,12 @@ namespace WebApi.Commands.Instance
                     {
                         PageInfo = new PageInfoRP()
                         {
-                            PageIndex = objRQ.PageIndex,
-                            PageSize = res.Item2.Count(),
-                            PageCnt = (res.Item1 % objRQ.PageSize == 0 ? res.Item1 / objRQ.PageSize : res.Item1 / objRQ.PageSize + 1),
-                            TotalCnt = res.Item1
+                            CurrentIndex = objRQ.PageIndex,
+                            CurrentSize = res.data.Count(),
+                            PageCnt = (res.totalCnt % objRQ.PageSize == 0 ? res.totalCnt / objRQ.PageSize : res.totalCnt / objRQ.PageSize + 1),
+                            TotalCnt = res.totalCnt
                         },
-                        Data = res.Item2
+                        Data = res.data
                     });
                 }
             }

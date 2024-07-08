@@ -50,7 +50,7 @@ namespace WebApi.Services.Instance
         /// </summary>
         /// <param name="dicParams"></param>
         /// <returns></returns>
-        public (int, IEnumerable<ContactInfo>) Query(Dictionary<string, object> dicParams)
+        public (int totalCnt, IEnumerable<ContactInfo> data) Query(Dictionary<string, object> dicParams)
         {
             try
             {

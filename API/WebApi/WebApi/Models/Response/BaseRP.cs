@@ -45,14 +45,14 @@
     public class PageInfoRP
     {
         /// <summary>
-        /// 分頁頁碼
+        /// 目前頁碼
         /// </summary>
-        public int PageIndex { get; set; }
+        public int CurrentIndex { get; set; }
 
         /// <summary>
-        /// 資料數量
+        /// 目前數量
         /// </summary>
-        public int PageSize { get; set; }
+        public int CurrentSize { get; set; }
 
         /// <summary>
         /// 分頁總數

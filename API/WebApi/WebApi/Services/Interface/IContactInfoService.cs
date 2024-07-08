@@ -19,7 +19,7 @@ namespace WebApi.Services.Interface
         /// </summary>
         /// <param name="dicParams"></param>
         /// <returns></returns>
-        (int, IEnumerable<ContactInfo>) Query(Dictionary<string, object> dicParams);
+        (int totalCnt, IEnumerable<ContactInfo> data) Query(Dictionary<string, object> dicParams);
 
         /// <summary>
         /// 新增

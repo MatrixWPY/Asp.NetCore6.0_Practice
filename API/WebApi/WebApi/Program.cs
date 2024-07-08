@@ -172,15 +172,15 @@ else
 
 switch (queueType)
 {
-    case "RabbitMQ":
+    case "RabbitMQ" when isUseRabbitMQ:
         builder.Services.AddScoped<IQueueCommand, QueueRabbitMQCommand>();
         break;
 
-    case "RedisList":
+    case "RedisList" when isUseRedis:
         builder.Services.AddScoped<IQueueCommand, QueueRedisListCommand>();
         break;
 
-    case "RedisStream":
+    case "RedisStream" when isUseRedis:
         builder.Services.AddScoped<IQueueCommand, QueueRedisStreamCommand>();
         break;
 }

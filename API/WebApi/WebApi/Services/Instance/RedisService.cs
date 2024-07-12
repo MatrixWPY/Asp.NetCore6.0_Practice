@@ -38,6 +38,7 @@ namespace WebApi.Services.Instance
             {
                 ConfigurationOptions options = new ConfigurationOptions
                 {
+                    ClientName = configuration.GetValue<string>("Redis:Name"),
                     EndPoints =
                     {
                         {
@@ -45,10 +46,8 @@ namespace WebApi.Services.Instance
                             configuration.GetValue<int>("Redis:Port")
                         }
                     },
-                    ClientName = configuration.GetValue<string>("Redis:Name"),
                     Password = configuration.GetValue<string>("Redis:Password"),
-                    ConnectTimeout = configuration.GetValue<int>("Redis:Timeout"),
-                    DefaultDatabase = configuration.GetValue<int>("Redis:Db"),
+                    DefaultDatabase = configuration.GetValue<int>("Redis:Db")
                 };
                 return options;
             }

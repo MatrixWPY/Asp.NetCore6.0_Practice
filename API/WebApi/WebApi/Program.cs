@@ -1,14 +1,18 @@
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi.Models;
 using MySql.Data.MySqlClient;
+using Newtonsoft.Json;
 using NLog.Extensions.Logging;
 using System.Data;
 using System.Data.SqlClient;
+using System.Net;
 using System.Text.Encodings.Web;
 using System.Text.Unicode;
 using WebApi.Commands.Instance;
 using WebApi.Commands.Interface;
 using WebApi.Middlewares;
+using WebApi.Models.Response;
 using WebApi.Services.Instance;
 using WebApi.Services.Interface;
 
@@ -196,6 +200,31 @@ app.UseHttpsRedirection();
 
 #region 記錄傳出參數
 app.UseLogResponseMiddleware();
+#endregion
+
+#region 錯誤處理
+// 若有註冊 NLog 套件，則會自動記錄異常至 Level=Error 配置目標中
+app.UseExceptionHandler(appBuilder =>
+{
+    appBuilder.Run(async context =>
+    {
+        context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+        context.Response.ContentType = "application/json";
+
+        var exceptionHandlerFeature = context.Features.Get<IExceptionHandlerFeature>();
+        if (exceptionHandlerFeature != null)
+        {
+            var res = new ApiResultRP<string>
+            {
+                Code = context.Response.StatusCode,
+                Msg = "An unexpected error occurred.",
+                Result = exceptionHandlerFeature.Error.Message
+            };
+
+            await context.Response.WriteAsync(JsonConvert.SerializeObject(res));
+        }
+    });
+});
 #endregion
 
 #region 記錄傳入參數

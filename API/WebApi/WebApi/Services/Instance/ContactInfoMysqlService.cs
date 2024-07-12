@@ -44,7 +44,7 @@ namespace WebApi.Services.Instance
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Query Fail : {ex.Message}");
-                return null;
+                throw;
             }
         }
 
@@ -99,7 +99,7 @@ namespace WebApi.Services.Instance
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Query Fail : {ex.Message}");
-                return (0, null);
+                throw;
             }
         }
 
@@ -123,7 +123,7 @@ namespace WebApi.Services.Instance
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Insert Fail : {ex.Message}");
-                return false;
+                throw;
             }
         }
 
@@ -146,7 +146,7 @@ namespace WebApi.Services.Instance
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Update Fail : {ex.Message}");
-                return false;
+                throw;
             }
         }
 
@@ -168,7 +168,7 @@ namespace WebApi.Services.Instance
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Delete Fail : {ex.Message}");
-                return false;
+                throw;
             }
         }
     }

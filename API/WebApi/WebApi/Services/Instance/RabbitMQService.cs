@@ -51,7 +51,7 @@ namespace WebApi.Services.Instance
                 catch (Exception ex)
                 {
                     _logger.LogError($"獲取RabbitMQ配置信息失敗：{ex.Message}");
-                    return null;
+                    throw;
                 }
             }
             return _connectionFactory.CreateConnection();

@@ -38,6 +38,7 @@ namespace WebApi.Services.Instance
             {
                 ConfigurationOptions options = new ConfigurationOptions
                 {
+                    ClientName = configuration.GetValue<string>("Redis:Name"),
                     EndPoints =
                     {
                         {
@@ -45,17 +46,15 @@ namespace WebApi.Services.Instance
                             configuration.GetValue<int>("Redis:Port")
                         }
                     },
-                    ClientName = configuration.GetValue<string>("Redis:Name"),
                     Password = configuration.GetValue<string>("Redis:Password"),
-                    ConnectTimeout = configuration.GetValue<int>("Redis:Timeout"),
-                    DefaultDatabase = configuration.GetValue<int>("Redis:Db"),
+                    DefaultDatabase = configuration.GetValue<int>("Redis:Db")
                 };
                 return options;
             }
             catch (Exception ex)
             {
                 _logger.LogError($"獲取Redis配置信息失敗：{ex.Message}");
-                return null;
+                throw;
             }
         }
 
@@ -78,6 +77,7 @@ namespace WebApi.Services.Instance
                 catch (Exception ex)
                 {
                     _logger.LogError($"Redis服務啟動失敗：{ex.Message}");
+                    throw;
                 }
             }
             return _redisConnection;
@@ -639,14 +639,14 @@ namespace WebApi.Services.Instance
             var hasKey = _redisConnection.GetDatabase().KeyExists(queueName, CommandFlags.None);
             if (hasKey == false)
             {
-                _logger.LogInformation($"不存在 Queue = {queueName}");
+                _logger.LogError($"不存在 Queue = {queueName}");
                 return res;
             }
 
             var groups = _redisConnection.GetDatabase().StreamGroupInfo(queueName, CommandFlags.None);
             if (groups == null || groups?.Any(x => x.Name.Equals(groupName, StringComparison.OrdinalIgnoreCase)) == false)
             {
-                _logger.LogInformation($"不存在 Group = {groupName}");
+                _logger.LogError($"不存在 Group = {groupName}");
                 return res;
             }
             #endregion
@@ -688,14 +688,14 @@ namespace WebApi.Services.Instance
             var hasKey = await _redisConnection.GetDatabase().KeyExistsAsync(queueName, CommandFlags.None);
             if (hasKey == false)
             {
-                _logger.LogInformation($"不存在 Queue = {queueName}");
+                _logger.LogError($"不存在 Queue = {queueName}");
                 return res;
             }
 
             var groups = await _redisConnection.GetDatabase().StreamGroupInfoAsync(queueName, CommandFlags.None);
             if (groups == null || groups?.Any(x => x.Name.Equals(groupName, StringComparison.OrdinalIgnoreCase)) == false)
             {
-                _logger.LogInformation($"不存在 Group = {groupName}");
+                _logger.LogError($"不存在 Group = {groupName}");
                 return res;
             }
             #endregion

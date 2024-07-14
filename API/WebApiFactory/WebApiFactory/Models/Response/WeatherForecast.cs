@@ -1,4 +1,4 @@
-namespace WebApiFactory
+namespace WebApiFactory.Models.Response
 {
     public class WeatherForecast
     {

@@ -1,5 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc.Filters;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Filters;
+using WebApi.Models.Response;
 
 namespace WebApi.Filters
 {
@@ -18,7 +19,7 @@ namespace WebApi.Filters
             {
                 context.Result = new JsonResult
                 (
-                    new
+                    new ApiResultRP<IEnumerable<string>>
                     {
                         Code = -1,
                         Msg = "Valid Error",

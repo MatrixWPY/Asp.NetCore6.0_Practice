@@ -71,6 +71,8 @@ builder.Logging.AddNLog("nlog.config");
 #region 讀取appsettings.json設定
 builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
 
+var isOpenSwagger = (bool)builder.Configuration.GetValue(typeof(bool), "IsOpenSwagger");
+
 var isUseRedis = (bool)builder.Configuration.GetValue(typeof(bool), "IsUseRedis");
 var redisType = builder.Configuration["RedisType"];
 
@@ -196,6 +198,22 @@ var app = builder.Build();
 
 #region Configure the HTTP request pipeline.
 
+#region 使用SwaggerUI
+if (app.Environment.IsDevelopment() && isOpenSwagger)
+{
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint(
+            // url: 需配合 SwaggerDoc 的 name。 "/swagger/{SwaggerDoc name}/swagger.json"
+            url: "/swagger/v1/swagger.json",
+            // name: 用於 Swagger UI 右上角選擇不同版本的 SwaggerDocument 顯示名稱使用。
+            name: "API Document V1"
+        );
+    });
+}
+#endregion
+
 app.UseHttpsRedirection();
 
 #region 記錄傳出參數
@@ -234,23 +252,6 @@ app.UseLogRequestMiddleware();
 app.UseAuthorization();
 
 app.MapControllers();
-
-#region 使用SwaggerUI
-var isOpenSwagger = (bool)app.Configuration.GetValue(typeof(bool), "IsOpenSwagger");
-if (app.Environment.IsDevelopment() && isOpenSwagger)
-{
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint(
-            // url: 需配合 SwaggerDoc 的 name。 "/swagger/{SwaggerDoc name}/swagger.json"
-            url: "/swagger/v1/swagger.json",
-            // name: 用於 Swagger UI 右上角選擇不同版本的 SwaggerDocument 顯示名稱使用。
-            name: "API Document V1"
-        );
-    });
-}
-#endregion
 
 #endregion
 

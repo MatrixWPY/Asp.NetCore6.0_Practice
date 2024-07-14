@@ -1,6 +1,6 @@
 ﻿using Microsoft.IO;
 
-namespace WebApi.Middlewares
+namespace WebApiFactory.Middlewares
 {
     /// <summary>
     /// API傳入參數記錄

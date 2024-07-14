@@ -1,24 +1,23 @@
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.OpenApi.Models;
+using Microsoft.Data.SqlClient;
 using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
 using NLog.Extensions.Logging;
 using System.Data;
-using System.Data.SqlClient;
 using System.Net;
 using System.Text.Encodings.Web;
 using System.Text.Unicode;
-using WebApi.Commands.Instance;
-using WebApi.Commands.Interface;
-using WebApi.Middlewares;
-using WebApi.Models.Response;
-using WebApi.Services.Instance;
-using WebApi.Services.Interface;
+using WebApiFactory.Commands.Instance;
+using WebApiFactory.Commands.Interface;
+using WebApiFactory.Middlewares;
+using WebApiFactory.Models.Response;
+using WebApiFactory.Services.Instance;
+using WebApiFactory.Services.Interface;
 
 var builder = WebApplication.CreateBuilder(args);
 
-#region Add services to the container.
+// Add services to the container.
 
 builder.Services.AddControllers().AddJsonOptions(opt =>
 {
@@ -39,29 +38,7 @@ builder.Services.Configure<ApiBehaviorOptions>(opt =>
 #region 註冊Swagger
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(c =>
-{
-    c.SwaggerDoc(
-        // name: 攸關 SwaggerDocument 的 URL 位置。
-        name: "v1",
-        // info: 是用於 SwaggerDocument 版本資訊的顯示(內容非必填)。
-        info: new OpenApiInfo
-        {
-            Title = "WebApi",
-            Version = "1.0.0",
-            Description = "This is ASP.NET Core 6 API Sample.",
-            Contact = new OpenApiContact
-            {
-                Name = "Matrix",
-                Email = string.Empty
-            }
-        }
-    );
-
-    // XML 檔案: 文件註解標籤
-    var xmlPath = Path.Combine(AppContext.BaseDirectory, "WebApi.xml");
-    c.IncludeXmlComments(xmlPath);
-});
+builder.Services.AddSwaggerGen();
 #endregion
 
 #region 註冊NLog
@@ -75,9 +52,6 @@ var isOpenSwagger = (bool)builder.Configuration.GetValue(typeof(bool), "IsOpenSw
 
 var isUseRedis = (bool)builder.Configuration.GetValue(typeof(bool), "IsUseRedis");
 var redisType = builder.Configuration["RedisType"];
-
-var isUseRabbitMQ = (bool)builder.Configuration.GetValue(typeof(bool), "IsUseRabbitMQ");
-var queueType = builder.Configuration["QueueType"];
 
 var dbType = builder.Configuration["DbType"];
 var dbConnectString = string.Empty;
@@ -105,13 +79,6 @@ switch (dbType)
 if (isUseRedis)
 {
     builder.Services.AddSingleton<IRedisService, RedisService>();
-}
-#endregion
-
-#region 註冊RabbitMQ
-if (isUseRabbitMQ)
-{
-    builder.Services.AddSingleton<IRabbitMQService, RabbitMQService>();
 }
 #endregion
 
@@ -175,42 +142,17 @@ else
 {
     builder.Services.AddScoped<IContactInfoCommand, ContactInfoCommand>();
 }
-
-switch (queueType)
-{
-    case "RabbitMQ" when isUseRabbitMQ:
-        builder.Services.AddScoped<IQueueCommand, QueueRabbitMQCommand>();
-        break;
-
-    case "RedisList" when isUseRedis:
-        builder.Services.AddScoped<IQueueCommand, QueueRedisListCommand>();
-        break;
-
-    case "RedisStream" when isUseRedis:
-        builder.Services.AddScoped<IQueueCommand, QueueRedisStreamCommand>();
-        break;
-}
-#endregion
-
 #endregion
 
 var app = builder.Build();
 
-#region Configure the HTTP request pipeline.
+// Configure the HTTP request pipeline.
 
 #region 使用SwaggerUI
 if (app.Environment.IsDevelopment() && isOpenSwagger)
 {
     app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint(
-            // url: 需配合 SwaggerDoc 的 name。 "/swagger/{SwaggerDoc name}/swagger.json"
-            url: "/swagger/v1/swagger.json",
-            // name: 用於 Swagger UI 右上角選擇不同版本的 SwaggerDocument 顯示名稱使用。
-            name: "API Document V1"
-        );
-    });
+    app.UseSwaggerUI();
 }
 #endregion
 
@@ -252,7 +194,5 @@ app.UseLogRequestMiddleware();
 app.UseAuthorization();
 
 app.MapControllers();
-
-#endregion
 
 app.Run();

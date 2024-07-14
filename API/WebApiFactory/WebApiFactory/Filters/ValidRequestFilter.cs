@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
-using WebApi.Models.Response;
+using WebApiFactory.Models.Response;
 
-namespace WebApi.Filters
+namespace WebApiFactory.Filters
 {
     /// <summary>
     /// API傳入參數驗證

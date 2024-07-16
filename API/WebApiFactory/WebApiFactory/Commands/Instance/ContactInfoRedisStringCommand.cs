@@ -1,4 +1,5 @@
 ﻿using WebApiFactory.Commands.Interface;
+using WebApiFactory.Factories.Interface;
 using WebApiFactory.Models.Data;
 using WebApiFactory.Models.Request;
 using WebApiFactory.Models.Response;
@@ -11,7 +12,7 @@ namespace WebApiFactory.Commands.Instance
     /// </summary>
     public class ContactInfoRedisStringCommand : BaseCommand, IContactInfoCommand
     {
-        private readonly IContactInfoService _contactInfoService;
+        private readonly IServiceFactory _serviceFactory;
         private readonly IRedisService _redisService;
         private const string _redisQueryByID = $"{nameof(ContactInfo)}:{nameof(QueryByID)}";
         private const string _redisQueryByCondition = $"{nameof(ContactInfo)}:{nameof(QueryByCondition)}";
@@ -19,11 +20,11 @@ namespace WebApiFactory.Commands.Instance
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="contactInfoService"></param>
+        /// <param name="serviceFactory"></param>
         /// <param name="redisService"></param>
-        public ContactInfoRedisStringCommand(IContactInfoService contactInfoService, IRedisService redisService)
+        public ContactInfoRedisStringCommand(IServiceFactory serviceFactory, IRedisService redisService)
         {
-            _contactInfoService = contactInfoService;
+            _serviceFactory = serviceFactory;
             _redisService = redisService;
         }
 
@@ -31,8 +32,9 @@ namespace WebApiFactory.Commands.Instance
         /// 單筆查詢
         /// </summary>
         /// <param name="id"></param>
+        /// <param name="serviceType"></param>
         /// <returns></returns>
-        public ApiResultRP<ContactInfo> QueryByID(long id)
+        public ApiResultRP<ContactInfo> QueryByID(long id, string serviceType)
         {
             var redisKey = $"{_redisQueryByID}:{id}";
             if (_redisService.Exist(redisKey))
@@ -42,7 +44,8 @@ namespace WebApiFactory.Commands.Instance
             }
             else
             {
-                var res = _contactInfoService.Query(id);
+                var service = _serviceFactory.CreateContactInfoService(serviceType);
+                var res = service.Query(id);
                 if (res == null)
                 {
                     return FailRP<ContactInfo>(1, "No Data");
@@ -96,7 +99,8 @@ namespace WebApiFactory.Commands.Instance
             }
             else
             {
-                var res = _contactInfoService.Query(dicParams);
+                var service = _serviceFactory.CreateContactInfoService(objRQ.ServiceType);
+                var res = service.Query(dicParams);
                 if (res.Item2 == null)
                 {
                     return FailRP<PageDataRP<IEnumerable<ContactInfo>>>(1, "No Data");
@@ -136,10 +140,11 @@ namespace WebApiFactory.Commands.Instance
                 Address = objRQ.Address
             };
 
-            var res = _contactInfoService.Insert(objInsert);
+            var service = _serviceFactory.CreateContactInfoService(objRQ.ServiceType);
+            var res = service.Insert(objInsert);
             if (res)
             {
-                var objCache = _contactInfoService.Query(objInsert.ContactInfoID);
+                var objCache = service.Query(objInsert.ContactInfoID);
                 _redisService.SetObjectAsync($"{_redisQueryByID}:{objCache.ContactInfoID}", objCache, TimeSpan.FromMinutes(5));
                 _redisService.RemoveByKeyAsync($"{_redisQueryByCondition}");
                 return SuccessRP(objCache);
@@ -157,7 +162,8 @@ namespace WebApiFactory.Commands.Instance
         /// <returns></returns>
         public ApiResultRP<ContactInfo> Edit(ContactInfoEditRQ objRQ)
         {
-            var objOrigin = _contactInfoService.Query(objRQ.ID ?? 0);
+            var service = _serviceFactory.CreateContactInfoService(objRQ.ServiceType);
+            var objOrigin = service.Query(objRQ.ID ?? 0);
             if (objOrigin == null)
             {
                 return FailRP<ContactInfo>(1, "No Data");
@@ -173,10 +179,10 @@ namespace WebApiFactory.Commands.Instance
                 Address = objRQ.Address
             };
 
-            var res = _contactInfoService.Update(objUpdate);
+            var res = service.Update(objUpdate);
             if (res)
             {
-                var objCache = _contactInfoService.Query(objUpdate.ContactInfoID);
+                var objCache = service.Query(objUpdate.ContactInfoID);
                 _redisService.SetObjectAsync($"{_redisQueryByID}:{objCache.ContactInfoID}", objCache, TimeSpan.FromMinutes(5));
                 _redisService.RemoveByKeyAsync($"{_redisQueryByCondition}");
                 return SuccessRP(objCache);
@@ -194,7 +200,8 @@ namespace WebApiFactory.Commands.Instance
         /// <returns></returns>
         public ApiResultRP<ContactInfo> EditPartial(ContactInfoEditPartialRQ objRQ)
         {
-            var objOrigin = _contactInfoService.Query(objRQ.ID ?? 0);
+            var service = _serviceFactory.CreateContactInfoService(objRQ.ServiceType);
+            var objOrigin = service.Query(objRQ.ID ?? 0);
             if (objOrigin == null)
             {
                 return FailRP<ContactInfo>(1, "No Data");
@@ -210,10 +217,10 @@ namespace WebApiFactory.Commands.Instance
                 Address = string.IsNullOrWhiteSpace(objRQ.Address) ? objOrigin.Address : objRQ.Address
             };
 
-            var res = _contactInfoService.Update(objUpdate);
+            var res = service.Update(objUpdate);
             if (res)
             {
-                var objCache = _contactInfoService.Query(objUpdate.ContactInfoID);
+                var objCache = service.Query(objUpdate.ContactInfoID);
                 _redisService.SetObjectAsync($"{_redisQueryByID}:{objCache.ContactInfoID}", objCache, TimeSpan.FromMinutes(5));
                 _redisService.RemoveByKeyAsync($"{_redisQueryByCondition}");
                 return SuccessRP(objCache);
@@ -228,10 +235,12 @@ namespace WebApiFactory.Commands.Instance
         /// 刪除資料
         /// </summary>
         /// <param name="liID"></param>
+        /// <param name="serviceType"></param>
         /// <returns></returns>
-        public ApiResultRP<bool> DeleteByID(IEnumerable<long> liID)
+        public ApiResultRP<bool> DeleteByID(IEnumerable<long> liID, string serviceType)
         {
-            var res = _contactInfoService.Delete(liID);
+            var service = _serviceFactory.CreateContactInfoService(serviceType);
+            var res = service.Delete(liID);
             if (res)
             {
                 _redisService.RemoveAsync(liID.Select(e => $"{_redisQueryByID}:{e}"));

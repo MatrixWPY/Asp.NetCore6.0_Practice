@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using WebApiFactory.Commands.Interface;
+using System.ComponentModel.DataAnnotations;
+using WebApiFactory.Factories.Interface;
 using WebApiFactory.Filters;
 using WebApiFactory.Models.Data;
 using WebApiFactory.Models.Request;
@@ -15,26 +16,32 @@ namespace WebApiFactory.Controllers
     [ApiController]
     public class ContactInfoRestfulController : ControllerBase
     {
-        private readonly IContactInfoCommand _contactInfoCommand;
+        private readonly ICommandFactory _commandFactory;
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="contactInfoCommand"></param>
-        public ContactInfoRestfulController(IContactInfoCommand contactInfoCommand)
+        public ContactInfoRestfulController(ICommandFactory commandFactory)
         {
-            _contactInfoCommand = contactInfoCommand;
+            _commandFactory = commandFactory;
         }
 
         /// <summary>
         /// ContactInfo - 單筆查詢
         /// </summary>
         /// <param name="id"></param>
+        /// <param name="commandType"></param>
+        /// <param name="serviceType"></param>
         /// <returns></returns>
         [HttpGet, Route("{id}")]
-        public ApiResultRP<ContactInfo> Get([FromRoute] long id)
+        public ApiResultRP<ContactInfo> Get(
+            [FromRoute] long id,
+            [FromQuery][Required] string commandType, [FromQuery][Required] string serviceType
+        )
         {
-            return _contactInfoCommand.QueryByID(id);
+            var command = _commandFactory.CreateContactInfoCommand(commandType);
+            return command.QueryByID(id, serviceType);
         }
 
         /// <summary>
@@ -43,9 +50,12 @@ namespace WebApiFactory.Controllers
         /// <param name="objRQ"></param>
         /// <returns></returns>
         [HttpGet]
-        public ApiResultRP<PageDataRP<IEnumerable<ContactInfo>>> Get([FromQuery] ContactInfoQueryRQ objRQ)
+        public ApiResultRP<PageDataRP<IEnumerable<ContactInfo>>> Get(
+            [FromQuery] ContactInfoQueryRQ objRQ
+        )
         {
-            return _contactInfoCommand.QueryByCondition(objRQ);
+            var command = _commandFactory.CreateContactInfoCommand(objRQ.CommandType);
+            return command.QueryByCondition(objRQ);
         }
 
         /// <summary>
@@ -54,9 +64,12 @@ namespace WebApiFactory.Controllers
         /// <param name="objRQ"></param>
         /// <returns></returns>
         [HttpPost]
-        public ApiResultRP<ContactInfo> Post([FromBody] ContactInfoAddRQ objRQ)
+        public ApiResultRP<ContactInfo> Post(
+            [FromBody] ContactInfoAddRQ objRQ
+        )
         {
-            return _contactInfoCommand.Add(objRQ);
+            var command = _commandFactory.CreateContactInfoCommand(objRQ.CommandType);
+            return command.Add(objRQ);
         }
 
         /// <summary>
@@ -66,9 +79,13 @@ namespace WebApiFactory.Controllers
         /// <param name="objRQ"></param>
         /// <returns></returns>
         [HttpPut, Route("{id}")]
-        public ApiResultRP<ContactInfo> Put([FromRoute] long id, [FromBody] ContactInfoRestfulEditRQ objRQ)
+        public ApiResultRP<ContactInfo> Put(
+            [FromRoute] long id,
+            [FromBody] ContactInfoRestfulEditRQ objRQ
+        )
         {
-            return _contactInfoCommand.Edit(new ContactInfoEditRQ()
+            var command = _commandFactory.CreateContactInfoCommand(objRQ.CommandType);
+            return command.Edit(new ContactInfoEditRQ()
             {
                 ID = id,
                 Name = objRQ.Name,
@@ -87,9 +104,13 @@ namespace WebApiFactory.Controllers
         /// <param name="objRQ"></param>
         /// <returns></returns>
         [HttpPatch, Route("{id}")]
-        public ApiResultRP<ContactInfo> Patch([FromRoute] long id, [FromBody] ContactInfoRestfulEditPartialRQ objRQ)
+        public ApiResultRP<ContactInfo> Patch(
+            [FromRoute] long id,
+            [FromBody] ContactInfoRestfulEditPartialRQ objRQ
+        )
         {
-            return _contactInfoCommand.EditPartial(new ContactInfoEditPartialRQ()
+            var command = _commandFactory.CreateContactInfoCommand(objRQ.CommandType);
+            return command.EditPartial(new ContactInfoEditPartialRQ()
             {
                 ID = id,
                 Name = objRQ.Name,
@@ -105,11 +126,17 @@ namespace WebApiFactory.Controllers
         /// ContactInfo - 刪除資料
         /// </summary>
         /// <param name="id"></param>
+        /// <param name="commandType"></param>
+        /// <param name="serviceType"></param>
         /// <returns></returns>
         [HttpDelete, Route("{id}")]
-        public ApiResultRP<bool> Delete([FromRoute] long id)
+        public ApiResultRP<bool> Delete(
+            [FromRoute] long id,
+            [FromQuery][Required] string commandType, [FromQuery][Required] string serviceType
+        )
         {
-            return _contactInfoCommand.DeleteByID(new List<long>() { id });
+            var command = _commandFactory.CreateContactInfoCommand(commandType);
+            return command.DeleteByID(new List<long>() { id }, serviceType);
         }
     }
 }

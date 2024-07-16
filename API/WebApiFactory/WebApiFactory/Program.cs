@@ -9,7 +9,8 @@ using System.Net;
 using System.Text.Encodings.Web;
 using System.Text.Unicode;
 using WebApiFactory.Commands.Instance;
-using WebApiFactory.Commands.Interface;
+using WebApiFactory.Factories.Instance;
+using WebApiFactory.Factories.Interface;
 using WebApiFactory.Middlewares;
 using WebApiFactory.Models.Response;
 using WebApiFactory.Services.Instance;
@@ -47,101 +48,33 @@ builder.Logging.AddNLog("nlog.config");
 
 #region 讀取appsettings.json設定
 builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
-
-var isOpenSwagger = (bool)builder.Configuration.GetValue(typeof(bool), "IsOpenSwagger");
-
-var isUseRedis = (bool)builder.Configuration.GetValue(typeof(bool), "IsUseRedis");
-var redisType = builder.Configuration["RedisType"];
-
-var dbType = builder.Configuration["DbType"];
-var dbConnectString = string.Empty;
-switch (dbType)
-{
-    case "MsSql":
-        dbConnectString = builder.Configuration["ConnectionStrings:MsSql"];
-        break;
-
-    case "MsSqlSP":
-        dbConnectString = builder.Configuration["ConnectionStrings:MsSqlSP"];
-        break;
-
-    case "MySql":
-        dbConnectString = builder.Configuration["ConnectionStrings:MySql"];
-        break;
-
-    case "MySqlSP":
-        dbConnectString = builder.Configuration["ConnectionStrings:MySqlSP"];
-        break;
-}
 #endregion
 
 #region 註冊Redis
-if (isUseRedis)
-{
-    builder.Services.AddSingleton<IRedisService, RedisService>();
-}
+builder.Services.AddSingleton<IRedisService, RedisService>();
 #endregion
 
 #region 註冊DB連線
-switch (dbType)
-{
-    case "MsSql":
-        builder.Services.AddScoped<IDbConnection, SqlConnection>(db => new SqlConnection(dbConnectString));
-        break;
-
-    case "MsSqlSP":
-        builder.Services.AddScoped<IDbConnection, SqlConnection>(db => new SqlConnection(dbConnectString));
-        break;
-
-    case "MySql":
-        builder.Services.AddScoped<IDbConnection, MySqlConnection>(db => new MySqlConnection(dbConnectString));
-        break;
-
-    case "MySqlSP":
-        builder.Services.AddScoped<IDbConnection, MySqlConnection>(db => new MySqlConnection(dbConnectString));
-        break;
-}
+builder.Services.AddScoped<SqlConnection>(db => new SqlConnection(builder.Configuration["ConnectionStrings:MsSql"]));
+builder.Services.AddScoped<MySqlConnection>(db => new MySqlConnection(builder.Configuration["ConnectionStrings:MySql"]));
 #endregion
 
 #region 註冊Service
-switch (dbType)
-{
-    case "MsSql":
-        builder.Services.AddScoped<IContactInfoService, ContactInfoMssqlService>();
-        break;
-
-    case "MsSqlSP":
-        builder.Services.AddScoped<IContactInfoService, ContactInfoMssqlSPService>();
-        break;
-
-    case "MySql":
-        builder.Services.AddScoped<IContactInfoService, ContactInfoMysqlService>();
-        break;
-
-    case "MySqlSP":
-        builder.Services.AddScoped<IContactInfoService, ContactInfoMysqlSPService>();
-        break;
-}
+builder.Services.AddScoped<ContactInfoMssqlService>();
+builder.Services.AddScoped<ContactInfoMssqlSPService>();
+builder.Services.AddScoped<ContactInfoMysqlService>();
+builder.Services.AddScoped<ContactInfoMysqlSPService>();
 #endregion
 
 #region 註冊Command
-if (isUseRedis)
-{
-    switch (redisType)
-    {
-        case "String":
-            builder.Services.AddScoped<IContactInfoCommand, ContactInfoRedisStringCommand>();
-            break;
+builder.Services.AddScoped<ContactInfoCommand>();
+builder.Services.AddScoped<ContactInfoRedisStringCommand>();
+builder.Services.AddScoped<ContactInfoRedisHashCommand>();
+#endregion
 
-        case "Hash":
-            builder.Services.AddScoped<IContactInfoCommand, ContactInfoRedisHashCommand>();
-            break;
-    }
-}
-else
-{
-    builder.Services.AddScoped<IContactInfoCommand, ContactInfoCommand>();
-}
+#region 註冊Factory
+builder.Services.AddScoped<IServiceFactory, ServiceFactory>();
+builder.Services.AddScoped<ICommandFactory, CommandFactory>();
 #endregion
 
 var app = builder.Build();
@@ -149,6 +82,7 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 
 #region 使用SwaggerUI
+var isOpenSwagger = (bool)builder.Configuration.GetValue(typeof(bool), "IsOpenSwagger");
 if (app.Environment.IsDevelopment() && isOpenSwagger)
 {
     app.UseSwagger();

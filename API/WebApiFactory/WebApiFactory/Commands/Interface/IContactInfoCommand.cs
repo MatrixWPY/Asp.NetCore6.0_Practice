@@ -13,8 +13,9 @@ namespace WebApiFactory.Commands.Interface
         /// 單筆查詢
         /// </summary>
         /// <param name="id"></param>
+        /// <param name="serviceType"></param>
         /// <returns></returns>
-        ApiResultRP<ContactInfo> QueryByID(long id);
+        ApiResultRP<ContactInfo> QueryByID(long id, string serviceType);
 
         /// <summary>
         /// 多筆查詢
@@ -48,7 +49,8 @@ namespace WebApiFactory.Commands.Interface
         /// 刪除資料
         /// </summary>
         /// <param name="liID"></param>
+        /// <param name="serviceType"></param>
         /// <returns></returns>
-        ApiResultRP<bool> DeleteByID(IEnumerable<long> liID);
+        ApiResultRP<bool> DeleteByID(IEnumerable<long> liID, string serviceType);
     }
 }

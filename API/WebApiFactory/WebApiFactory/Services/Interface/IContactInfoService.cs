@@ -12,7 +12,7 @@ namespace WebApiFactory.Services.Interface
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        ContactInfo Query(long id);
+        ContactInfo? Query(long id);
 
         /// <summary>
         /// 查詢

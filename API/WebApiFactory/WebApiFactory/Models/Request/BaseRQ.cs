@@ -40,4 +40,17 @@ namespace WebApiFactory.Models.Request
             set => _PageSize = value < 1 ? 10 : value;
         }
     }
+
+    public interface IFactoryRQ
+    {
+        /// <summary>
+        /// Command實作 (Normal, RedisString, RedisHash)
+        /// </summary>
+        string CommandType { get; set; }
+
+        /// <summary>
+        /// Service實作 (MsSql, MsSqlSP, MySql, MySqlSP)
+        /// </summary>
+        string ServiceType { get; set; }
+    }
 }

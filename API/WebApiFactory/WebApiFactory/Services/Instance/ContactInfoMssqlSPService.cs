@@ -1,4 +1,5 @@
 ﻿using Dapper;
+using Microsoft.Data.SqlClient;
 using System.Data;
 using WebApiFactory.Models.Data;
 using WebApiFactory.Services.Interface;
@@ -17,11 +18,11 @@ namespace WebApiFactory.Services.Instance
         /// 
         /// </summary>
         /// <param name="logger"></param>
-        /// <param name="dbConnection"></param>
-        public ContactInfoMssqlSPService(ILogger<ContactInfoMssqlSPService> logger, IDbConnection dbConnection)
+        /// <param name="sqlConnection"></param>
+        public ContactInfoMssqlSPService(ILogger<ContactInfoMssqlSPService> logger, SqlConnection sqlConnection)
         {
             _logger = logger;
-            _dbConnection = dbConnection;
+            _dbConnection = sqlConnection;
         }
 
         /// <summary>
@@ -29,7 +30,7 @@ namespace WebApiFactory.Services.Instance
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        public ContactInfo Query(long id)
+        public ContactInfo? Query(long id)
         {
             try
             {

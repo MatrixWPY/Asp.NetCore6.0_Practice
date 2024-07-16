@@ -1,4 +1,5 @@
 ﻿using Dapper;
+using MySql.Data.MySqlClient;
 using System.Data;
 using System.Text;
 using WebApiFactory.Models.Data;
@@ -18,11 +19,11 @@ namespace WebApiFactory.Services.Instance
         /// 
         /// </summary>
         /// <param name="logger"></param>
-        /// <param name="dbConnection"></param>
-        public ContactInfoMysqlService(ILogger<ContactInfoMysqlService> logger, IDbConnection dbConnection)
+        /// <param name="mySqlConnection"></param>
+        public ContactInfoMysqlService(ILogger<ContactInfoMysqlService> logger, MySqlConnection mySqlConnection)
         {
             _logger = logger;
-            _dbConnection = dbConnection;
+            _dbConnection = mySqlConnection;
         }
 
         /// <summary>
@@ -30,7 +31,7 @@ namespace WebApiFactory.Services.Instance
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        public ContactInfo Query(long id)
+        public ContactInfo? Query(long id)
         {
             try
             {

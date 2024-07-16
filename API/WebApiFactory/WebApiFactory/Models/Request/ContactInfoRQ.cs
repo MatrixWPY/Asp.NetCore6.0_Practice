@@ -5,8 +5,14 @@ namespace WebApiFactory.Models.Request
     /// <summary>
     /// 傳入參數 - 多筆查詢
     /// </summary>
-    public class ContactInfoQueryRQ : PageInfoRQ
+    public class ContactInfoQueryRQ : PageInfoRQ, IFactoryRQ
     {
+        [Required(ErrorMessage = "{0} 為必填欄位。")]
+        public string CommandType { get; set; }
+
+        [Required(ErrorMessage = "{0} 為必填欄位。")]
+        public string ServiceType { get; set; }
+
         /// <summary>
         /// 姓名
         /// </summary>
@@ -29,8 +35,14 @@ namespace WebApiFactory.Models.Request
     /// <summary>
     /// 傳入參數 - 新增資料
     /// </summary>
-    public class ContactInfoAddRQ
+    public class ContactInfoAddRQ : IFactoryRQ
     {
+        [Required(ErrorMessage = "{0} 為必填欄位。")]
+        public string CommandType { get; set; }
+
+        [Required(ErrorMessage = "{0} 為必填欄位。")]
+        public string ServiceType { get; set; }
+
         /// <summary>
         /// 姓名
         /// </summary>
@@ -74,8 +86,14 @@ namespace WebApiFactory.Models.Request
     /// <summary>
     /// 傳入參數 - 修改資料
     /// </summary>
-    public class ContactInfoEditRQ : IdRQ
+    public class ContactInfoEditRQ : IdRQ, IFactoryRQ
     {
+        [Required(ErrorMessage = "{0} 為必填欄位。")]
+        public string CommandType { get; set; }
+
+        [Required(ErrorMessage = "{0} 為必填欄位。")]
+        public string ServiceType { get; set; }
+
         /// <summary>
         /// 姓名
         /// </summary>
@@ -119,8 +137,14 @@ namespace WebApiFactory.Models.Request
     /// <summary>
     /// 傳入參數 - 部分修改資料
     /// </summary>
-    public class ContactInfoEditPartialRQ : IdRQ
+    public class ContactInfoEditPartialRQ : IdRQ, IFactoryRQ
     {
+        [Required(ErrorMessage = "{0} 為必填欄位。")]
+        public string CommandType { get; set; }
+
+        [Required(ErrorMessage = "{0} 為必填欄位。")]
+        public string ServiceType { get; set; }
+
         /// <summary>
         /// 姓名
         /// </summary>
@@ -161,8 +185,14 @@ namespace WebApiFactory.Models.Request
     /// <summary>
     /// 傳入參數 - 修改資料
     /// </summary>
-    public class ContactInfoRestfulEditRQ
+    public class ContactInfoRestfulEditRQ : IFactoryRQ
     {
+        [Required(ErrorMessage = "{0} 為必填欄位。")]
+        public string CommandType { get; set; }
+
+        [Required(ErrorMessage = "{0} 為必填欄位。")]
+        public string ServiceType { get; set; }
+
         /// <summary>
         /// 姓名
         /// </summary>
@@ -206,8 +236,14 @@ namespace WebApiFactory.Models.Request
     /// <summary>
     /// 傳入參數 - 部分修改資料
     /// </summary>
-    public class ContactInfoRestfulEditPartialRQ
+    public class ContactInfoRestfulEditPartialRQ : IFactoryRQ
     {
+        [Required(ErrorMessage = "{0} 為必填欄位。")]
+        public string CommandType { get; set; }
+
+        [Required(ErrorMessage = "{0} 為必填欄位。")]
+        public string ServiceType { get; set; }
+
         /// <summary>
         /// 姓名
         /// </summary>

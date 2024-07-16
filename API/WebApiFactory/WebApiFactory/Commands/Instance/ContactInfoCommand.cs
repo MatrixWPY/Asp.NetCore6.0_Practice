@@ -1,8 +1,8 @@
 ﻿using WebApiFactory.Commands.Interface;
+using WebApiFactory.Factories.Interface;
 using WebApiFactory.Models.Data;
 using WebApiFactory.Models.Request;
 using WebApiFactory.Models.Response;
-using WebApiFactory.Services.Interface;
 
 namespace WebApiFactory.Commands.Instance
 {
@@ -11,25 +11,27 @@ namespace WebApiFactory.Commands.Instance
     /// </summary>
     public class ContactInfoCommand : BaseCommand, IContactInfoCommand
     {
-        private readonly IContactInfoService _contactInfoService;
+        private readonly IServiceFactory _serviceFactory;
 
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="contactInfoService"></param>
-        public ContactInfoCommand(IContactInfoService contactInfoService)
+        /// <param name="serviceFactory"></param>
+        public ContactInfoCommand(IServiceFactory serviceFactory)
         {
-            _contactInfoService = contactInfoService;
+            _serviceFactory = serviceFactory;
         }
 
         /// <summary>
         /// 單筆查詢
         /// </summary>
         /// <param name="id"></param>
+        /// <param name="serviceType"></param>
         /// <returns></returns>
-        public ApiResultRP<ContactInfo> QueryByID(long id)
+        public ApiResultRP<ContactInfo> QueryByID(long id, string serviceType)
         {
-            var res = _contactInfoService.Query(id);
+            var service = _serviceFactory.CreateContactInfoService(serviceType);
+            var res = service.Query(id);
             return res == null ? FailRP<ContactInfo>(1, "No Data") : SuccessRP(res);
         }
 
@@ -56,7 +58,8 @@ namespace WebApiFactory.Commands.Instance
             dicParams["RowStart"] = (objRQ.PageIndex - 1) * objRQ.PageSize;
             dicParams["RowLength"] = objRQ.PageSize;
 
-            var res = _contactInfoService.Query(dicParams);
+            var service = _serviceFactory.CreateContactInfoService(objRQ.ServiceType);
+            var res = service.Query(dicParams);
             return res.Item2 == null ? FailRP<PageDataRP<IEnumerable<ContactInfo>>>(1, "No Data")
                                      : SuccessRP(new PageDataRP<IEnumerable<ContactInfo>>()
                                      {
@@ -87,8 +90,9 @@ namespace WebApiFactory.Commands.Instance
                 PhoneNo = objRQ.PhoneNo,
                 Address = objRQ.Address
             };
-            return _contactInfoService.Insert(objInsert) == false ? FailRP<ContactInfo>(2, "Add Fail")
-                                                                  : SuccessRP(_contactInfoService.Query(objInsert.ContactInfoID));
+            var service = _serviceFactory.CreateContactInfoService(objRQ.ServiceType);
+            return service.Insert(objInsert) == false ? FailRP<ContactInfo>(2, "Add Fail")
+                                                      : SuccessRP(service.Query(objInsert.ContactInfoID));
         }
 
         /// <summary>
@@ -98,7 +102,8 @@ namespace WebApiFactory.Commands.Instance
         /// <returns></returns>
         public ApiResultRP<ContactInfo> Edit(ContactInfoEditRQ objRQ)
         {
-            var objOrigin = _contactInfoService.Query(objRQ.ID ?? 0);
+            var service = _serviceFactory.CreateContactInfoService(objRQ.ServiceType);
+            var objOrigin = service.Query(objRQ.ID ?? 0);
             if (objOrigin == null)
             {
                 return FailRP<ContactInfo>(1, "No Data");
@@ -114,8 +119,8 @@ namespace WebApiFactory.Commands.Instance
                 PhoneNo = objRQ.PhoneNo,
                 Address = objRQ.Address
             };
-            return _contactInfoService.Update(objUpdate) == false ? FailRP<ContactInfo>(3, "Edit Fail")
-                                                                  : SuccessRP(_contactInfoService.Query(objUpdate.ContactInfoID));
+            return service.Update(objUpdate) == false ? FailRP<ContactInfo>(3, "Edit Fail")
+                                                      : SuccessRP(service.Query(objUpdate.ContactInfoID));
         }
 
         /// <summary>
@@ -125,7 +130,8 @@ namespace WebApiFactory.Commands.Instance
         /// <returns></returns>
         public ApiResultRP<ContactInfo> EditPartial(ContactInfoEditPartialRQ objRQ)
         {
-            var objOrigin = _contactInfoService.Query(objRQ.ID ?? 0);
+            var service = _serviceFactory.CreateContactInfoService(objRQ.ServiceType);
+            var objOrigin = service.Query(objRQ.ID ?? 0);
             if (objOrigin == null)
             {
                 return FailRP<ContactInfo>(1, "No Data");
@@ -141,18 +147,20 @@ namespace WebApiFactory.Commands.Instance
                 PhoneNo = string.IsNullOrWhiteSpace(objRQ.PhoneNo) ? objOrigin.PhoneNo : objRQ.PhoneNo,
                 Address = string.IsNullOrWhiteSpace(objRQ.Address) ? objOrigin.Address : objRQ.Address
             };
-            return _contactInfoService.Update(objUpdate) == false ? FailRP<ContactInfo>(3, "Edit Partial Fail")
-                                                                  : SuccessRP(_contactInfoService.Query(objUpdate.ContactInfoID));
+            return service.Update(objUpdate) == false ? FailRP<ContactInfo>(3, "Edit Partial Fail")
+                                                      : SuccessRP(service.Query(objUpdate.ContactInfoID));
         }
 
         /// <summary>
         /// 刪除資料
         /// </summary>
         /// <param name="liID"></param>
+        /// <param name="serviceType"></param>
         /// <returns></returns>
-        public ApiResultRP<bool> DeleteByID(IEnumerable<long> liID)
+        public ApiResultRP<bool> DeleteByID(IEnumerable<long> liID, string serviceType)
         {
-            var res = _contactInfoService.Delete(liID);
+            var service = _serviceFactory.CreateContactInfoService(serviceType);
+            var res = service.Delete(liID);
             return res == false ? FailRP<bool>(4, "Delete Fail") : SuccessRP(res);
         }
     }

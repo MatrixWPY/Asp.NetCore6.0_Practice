@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using WebMVC.Models.Common;
 using WebMVC.Models.Interface;
 
 namespace WebMVC.Models.Instance.EFCore

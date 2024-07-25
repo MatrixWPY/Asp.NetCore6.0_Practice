@@ -1,4 +1,5 @@
-﻿using WebMVC.Models.Interface;
+﻿using WebMVC.Models.Common;
+using WebMVC.Models.Interface;
 
 namespace WebMVC.Models.Instance.Dapper
 {

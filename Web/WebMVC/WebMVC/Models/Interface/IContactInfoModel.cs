@@ -1,4 +1,6 @@
-﻿namespace WebMVC.Models.Interface
+﻿using WebMVC.Models.Common;
+
+namespace WebMVC.Models.Interface
 {
     public interface IContactInfoModel
     {

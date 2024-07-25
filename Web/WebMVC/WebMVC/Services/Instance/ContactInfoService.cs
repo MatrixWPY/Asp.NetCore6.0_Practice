@@ -1,4 +1,4 @@
-﻿using WebMVC.Models;
+﻿using WebMVC.Models.Common;
 using WebMVC.Models.Interface;
 using WebMVC.Repositories.Interface;
 using WebMVC.Services.Interface;

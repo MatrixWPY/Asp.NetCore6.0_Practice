@@ -1,4 +1,4 @@
-﻿namespace WebMVC.Models
+﻿namespace WebMVC.Models.Common
 {
     public enum EnumGender
     {

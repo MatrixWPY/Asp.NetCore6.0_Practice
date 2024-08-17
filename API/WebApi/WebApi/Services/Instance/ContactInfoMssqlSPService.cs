@@ -137,15 +137,15 @@ namespace WebApi.Services.Instance
         /// <summary>
         /// 刪除
         /// </summary>
-        /// <param name="liID"></param>
+        /// <param name="ids"></param>
         /// <returns></returns>
-        public bool Delete(IEnumerable<long> liID)
+        public bool Delete(IEnumerable<long> ids)
         {
             try
             {
                 return _dbConnection.Execute(
                         "dbo.Sp_RemoveContactInfo",
-                        new { ContactInfoIDs = string.Join(",", liID) },
+                        new { ContactInfoIDs = string.Join(",", ids) },
                         commandType: CommandType.StoredProcedure) > 0;
             }
             catch (Exception ex)

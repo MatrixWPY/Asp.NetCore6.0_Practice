@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using WebApi.Commands.Interface;
 using WebApi.Filters;
-using WebApi.Models.Data;
 using WebApi.Models.Request;
 using WebApi.Models.Response;
 
@@ -32,7 +31,7 @@ namespace WebApi.Controllers
         /// <param name="objRQ"></param>
         /// <returns></returns>
         [HttpPost]
-        public ApiResultRP<ContactInfo> GetContactInfo(IdRQ objRQ)
+        public ApiResultRP<QueryRP> GetContactInfo(IdRQ objRQ)
         {
             return _contactInfoCommand.QueryByID(objRQ.ID ?? 0);
         }
@@ -43,7 +42,7 @@ namespace WebApi.Controllers
         /// <param name="objRQ"></param>
         /// <returns></returns>
         [HttpPost]
-        public ApiResultRP<PageDataRP<IEnumerable<ContactInfo>>> ListContactInfo(ContactInfoQueryRQ objRQ)
+        public ApiResultRP<PageDataRP<IEnumerable<QueryRP>>> ListContactInfo(QueryRQ objRQ)
         {
             return _contactInfoCommand.QueryByCondition(objRQ);
         }
@@ -54,9 +53,9 @@ namespace WebApi.Controllers
         /// <param name="objRQ"></param>
         /// <returns></returns>
         [HttpPost]
-        public ApiResultRP<ContactInfo> AddContactInfo(ContactInfoAddRQ objRQ)
+        public ApiResultRP<QueryRP> CreateContactInfo(CreateRQ objRQ)
         {
-            return _contactInfoCommand.Add(objRQ);
+            return _contactInfoCommand.Create(objRQ);
         }
 
         /// <summary>
@@ -65,7 +64,7 @@ namespace WebApi.Controllers
         /// <param name="objRQ"></param>
         /// <returns></returns>
         [HttpPost]
-        public ApiResultRP<ContactInfo> EditContactInfo(ContactInfoEditRQ objRQ)
+        public ApiResultRP<QueryRP> EditContactInfo(EditRQ objRQ)
         {
             return _contactInfoCommand.Edit(objRQ);
         }
@@ -76,7 +75,7 @@ namespace WebApi.Controllers
         /// <param name="objRQ"></param>
         /// <returns></returns>
         [HttpPost]
-        public ApiResultRP<ContactInfo> EditPartialContactInfo(ContactInfoEditPartialRQ objRQ)
+        public ApiResultRP<QueryRP> EditPartialContactInfo(EditPartialRQ objRQ)
         {
             return _contactInfoCommand.EditPartial(objRQ);
         }
@@ -87,9 +86,9 @@ namespace WebApi.Controllers
         /// <param name="objRQ"></param>
         /// <returns></returns>
         [HttpPost]
-        public ApiResultRP<bool> DeleteContactInfo(IdRQ objRQ)
+        public ApiResultRP<bool> RemoveContactInfo(IdRQ objRQ)
         {
-            return _contactInfoCommand.DeleteByID(new List<long>() { objRQ.ID ?? 0 });
+            return _contactInfoCommand.Remove(new List<long>() { objRQ.ID ?? 0 });
         }
     }
 }

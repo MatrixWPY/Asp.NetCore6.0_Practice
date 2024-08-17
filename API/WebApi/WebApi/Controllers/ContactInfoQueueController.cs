@@ -42,7 +42,7 @@ namespace WebApi.Controllers
         /// <param name="objRQ"></param>
         /// <returns></returns>
         [HttpPost]
-        public ApiResultRP<bool> Post([FromBody] ContactInfoAddRQ objRQ)
+        public ApiResultRP<bool> Post([FromBody] CreateRQ objRQ)
         {
             var objInsert = new ContactInfo()
             {

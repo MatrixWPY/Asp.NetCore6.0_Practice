@@ -1,5 +1,4 @@
-﻿using WebApi.Models.Data;
-using WebApi.Models.Request;
+﻿using WebApi.Models.Request;
 using WebApi.Models.Response;
 
 namespace WebApi.Commands.Interface
@@ -14,41 +13,41 @@ namespace WebApi.Commands.Interface
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        ApiResultRP<ContactInfo> QueryByID(long id);
+        ApiResultRP<QueryRP> QueryByID(long id);
 
         /// <summary>
         /// 多筆查詢
         /// </summary>
         /// <param name="objRQ"></param>
         /// <returns></returns>
-        ApiResultRP<PageDataRP<IEnumerable<ContactInfo>>> QueryByCondition(ContactInfoQueryRQ objRQ);
+        ApiResultRP<PageDataRP<IEnumerable<QueryRP>>> QueryByCondition(QueryRQ objRQ);
 
         /// <summary>
         /// 新增資料
         /// </summary>
         /// <param name="objRQ"></param>
         /// <returns></returns>
-        ApiResultRP<ContactInfo> Add(ContactInfoAddRQ objRQ);
+        ApiResultRP<QueryRP> Create(CreateRQ objRQ);
 
         /// <summary>
         /// 修改資料
         /// </summary>
         /// <param name="objRQ"></param>
         /// <returns></returns>
-        ApiResultRP<ContactInfo> Edit(ContactInfoEditRQ objRQ);
+        ApiResultRP<QueryRP> Edit(EditRQ objRQ);
 
         /// <summary>
         /// 部分修改資料
         /// </summary>
         /// <param name="objRQ"></param>
         /// <returns></returns>
-        ApiResultRP<ContactInfo> EditPartial(ContactInfoEditPartialRQ objRQ);
+        ApiResultRP<QueryRP> EditPartial(EditPartialRQ objRQ);
 
         /// <summary>
         /// 刪除資料
         /// </summary>
-        /// <param name="liID"></param>
+        /// <param name="ids"></param>
         /// <returns></returns>
-        ApiResultRP<bool> DeleteByID(IEnumerable<long> liID);
+        ApiResultRP<bool> Remove(IEnumerable<long> ids);
     }
 }

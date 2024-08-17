@@ -5,7 +5,7 @@ namespace WebApi.Models.Request
     /// <summary>
     /// 傳入參數 - 多筆查詢
     /// </summary>
-    public class ContactInfoQueryRQ : PageInfoRQ
+    public class QueryRQ : PageInfoRQ
     {
         /// <summary>
         /// 姓名
@@ -29,7 +29,7 @@ namespace WebApi.Models.Request
     /// <summary>
     /// 傳入參數 - 新增資料
     /// </summary>
-    public class ContactInfoAddRQ
+    public class CreateRQ
     {
         /// <summary>
         /// 姓名
@@ -54,7 +54,7 @@ namespace WebApi.Models.Request
         /// 年齡
         /// </summary>
         [RegularExpression("[0-9]{1,3}", ErrorMessage = "{0} 限定為1-3個數字。")]
-        public int? Age { get; set; }
+        public short? Age { get; set; }
 
         /// <summary>
         /// 電話號碼
@@ -74,7 +74,7 @@ namespace WebApi.Models.Request
     /// <summary>
     /// 傳入參數 - 修改資料
     /// </summary>
-    public class ContactInfoEditRQ : IdRQ
+    public class EditRQ : IdRQ
     {
         /// <summary>
         /// 姓名
@@ -99,7 +99,7 @@ namespace WebApi.Models.Request
         /// 年齡
         /// </summary>
         [RegularExpression("[0-9]{1,3}", ErrorMessage = "{0} 限定為1-3個數字。")]
-        public int? Age { get; set; }
+        public short? Age { get; set; }
 
         /// <summary>
         /// 電話號碼
@@ -119,7 +119,7 @@ namespace WebApi.Models.Request
     /// <summary>
     /// 傳入參數 - 部分修改資料
     /// </summary>
-    public class ContactInfoEditPartialRQ : IdRQ
+    public class EditPartialRQ : IdRQ
     {
         /// <summary>
         /// 姓名
@@ -143,7 +143,7 @@ namespace WebApi.Models.Request
         /// 年齡
         /// </summary>
         [RegularExpression("[0-9]{1,3}", ErrorMessage = "{0} 限定為1-3個數字。")]
-        public int? Age { get; set; }
+        public short? Age { get; set; }
 
         /// <summary>
         /// 電話號碼
@@ -161,7 +161,7 @@ namespace WebApi.Models.Request
     /// <summary>
     /// 傳入參數 - 修改資料
     /// </summary>
-    public class ContactInfoRestfulEditRQ
+    public class RestfulEditRQ
     {
         /// <summary>
         /// 姓名
@@ -186,7 +186,7 @@ namespace WebApi.Models.Request
         /// 年齡
         /// </summary>
         [RegularExpression("[0-9]{1,3}", ErrorMessage = "{0} 限定為1-3個數字。")]
-        public int? Age { get; set; }
+        public short? Age { get; set; }
 
         /// <summary>
         /// 電話號碼
@@ -206,7 +206,7 @@ namespace WebApi.Models.Request
     /// <summary>
     /// 傳入參數 - 部分修改資料
     /// </summary>
-    public class ContactInfoRestfulEditPartialRQ
+    public class RestfulEditPartialRQ
     {
         /// <summary>
         /// 姓名
@@ -230,7 +230,7 @@ namespace WebApi.Models.Request
         /// 年齡
         /// </summary>
         [RegularExpression("[0-9]{1,3}", ErrorMessage = "{0} 限定為1-3個數字。")]
-        public int? Age { get; set; }
+        public short? Age { get; set; }
 
         /// <summary>
         /// 電話號碼

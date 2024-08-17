@@ -153,9 +153,9 @@ namespace WebApi.Services.Instance
         /// <summary>
         /// 刪除
         /// </summary>
-        /// <param name="liID"></param>
+        /// <param name="ids"></param>
         /// <returns></returns>
-        public bool Delete(IEnumerable<long> liID)
+        public bool Delete(IEnumerable<long> ids)
         {
             try
             {
@@ -163,7 +163,7 @@ namespace WebApi.Services.Instance
                 sbSQL.AppendLine("DELETE FROM Tbl_ContactInfo");
                 sbSQL.AppendLine("WHERE ContactInfoID IN @ContactInfoIDs;");
 
-                return _dbConnection.Execute(sbSQL.ToString(), new { ContactInfoIDs = liID }) > 0;
+                return _dbConnection.Execute(sbSQL.ToString(), new { ContactInfoIDs = ids }) > 0;
             }
             catch (Exception ex)
             {

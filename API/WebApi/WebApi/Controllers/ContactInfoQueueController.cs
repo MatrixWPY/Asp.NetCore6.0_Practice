@@ -31,9 +31,24 @@ namespace WebApi.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        public ApiResultRP<IEnumerable<ContactInfo>> Get(int cnt)
+        public ApiResultRP<IEnumerable<QueryRP>> Get(int cnt)
         {
-            return _queueCommand.Receive<ContactInfo>(cnt);
+            var res = _queueCommand.Receive<ContactInfo>(cnt);
+            return new ApiResultRP<IEnumerable<QueryRP>>
+            {
+                Code = res.Code,
+                Msg = res.Msg,
+                Result = res.Result.Select(e => new QueryRP
+                {
+                    ContactInfoID = e.ContactInfoID,
+                    Name = e.Name,
+                    Nickname = e.Nickname,
+                    Gender = (short)e.Gender,
+                    Age = e.Age,
+                    PhoneNo = e.PhoneNo,
+                    Address = e.Address
+                })
+            };
         }
 
         /// <summary>

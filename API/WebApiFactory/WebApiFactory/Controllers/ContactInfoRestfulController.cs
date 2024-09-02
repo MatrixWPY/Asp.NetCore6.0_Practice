@@ -2,7 +2,6 @@
 using System.ComponentModel.DataAnnotations;
 using WebApiFactory.Factories.Interface;
 using WebApiFactory.Filters;
-using WebApiFactory.Models.Data;
 using WebApiFactory.Models.Request;
 using WebApiFactory.Models.Response;
 
@@ -35,7 +34,7 @@ namespace WebApiFactory.Controllers
         /// <param name="serviceType"></param>
         /// <returns></returns>
         [HttpGet, Route("{id}")]
-        public ApiResultRP<ContactInfo> Get(
+        public ApiResultRP<QueryRP> Get(
             [FromRoute] long id,
             [FromQuery][Required] string commandType, [FromQuery][Required] string serviceType
         )
@@ -50,8 +49,8 @@ namespace WebApiFactory.Controllers
         /// <param name="objRQ"></param>
         /// <returns></returns>
         [HttpGet]
-        public ApiResultRP<PageDataRP<IEnumerable<ContactInfo>>> Get(
-            [FromQuery] ContactInfoQueryRQ objRQ
+        public ApiResultRP<PageDataRP<IEnumerable<QueryRP>>> Get(
+            [FromQuery] QueryRQ objRQ
         )
         {
             var command = _commandFactory.CreateContactInfoCommand(objRQ.CommandType);
@@ -64,12 +63,12 @@ namespace WebApiFactory.Controllers
         /// <param name="objRQ"></param>
         /// <returns></returns>
         [HttpPost]
-        public ApiResultRP<ContactInfo> Post(
-            [FromBody] ContactInfoAddRQ objRQ
+        public ApiResultRP<QueryRP> Post(
+            [FromBody] CreateRQ objRQ
         )
         {
             var command = _commandFactory.CreateContactInfoCommand(objRQ.CommandType);
-            return command.Add(objRQ);
+            return command.Create(objRQ);
         }
 
         /// <summary>
@@ -79,14 +78,16 @@ namespace WebApiFactory.Controllers
         /// <param name="objRQ"></param>
         /// <returns></returns>
         [HttpPut, Route("{id}")]
-        public ApiResultRP<ContactInfo> Put(
+        public ApiResultRP<QueryRP> Put(
             [FromRoute] long id,
-            [FromBody] ContactInfoRestfulEditRQ objRQ
+            [FromBody] RestfulEditRQ objRQ
         )
         {
             var command = _commandFactory.CreateContactInfoCommand(objRQ.CommandType);
-            return command.Edit(new ContactInfoEditRQ()
+            return command.Edit(new EditRQ()
             {
+                CommandType = objRQ.CommandType,
+                ServiceType = objRQ.ServiceType,
                 ID = id,
                 Name = objRQ.Name,
                 Nickname = objRQ.Nickname,
@@ -104,14 +105,16 @@ namespace WebApiFactory.Controllers
         /// <param name="objRQ"></param>
         /// <returns></returns>
         [HttpPatch, Route("{id}")]
-        public ApiResultRP<ContactInfo> Patch(
+        public ApiResultRP<QueryRP> Patch(
             [FromRoute] long id,
-            [FromBody] ContactInfoRestfulEditPartialRQ objRQ
+            [FromBody] RestfulEditPartialRQ objRQ
         )
         {
             var command = _commandFactory.CreateContactInfoCommand(objRQ.CommandType);
-            return command.EditPartial(new ContactInfoEditPartialRQ()
+            return command.EditPartial(new EditPartialRQ()
             {
+                CommandType = objRQ.CommandType,
+                ServiceType = objRQ.ServiceType,
                 ID = id,
                 Name = objRQ.Name,
                 Nickname = objRQ.Nickname,
@@ -136,7 +139,7 @@ namespace WebApiFactory.Controllers
         )
         {
             var command = _commandFactory.CreateContactInfoCommand(commandType);
-            return command.DeleteByID(new List<long>() { id }, serviceType);
+            return command.Remove(new List<long>() { id }, serviceType);
         }
     }
 }

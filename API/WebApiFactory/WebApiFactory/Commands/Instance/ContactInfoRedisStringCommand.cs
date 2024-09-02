@@ -34,26 +34,47 @@ namespace WebApiFactory.Commands.Instance
         /// <param name="id"></param>
         /// <param name="serviceType"></param>
         /// <returns></returns>
-        public ApiResultRP<ContactInfo> QueryByID(long id, string serviceType)
+        public ApiResultRP<QueryRP> QueryByID(long id, string serviceType)
         {
             var redisKey = $"{_redisQueryByID}:{id}";
             if (_redisService.Exist(redisKey))
             {
                 var res = _redisService.GetObject<ContactInfo>(redisKey);
-                return SuccessRP(res);
+
+                return SuccessRP(new QueryRP
+                {
+                    ContactInfoID = res.ContactInfoID,
+                    Name = res.Name,
+                    Nickname = res.Nickname,
+                    Gender = (short?)res.Gender,
+                    Age = res.Age,
+                    PhoneNo = res.PhoneNo,
+                    Address = res.Address
+                });
             }
             else
             {
                 var service = _serviceFactory.CreateContactInfoService(serviceType);
                 var res = service.Query(id);
+
                 if (res == null)
                 {
-                    return FailRP<ContactInfo>(1, "No Data");
+                    return FailRP<QueryRP>(1, "No Data");
                 }
                 else
                 {
                     _redisService.SetObjectAsync(redisKey, res, TimeSpan.FromMinutes(5));
-                    return SuccessRP(res);
+
+                    return SuccessRP(new QueryRP
+                    {
+                        ContactInfoID = res.ContactInfoID,
+                        Name = res.Name,
+                        Nickname = res.Nickname,
+                        Gender = (short?)res.Gender,
+                        Age = res.Age,
+                        PhoneNo = res.PhoneNo,
+                        Address = res.Address
+                    });
                 }
             }
         }
@@ -63,7 +84,7 @@ namespace WebApiFactory.Commands.Instance
         /// </summary>
         /// <param name="objRQ"></param>
         /// <returns></returns>
-        public ApiResultRP<PageDataRP<IEnumerable<ContactInfo>>> QueryByCondition(ContactInfoQueryRQ objRQ)
+        public ApiResultRP<PageDataRP<IEnumerable<QueryRP>>> QueryByCondition(QueryRQ objRQ)
         {
             Dictionary<string, object> dicParams = new Dictionary<string, object>();
             if (string.IsNullOrWhiteSpace(objRQ.Name) == false)
@@ -85,39 +106,60 @@ namespace WebApiFactory.Commands.Instance
             if (_redisService.Exist(redisKey))
             {
                 var res = _redisService.GetObject<(int totalCnt, IEnumerable<ContactInfo> data)>(redisKey);
-                return SuccessRP(new PageDataRP<IEnumerable<ContactInfo>>()
+
+                return SuccessRP(new PageDataRP<IEnumerable<QueryRP>>
                 {
-                    PageInfo = new PageInfoRP()
+                    PageInfo = new PageInfoRP
                     {
                         CurrentIndex = objRQ.PageIndex,
                         CurrentSize = res.data.Count(),
-                        PageCnt = res.totalCnt % objRQ.PageSize == 0 ? res.totalCnt / objRQ.PageSize : res.totalCnt / objRQ.PageSize + 1,
+                        PageCnt = (int)Math.Ceiling((decimal)res.totalCnt / objRQ.PageSize),
                         TotalCnt = res.totalCnt
                     },
-                    Data = res.data
+                    Data = res.data.Select(e => new QueryRP
+                    {
+                        ContactInfoID = e.ContactInfoID,
+                        Name = e.Name,
+                        Nickname = e.Nickname,
+                        Gender = (short?)e.Gender,
+                        Age = e.Age,
+                        PhoneNo = e.PhoneNo,
+                        Address = e.Address
+                    })
                 });
             }
             else
             {
                 var service = _serviceFactory.CreateContactInfoService(objRQ.ServiceType);
                 var res = service.Query(dicParams);
-                if (res.Item2 == null)
+
+                if (res.data == null)
                 {
-                    return FailRP<PageDataRP<IEnumerable<ContactInfo>>>(1, "No Data");
+                    return FailRP<PageDataRP<IEnumerable<QueryRP>>>(1, "No Data");
                 }
                 else
                 {
                     _redisService.SetObjectAsync(redisKey, res, TimeSpan.FromMinutes(5));
-                    return SuccessRP(new PageDataRP<IEnumerable<ContactInfo>>()
+
+                    return SuccessRP(new PageDataRP<IEnumerable<QueryRP>>
                     {
-                        PageInfo = new PageInfoRP()
+                        PageInfo = new PageInfoRP
                         {
                             CurrentIndex = objRQ.PageIndex,
                             CurrentSize = res.data.Count(),
-                            PageCnt = res.totalCnt % objRQ.PageSize == 0 ? res.totalCnt / objRQ.PageSize : res.totalCnt / objRQ.PageSize + 1,
+                            PageCnt = (int)Math.Ceiling((decimal)res.totalCnt / objRQ.PageSize),
                             TotalCnt = res.totalCnt
                         },
-                        Data = res.data
+                        Data = res.data.Select(e => new QueryRP
+                        {
+                            ContactInfoID = e.ContactInfoID,
+                            Name = e.Name,
+                            Nickname = e.Nickname,
+                            Gender = (short?)e.Gender,
+                            Age = e.Age,
+                            PhoneNo = e.PhoneNo,
+                            Address = e.Address
+                        })
                     });
                 }
             }
@@ -128,7 +170,7 @@ namespace WebApiFactory.Commands.Instance
         /// </summary>
         /// <param name="objRQ"></param>
         /// <returns></returns>
-        public ApiResultRP<ContactInfo> Add(ContactInfoAddRQ objRQ)
+        public ApiResultRP<QueryRP> Create(CreateRQ objRQ)
         {
             var objInsert = new ContactInfo()
             {
@@ -142,16 +184,27 @@ namespace WebApiFactory.Commands.Instance
 
             var service = _serviceFactory.CreateContactInfoService(objRQ.ServiceType);
             var res = service.Insert(objInsert);
-            if (res)
+
+            if (res == false)
+            {
+                return FailRP<QueryRP>(2, "Create Fail");
+            }
+            else
             {
                 var objCache = service.Query(objInsert.ContactInfoID);
                 _redisService.SetObjectAsync($"{_redisQueryByID}:{objCache.ContactInfoID}", objCache, TimeSpan.FromMinutes(5));
                 _redisService.RemoveByKeyAsync($"{_redisQueryByCondition}");
-                return SuccessRP(objCache);
-            }
-            else
-            {
-                return FailRP<ContactInfo>(2, "Add Fail");
+
+                return SuccessRP(new QueryRP
+                {
+                    ContactInfoID = objCache.ContactInfoID,
+                    Name = objCache.Name,
+                    Nickname = objCache.Nickname,
+                    Gender = (short?)objCache.Gender,
+                    Age = objCache.Age,
+                    PhoneNo = objCache.PhoneNo,
+                    Address = objCache.Address
+                });
             }
         }
 
@@ -160,13 +213,13 @@ namespace WebApiFactory.Commands.Instance
         /// </summary>
         /// <param name="objRQ"></param>
         /// <returns></returns>
-        public ApiResultRP<ContactInfo> Edit(ContactInfoEditRQ objRQ)
+        public ApiResultRP<QueryRP> Edit(EditRQ objRQ)
         {
             var service = _serviceFactory.CreateContactInfoService(objRQ.ServiceType);
             var objOrigin = service.Query(objRQ.ID ?? 0);
             if (objOrigin == null)
             {
-                return FailRP<ContactInfo>(1, "No Data");
+                return FailRP<QueryRP>(1, "No Data");
             }
             var objUpdate = new ContactInfo()
             {
@@ -180,16 +233,27 @@ namespace WebApiFactory.Commands.Instance
             };
 
             var res = service.Update(objUpdate);
-            if (res)
+
+            if (res == false)
+            {
+                return FailRP<QueryRP>(3, "Edit Fail");
+            }
+            else
             {
                 var objCache = service.Query(objUpdate.ContactInfoID);
                 _redisService.SetObjectAsync($"{_redisQueryByID}:{objCache.ContactInfoID}", objCache, TimeSpan.FromMinutes(5));
                 _redisService.RemoveByKeyAsync($"{_redisQueryByCondition}");
-                return SuccessRP(objCache);
-            }
-            else
-            {
-                return FailRP<ContactInfo>(3, "Edit Fail");
+
+                return SuccessRP(new QueryRP
+                {
+                    ContactInfoID = objCache.ContactInfoID,
+                    Name = objCache.Name,
+                    Nickname = objCache.Nickname,
+                    Gender = (short?)objCache.Gender,
+                    Age = objCache.Age,
+                    PhoneNo = objCache.PhoneNo,
+                    Address = objCache.Address
+                });
             }
         }
 
@@ -198,13 +262,13 @@ namespace WebApiFactory.Commands.Instance
         /// </summary>
         /// <param name="objRQ"></param>
         /// <returns></returns>
-        public ApiResultRP<ContactInfo> EditPartial(ContactInfoEditPartialRQ objRQ)
+        public ApiResultRP<QueryRP> EditPartial(EditPartialRQ objRQ)
         {
             var service = _serviceFactory.CreateContactInfoService(objRQ.ServiceType);
             var objOrigin = service.Query(objRQ.ID ?? 0);
             if (objOrigin == null)
             {
-                return FailRP<ContactInfo>(1, "No Data");
+                return FailRP<QueryRP>(1, "No Data");
             }
             var objUpdate = new ContactInfo()
             {
@@ -218,38 +282,51 @@ namespace WebApiFactory.Commands.Instance
             };
 
             var res = service.Update(objUpdate);
-            if (res)
+
+            if (res == false)
+            {
+                return FailRP<QueryRP>(3, "Edit Partial Fail");
+            }
+            else
             {
                 var objCache = service.Query(objUpdate.ContactInfoID);
                 _redisService.SetObjectAsync($"{_redisQueryByID}:{objCache.ContactInfoID}", objCache, TimeSpan.FromMinutes(5));
                 _redisService.RemoveByKeyAsync($"{_redisQueryByCondition}");
-                return SuccessRP(objCache);
-            }
-            else
-            {
-                return FailRP<ContactInfo>(3, "Edit Partial Fail");
+
+                return SuccessRP(new QueryRP
+                {
+                    ContactInfoID = objCache.ContactInfoID,
+                    Name = objCache.Name,
+                    Nickname = objCache.Nickname,
+                    Gender = (short?)objCache.Gender,
+                    Age = objCache.Age,
+                    PhoneNo = objCache.PhoneNo,
+                    Address = objCache.Address
+                });
             }
         }
 
         /// <summary>
         /// 刪除資料
         /// </summary>
-        /// <param name="liID"></param>
+        /// <param name="ids"></param>
         /// <param name="serviceType"></param>
         /// <returns></returns>
-        public ApiResultRP<bool> DeleteByID(IEnumerable<long> liID, string serviceType)
+        public ApiResultRP<bool> Remove(IEnumerable<long> ids, string serviceType)
         {
             var service = _serviceFactory.CreateContactInfoService(serviceType);
-            var res = service.Delete(liID);
-            if (res)
+            var res = service.Delete(ids);
+
+            if (res == false)
             {
-                _redisService.RemoveAsync(liID.Select(e => $"{_redisQueryByID}:{e}"));
-                _redisService.RemoveByKeyAsync($"{_redisQueryByCondition}");
-                return SuccessRP(res);
+                return FailRP<bool>(4, "Remove Fail");
             }
             else
             {
-                return FailRP<bool>(4, "Delete Fail");
+                _redisService.RemoveAsync(ids.Select(e => $"{_redisQueryByID}:{e}"));
+                _redisService.RemoveByKeyAsync($"{_redisQueryByCondition}");
+
+                return SuccessRP(res);
             }
         }
     }

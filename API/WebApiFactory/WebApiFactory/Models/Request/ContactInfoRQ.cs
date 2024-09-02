@@ -5,7 +5,7 @@ namespace WebApiFactory.Models.Request
     /// <summary>
     /// 傳入參數 - 多筆查詢
     /// </summary>
-    public class ContactInfoQueryRQ : PageInfoRQ, IFactoryRQ
+    public class QueryRQ : PageInfoRQ, IFactoryRQ
     {
         [Required(ErrorMessage = "{0} 為必填欄位。")]
         public string CommandType { get; set; }
@@ -35,7 +35,7 @@ namespace WebApiFactory.Models.Request
     /// <summary>
     /// 傳入參數 - 新增資料
     /// </summary>
-    public class ContactInfoAddRQ : IFactoryRQ
+    public class CreateRQ : IFactoryRQ
     {
         [Required(ErrorMessage = "{0} 為必填欄位。")]
         public string CommandType { get; set; }
@@ -66,7 +66,7 @@ namespace WebApiFactory.Models.Request
         /// 年齡
         /// </summary>
         [RegularExpression("[0-9]{1,3}", ErrorMessage = "{0} 限定為1-3個數字。")]
-        public int? Age { get; set; }
+        public short? Age { get; set; }
 
         /// <summary>
         /// 電話號碼
@@ -86,7 +86,7 @@ namespace WebApiFactory.Models.Request
     /// <summary>
     /// 傳入參數 - 修改資料
     /// </summary>
-    public class ContactInfoEditRQ : IdRQ, IFactoryRQ
+    public class EditRQ : IdRQ, IFactoryRQ
     {
         [Required(ErrorMessage = "{0} 為必填欄位。")]
         public string CommandType { get; set; }
@@ -117,7 +117,7 @@ namespace WebApiFactory.Models.Request
         /// 年齡
         /// </summary>
         [RegularExpression("[0-9]{1,3}", ErrorMessage = "{0} 限定為1-3個數字。")]
-        public int? Age { get; set; }
+        public short? Age { get; set; }
 
         /// <summary>
         /// 電話號碼
@@ -137,7 +137,7 @@ namespace WebApiFactory.Models.Request
     /// <summary>
     /// 傳入參數 - 部分修改資料
     /// </summary>
-    public class ContactInfoEditPartialRQ : IdRQ, IFactoryRQ
+    public class EditPartialRQ : IdRQ, IFactoryRQ
     {
         [Required(ErrorMessage = "{0} 為必填欄位。")]
         public string CommandType { get; set; }
@@ -167,7 +167,7 @@ namespace WebApiFactory.Models.Request
         /// 年齡
         /// </summary>
         [RegularExpression("[0-9]{1,3}", ErrorMessage = "{0} 限定為1-3個數字。")]
-        public int? Age { get; set; }
+        public short? Age { get; set; }
 
         /// <summary>
         /// 電話號碼
@@ -185,7 +185,7 @@ namespace WebApiFactory.Models.Request
     /// <summary>
     /// 傳入參數 - 修改資料
     /// </summary>
-    public class ContactInfoRestfulEditRQ : IFactoryRQ
+    public class RestfulEditRQ : IFactoryRQ
     {
         [Required(ErrorMessage = "{0} 為必填欄位。")]
         public string CommandType { get; set; }
@@ -216,7 +216,7 @@ namespace WebApiFactory.Models.Request
         /// 年齡
         /// </summary>
         [RegularExpression("[0-9]{1,3}", ErrorMessage = "{0} 限定為1-3個數字。")]
-        public int? Age { get; set; }
+        public short? Age { get; set; }
 
         /// <summary>
         /// 電話號碼
@@ -236,7 +236,7 @@ namespace WebApiFactory.Models.Request
     /// <summary>
     /// 傳入參數 - 部分修改資料
     /// </summary>
-    public class ContactInfoRestfulEditPartialRQ : IFactoryRQ
+    public class RestfulEditPartialRQ : IFactoryRQ
     {
         [Required(ErrorMessage = "{0} 為必填欄位。")]
         public string CommandType { get; set; }
@@ -266,7 +266,7 @@ namespace WebApiFactory.Models.Request
         /// 年齡
         /// </summary>
         [RegularExpression("[0-9]{1,3}", ErrorMessage = "{0} 限定為1-3個數字。")]
-        public int? Age { get; set; }
+        public short? Age { get; set; }
 
         /// <summary>
         /// 電話號碼

@@ -1,7 +1,7 @@
 ﻿using WebApi.Commands.Interface;
-using WebApi.Models.Data;
-using WebApi.Models.Request;
-using WebApi.Models.Response;
+using WebApi.DtoModels.Common;
+using WebApi.DtoModels.ContactInfo;
+using WebApi.Models;
 using WebApi.Services.Interface;
 
 namespace WebApi.Commands.Instance

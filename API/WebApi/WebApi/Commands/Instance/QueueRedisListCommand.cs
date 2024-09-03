@@ -1,5 +1,5 @@
 ﻿using WebApi.Commands.Interface;
-using WebApi.Models.Response;
+using WebApi.DtoModels.Common;
 using WebApi.Services.Interface;
 
 namespace WebApi.Commands.Instance

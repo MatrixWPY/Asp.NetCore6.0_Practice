@@ -1,5 +1,5 @@
-﻿using WebApi.Models.Request;
-using WebApi.Models.Response;
+﻿using WebApi.DtoModels.Common;
+using WebApi.DtoModels.ContactInfo;
 
 namespace WebApi.Commands.Interface
 {

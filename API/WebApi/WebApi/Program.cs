@@ -11,8 +11,8 @@ using System.Text.Encodings.Web;
 using System.Text.Unicode;
 using WebApi.Commands.Instance;
 using WebApi.Commands.Interface;
+using WebApi.DtoModels.Common;
 using WebApi.Middlewares;
-using WebApi.Models.Response;
 using WebApi.Services.Instance;
 using WebApi.Services.Interface;
 

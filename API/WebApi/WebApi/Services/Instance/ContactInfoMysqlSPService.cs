@@ -1,6 +1,6 @@
 ﻿using Dapper;
 using System.Data;
-using WebApi.Models.Data;
+using WebApi.Models;
 using WebApi.Services.Interface;
 
 namespace WebApi.Services.Instance

@@ -1,4 +1,4 @@
-﻿namespace WebApi.Models.Response
+﻿namespace WebApi.DtoModels.ContactInfo
 {
     /// <summary>
     /// 傳出參數 - 查詢

@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
-using WebApi.Models.Response;
+using WebApi.DtoModels.Common;
 
 namespace WebApi.Filters
 {

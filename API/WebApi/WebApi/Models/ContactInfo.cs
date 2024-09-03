@@ -1,4 +1,4 @@
-﻿namespace WebApi.Models.Data
+﻿namespace WebApi.Models
 {
     /// <summary>
     /// ContactInfo - DB物件

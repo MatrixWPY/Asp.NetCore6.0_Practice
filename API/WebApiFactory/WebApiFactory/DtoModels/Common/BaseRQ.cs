@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace WebApiFactory.Models.Request
+namespace WebApiFactory.DtoModels.Common
 {
     /// <summary>
     /// 傳入參數 - PKey

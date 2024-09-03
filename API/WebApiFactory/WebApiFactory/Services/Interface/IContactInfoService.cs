@@ -1,4 +1,4 @@
-﻿using WebApiFactory.Models.Data;
+﻿using WebApiFactory.Models;
 
 namespace WebApiFactory.Services.Interface
 {

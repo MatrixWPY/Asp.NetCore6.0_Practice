@@ -2,7 +2,7 @@
 using MySql.Data.MySqlClient;
 using System.Data;
 using System.Text;
-using WebApiFactory.Models.Data;
+using WebApiFactory.Models;
 using WebApiFactory.Services.Interface;
 
 namespace WebApiFactory.Services.Instance

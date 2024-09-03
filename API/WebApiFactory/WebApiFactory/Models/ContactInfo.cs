@@ -1,4 +1,4 @@
-﻿namespace WebApiFactory.Models.Data
+﻿namespace WebApiFactory.Models
 {
     /// <summary>
     /// ContactInfo - DB物件

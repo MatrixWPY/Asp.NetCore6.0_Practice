@@ -1,7 +1,7 @@
 ﻿using Dapper;
 using Microsoft.Data.SqlClient;
 using System.Data;
-using WebApiFactory.Models.Data;
+using WebApiFactory.Models;
 using WebApiFactory.Services.Interface;
 
 namespace WebApiFactory.Services.Instance

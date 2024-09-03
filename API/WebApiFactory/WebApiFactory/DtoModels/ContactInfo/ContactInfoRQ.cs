@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using WebApiFactory.DtoModels.Common;
 
-namespace WebApiFactory.Models.Request
+namespace WebApiFactory.DtoModels.ContactInfo
 {
     /// <summary>
     /// 傳入參數 - 多筆查詢

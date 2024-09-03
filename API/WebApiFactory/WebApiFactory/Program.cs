@@ -9,10 +9,10 @@ using System.Net;
 using System.Text.Encodings.Web;
 using System.Text.Unicode;
 using WebApiFactory.Commands.Instance;
+using WebApiFactory.DtoModels.Common;
 using WebApiFactory.Factories.Instance;
 using WebApiFactory.Factories.Interface;
 using WebApiFactory.Middlewares;
-using WebApiFactory.Models.Response;
 using WebApiFactory.Services.Instance;
 using WebApiFactory.Services.Interface;
 

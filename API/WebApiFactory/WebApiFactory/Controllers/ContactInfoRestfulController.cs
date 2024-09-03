@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
+using WebApiFactory.DtoModels.Common;
+using WebApiFactory.DtoModels.ContactInfo;
 using WebApiFactory.Factories.Interface;
 using WebApiFactory.Filters;
-using WebApiFactory.Models.Request;
-using WebApiFactory.Models.Response;
 
 namespace WebApiFactory.Controllers
 {

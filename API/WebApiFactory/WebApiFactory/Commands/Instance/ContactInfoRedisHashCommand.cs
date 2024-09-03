@@ -1,8 +1,8 @@
 ﻿using WebApiFactory.Commands.Interface;
+using WebApiFactory.DtoModels.Common;
+using WebApiFactory.DtoModels.ContactInfo;
 using WebApiFactory.Factories.Interface;
-using WebApiFactory.Models.Data;
-using WebApiFactory.Models.Request;
-using WebApiFactory.Models.Response;
+using WebApiFactory.Models;
 using WebApiFactory.Services.Interface;
 
 namespace WebApiFactory.Commands.Instance

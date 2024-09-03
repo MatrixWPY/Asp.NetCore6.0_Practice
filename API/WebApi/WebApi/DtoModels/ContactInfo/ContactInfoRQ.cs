@@ -1,29 +1,24 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using WebApi.DtoModels.Common;
 
-namespace WebApiFactory.Models.Request
+namespace WebApi.DtoModels.ContactInfo
 {
     /// <summary>
     /// 傳入參數 - 多筆查詢
     /// </summary>
-    public class ContactInfoQueryRQ : PageInfoRQ, IFactoryRQ
+    public class QueryRQ : PageInfoRQ
     {
-        [Required(ErrorMessage = "{0} 為必填欄位。")]
-        public string CommandType { get; set; }
-
-        [Required(ErrorMessage = "{0} 為必填欄位。")]
-        public string ServiceType { get; set; }
-
         /// <summary>
         /// 姓名
         /// </summary>
         [MaxLength(10, ErrorMessage = "{0} 限定最大長度為10。")]
-        public string? Name { get; set; }
+        public string Name { get; set; }
 
         /// <summary>
         /// 暱稱
         /// </summary>
         [MaxLength(10, ErrorMessage = "{0} 限定最大長度為10。")]
-        public string? Nickname { get; set; }
+        public string Nickname { get; set; }
 
         /// <summary>
         /// 性別 (0:Female, 1:Male)
@@ -35,14 +30,8 @@ namespace WebApiFactory.Models.Request
     /// <summary>
     /// 傳入參數 - 新增資料
     /// </summary>
-    public class ContactInfoAddRQ : IFactoryRQ
+    public class CreateRQ
     {
-        [Required(ErrorMessage = "{0} 為必填欄位。")]
-        public string CommandType { get; set; }
-
-        [Required(ErrorMessage = "{0} 為必填欄位。")]
-        public string ServiceType { get; set; }
-
         /// <summary>
         /// 姓名
         /// </summary>
@@ -54,7 +43,7 @@ namespace WebApiFactory.Models.Request
         /// 暱稱
         /// </summary>
         [MaxLength(10, ErrorMessage = "{0} 限定最大長度為10。")]
-        public string? Nickname { get; set; }
+        public string Nickname { get; set; }
 
         /// <summary>
         /// 性別 (0:Female, 1:Male)
@@ -66,7 +55,7 @@ namespace WebApiFactory.Models.Request
         /// 年齡
         /// </summary>
         [RegularExpression("[0-9]{1,3}", ErrorMessage = "{0} 限定為1-3個數字。")]
-        public int? Age { get; set; }
+        public short? Age { get; set; }
 
         /// <summary>
         /// 電話號碼
@@ -86,14 +75,8 @@ namespace WebApiFactory.Models.Request
     /// <summary>
     /// 傳入參數 - 修改資料
     /// </summary>
-    public class ContactInfoEditRQ : IdRQ, IFactoryRQ
+    public class EditRQ : IdRQ
     {
-        [Required(ErrorMessage = "{0} 為必填欄位。")]
-        public string CommandType { get; set; }
-
-        [Required(ErrorMessage = "{0} 為必填欄位。")]
-        public string ServiceType { get; set; }
-
         /// <summary>
         /// 姓名
         /// </summary>
@@ -105,7 +88,7 @@ namespace WebApiFactory.Models.Request
         /// 暱稱
         /// </summary>
         [MaxLength(10, ErrorMessage = "{0} 限定最大長度為10。")]
-        public string? Nickname { get; set; }
+        public string Nickname { get; set; }
 
         /// <summary>
         /// 性別 (0:Female, 1:Male)
@@ -117,7 +100,7 @@ namespace WebApiFactory.Models.Request
         /// 年齡
         /// </summary>
         [RegularExpression("[0-9]{1,3}", ErrorMessage = "{0} 限定為1-3個數字。")]
-        public int? Age { get; set; }
+        public short? Age { get; set; }
 
         /// <summary>
         /// 電話號碼
@@ -137,25 +120,19 @@ namespace WebApiFactory.Models.Request
     /// <summary>
     /// 傳入參數 - 部分修改資料
     /// </summary>
-    public class ContactInfoEditPartialRQ : IdRQ, IFactoryRQ
+    public class EditPartialRQ : IdRQ
     {
-        [Required(ErrorMessage = "{0} 為必填欄位。")]
-        public string CommandType { get; set; }
-
-        [Required(ErrorMessage = "{0} 為必填欄位。")]
-        public string ServiceType { get; set; }
-
         /// <summary>
         /// 姓名
         /// </summary>
         [MaxLength(10, ErrorMessage = "{0} 限定最大長度為10。")]
-        public string? Name { get; set; }
+        public string Name { get; set; }
 
         /// <summary>
         /// 暱稱
         /// </summary>
         [MaxLength(10, ErrorMessage = "{0} 限定最大長度為10。")]
-        public string? Nickname { get; set; }
+        public string Nickname { get; set; }
 
         /// <summary>
         /// 性別 (0:Female, 1:Male)
@@ -167,32 +144,26 @@ namespace WebApiFactory.Models.Request
         /// 年齡
         /// </summary>
         [RegularExpression("[0-9]{1,3}", ErrorMessage = "{0} 限定為1-3個數字。")]
-        public int? Age { get; set; }
+        public short? Age { get; set; }
 
         /// <summary>
         /// 電話號碼
         /// </summary>
         [RegularExpression("[0-9]{6,20}", ErrorMessage = "{0} 限定為6-20個數字。")]
-        public string? PhoneNo { get; set; }
+        public string PhoneNo { get; set; }
 
         /// <summary>
         /// 住址
         /// </summary>
         [MaxLength(100, ErrorMessage = "{0} 限定最大長度為100。")]
-        public string? Address { get; set; }
+        public string Address { get; set; }
     }
 
     /// <summary>
     /// 傳入參數 - 修改資料
     /// </summary>
-    public class ContactInfoRestfulEditRQ : IFactoryRQ
+    public class RestfulEditRQ
     {
-        [Required(ErrorMessage = "{0} 為必填欄位。")]
-        public string CommandType { get; set; }
-
-        [Required(ErrorMessage = "{0} 為必填欄位。")]
-        public string ServiceType { get; set; }
-
         /// <summary>
         /// 姓名
         /// </summary>
@@ -204,7 +175,7 @@ namespace WebApiFactory.Models.Request
         /// 暱稱
         /// </summary>
         [MaxLength(10, ErrorMessage = "{0} 限定最大長度為10。")]
-        public string? Nickname { get; set; }
+        public string Nickname { get; set; }
 
         /// <summary>
         /// 性別 (0:Female, 1:Male)
@@ -216,7 +187,7 @@ namespace WebApiFactory.Models.Request
         /// 年齡
         /// </summary>
         [RegularExpression("[0-9]{1,3}", ErrorMessage = "{0} 限定為1-3個數字。")]
-        public int? Age { get; set; }
+        public short? Age { get; set; }
 
         /// <summary>
         /// 電話號碼
@@ -236,25 +207,19 @@ namespace WebApiFactory.Models.Request
     /// <summary>
     /// 傳入參數 - 部分修改資料
     /// </summary>
-    public class ContactInfoRestfulEditPartialRQ : IFactoryRQ
+    public class RestfulEditPartialRQ
     {
-        [Required(ErrorMessage = "{0} 為必填欄位。")]
-        public string CommandType { get; set; }
-
-        [Required(ErrorMessage = "{0} 為必填欄位。")]
-        public string ServiceType { get; set; }
-
         /// <summary>
         /// 姓名
         /// </summary>
         [MaxLength(10, ErrorMessage = "{0} 限定最大長度為10。")]
-        public string? Name { get; set; }
+        public string Name { get; set; }
 
         /// <summary>
         /// 暱稱
         /// </summary>
         [MaxLength(10, ErrorMessage = "{0} 限定最大長度為10。")]
-        public string? Nickname { get; set; }
+        public string Nickname { get; set; }
 
         /// <summary>
         /// 性別 (0:Female, 1:Male)
@@ -266,18 +231,18 @@ namespace WebApiFactory.Models.Request
         /// 年齡
         /// </summary>
         [RegularExpression("[0-9]{1,3}", ErrorMessage = "{0} 限定為1-3個數字。")]
-        public int? Age { get; set; }
+        public short? Age { get; set; }
 
         /// <summary>
         /// 電話號碼
         /// </summary>
         [RegularExpression("[0-9]{6,20}", ErrorMessage = "{0} 限定為6-20個數字。")]
-        public string? PhoneNo { get; set; }
+        public string PhoneNo { get; set; }
 
         /// <summary>
         /// 住址
         /// </summary>
         [MaxLength(100, ErrorMessage = "{0} 限定最大長度為100。")]
-        public string? Address { get; set; }
+        public string Address { get; set; }
     }
 }

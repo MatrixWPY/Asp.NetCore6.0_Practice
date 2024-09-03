@@ -1,4 +1,4 @@
-﻿namespace WebApiFactory.Models.Data
+﻿namespace WebApiFactory.Models
 {
     /// <summary>
     /// ContactInfo - DB物件
@@ -28,7 +28,7 @@
         /// <summary>
         /// 年齡
         /// </summary>
-        public int? Age { get; set; }
+        public short? Age { get; set; }
 
         /// <summary>
         /// 電話號碼

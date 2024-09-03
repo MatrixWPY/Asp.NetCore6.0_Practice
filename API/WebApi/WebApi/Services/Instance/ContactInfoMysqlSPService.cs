@@ -1,6 +1,6 @@
 ﻿using Dapper;
 using System.Data;
-using WebApi.Models.Data;
+using WebApi.Models;
 using WebApi.Services.Interface;
 
 namespace WebApi.Services.Instance
@@ -137,15 +137,15 @@ namespace WebApi.Services.Instance
         /// <summary>
         /// 刪除
         /// </summary>
-        /// <param name="liID"></param>
+        /// <param name="ids"></param>
         /// <returns></returns>
-        public bool Delete(IEnumerable<long> liID)
+        public bool Delete(IEnumerable<long> ids)
         {
             try
             {
                 return _dbConnection.Execute(
                         "Sp_RemoveContactInfo",
-                        new { In_ContactInfoIDs = string.Join(",", liID) },
+                        new { In_ContactInfoIDs = string.Join(",", ids) },
                         commandType: CommandType.StoredProcedure) > 0;
             }
             catch (Exception ex)

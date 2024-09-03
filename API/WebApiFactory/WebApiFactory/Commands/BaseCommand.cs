@@ -1,4 +1,4 @@
-﻿using WebApiFactory.Models.Response;
+﻿using WebApiFactory.DtoModels.Common;
 
 namespace WebApiFactory.Commands
 {

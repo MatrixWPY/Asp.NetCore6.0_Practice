@@ -1,4 +1,4 @@
-﻿using WebApi.Models.Data;
+﻿using WebApi.Models;
 
 namespace WebApi.Services.Interface
 {
@@ -38,8 +38,8 @@ namespace WebApi.Services.Interface
         /// <summary>
         /// 刪除
         /// </summary>
-        /// <param name="liID"></param>
+        /// <param name="ids"></param>
         /// <returns></returns>
-        bool Delete(IEnumerable<long> liID);
+        bool Delete(IEnumerable<long> ids);
     }
 }

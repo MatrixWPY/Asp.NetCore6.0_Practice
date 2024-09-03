@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace WebApi.Models.Request
+namespace WebApi.DtoModels.Common
 {
     /// <summary>
     /// 傳入參數 - PKey
@@ -28,7 +28,7 @@ namespace WebApi.Models.Request
         public int PageIndex
         {
             get => _PageIndex;
-            set => _PageIndex = (value < 1 ? 1 : value);
+            set => _PageIndex = value < 1 ? 1 : value;
         }
 
         /// <summary>
@@ -37,7 +37,7 @@ namespace WebApi.Models.Request
         public int PageSize
         {
             get => _PageSize;
-            set => _PageSize = (value < 1 ? 10 : value);
+            set => _PageSize = value < 1 ? 10 : value;
         }
     }
 }

@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
-using WebApiFactory.Models.Response;
+using WebApiFactory.DtoModels.Common;
 
 namespace WebApiFactory.Filters
 {

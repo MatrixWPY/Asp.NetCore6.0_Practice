@@ -1,7 +1,7 @@
 ﻿using Dapper;
 using MySql.Data.MySqlClient;
 using System.Data;
-using WebApiFactory.Models.Data;
+using WebApiFactory.Models;
 using WebApiFactory.Services.Interface;
 
 namespace WebApiFactory.Services.Instance
@@ -138,15 +138,15 @@ namespace WebApiFactory.Services.Instance
         /// <summary>
         /// 刪除
         /// </summary>
-        /// <param name="liID"></param>
+        /// <param name="ids"></param>
         /// <returns></returns>
-        public bool Delete(IEnumerable<long> liID)
+        public bool Delete(IEnumerable<long> ids)
         {
             try
             {
                 return _dbConnection.Execute(
                         "Sp_RemoveContactInfo",
-                        new { In_ContactInfoIDs = string.Join(",", liID) },
+                        new { In_ContactInfoIDs = string.Join(",", ids) },
                         commandType: CommandType.StoredProcedure) > 0;
             }
             catch (Exception ex)

@@ -1,4 +1,4 @@
-﻿namespace WebApiFactory.Models.Response
+﻿namespace WebApi.DtoModels.Common
 {
     /// <summary>
     /// 傳出參數 - API回傳格式

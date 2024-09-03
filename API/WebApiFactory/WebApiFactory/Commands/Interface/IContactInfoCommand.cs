@@ -1,6 +1,5 @@
-﻿using WebApiFactory.Models.Data;
-using WebApiFactory.Models.Request;
-using WebApiFactory.Models.Response;
+﻿using WebApiFactory.DtoModels.Common;
+using WebApiFactory.DtoModels.ContactInfo;
 
 namespace WebApiFactory.Commands.Interface
 {
@@ -15,42 +14,42 @@ namespace WebApiFactory.Commands.Interface
         /// <param name="id"></param>
         /// <param name="serviceType"></param>
         /// <returns></returns>
-        ApiResultRP<ContactInfo> QueryByID(long id, string serviceType);
+        ApiResultRP<QueryRP> QueryByID(long id, string serviceType);
 
         /// <summary>
         /// 多筆查詢
         /// </summary>
         /// <param name="objRQ"></param>
         /// <returns></returns>
-        ApiResultRP<PageDataRP<IEnumerable<ContactInfo>>> QueryByCondition(ContactInfoQueryRQ objRQ);
+        ApiResultRP<PageDataRP<IEnumerable<QueryRP>>> QueryByCondition(QueryRQ objRQ);
 
         /// <summary>
         /// 新增資料
         /// </summary>
         /// <param name="objRQ"></param>
         /// <returns></returns>
-        ApiResultRP<ContactInfo> Add(ContactInfoAddRQ objRQ);
+        ApiResultRP<QueryRP> Create(CreateRQ objRQ);
 
         /// <summary>
         /// 修改資料
         /// </summary>
         /// <param name="objRQ"></param>
         /// <returns></returns>
-        ApiResultRP<ContactInfo> Edit(ContactInfoEditRQ objRQ);
+        ApiResultRP<QueryRP> Edit(EditRQ objRQ);
 
         /// <summary>
         /// 部分修改資料
         /// </summary>
         /// <param name="objRQ"></param>
         /// <returns></returns>
-        ApiResultRP<ContactInfo> EditPartial(ContactInfoEditPartialRQ objRQ);
+        ApiResultRP<QueryRP> EditPartial(EditPartialRQ objRQ);
 
         /// <summary>
         /// 刪除資料
         /// </summary>
-        /// <param name="liID"></param>
+        /// <param name="ids"></param>
         /// <param name="serviceType"></param>
         /// <returns></returns>
-        ApiResultRP<bool> DeleteByID(IEnumerable<long> liID, string serviceType);
+        ApiResultRP<bool> Remove(IEnumerable<long> ids, string serviceType);
     }
 }

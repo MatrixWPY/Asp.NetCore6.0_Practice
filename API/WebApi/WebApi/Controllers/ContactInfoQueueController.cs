@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using WebApi.Commands.Interface;
+using WebApi.DtoModels.Common;
+using WebApi.DtoModels.ContactInfo;
 using WebApi.Filters;
-using WebApi.Models.Data;
-using WebApi.Models.Request;
-using WebApi.Models.Response;
+using WebApi.Models;
 
 namespace WebApi.Controllers
 {
@@ -31,9 +31,24 @@ namespace WebApi.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        public ApiResultRP<IEnumerable<ContactInfo>> Get(int cnt)
+        public ApiResultRP<IEnumerable<QueryRP>> Get(int cnt)
         {
-            return _queueCommand.Receive<ContactInfo>(cnt);
+            var res = _queueCommand.Receive<ContactInfo>(cnt);
+            return new ApiResultRP<IEnumerable<QueryRP>>
+            {
+                Code = res.Code,
+                Msg = res.Msg,
+                Result = res.Result.Select(e => new QueryRP
+                {
+                    ContactInfoID = e.ContactInfoID,
+                    Name = e.Name,
+                    Nickname = e.Nickname,
+                    Gender = (short)e.Gender,
+                    Age = e.Age,
+                    PhoneNo = e.PhoneNo,
+                    Address = e.Address
+                })
+            };
         }
 
         /// <summary>
@@ -42,7 +57,7 @@ namespace WebApi.Controllers
         /// <param name="objRQ"></param>
         /// <returns></returns>
         [HttpPost]
-        public ApiResultRP<bool> Post([FromBody] ContactInfoAddRQ objRQ)
+        public ApiResultRP<bool> Post([FromBody] CreateRQ objRQ)
         {
             var objInsert = new ContactInfo()
             {

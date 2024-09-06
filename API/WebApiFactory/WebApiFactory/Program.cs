@@ -1,3 +1,5 @@
+using AspectCore.Configuration;
+using AspectCore.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
@@ -12,6 +14,7 @@ using WebApiFactory.Commands.Instance;
 using WebApiFactory.DtoModels.Common;
 using WebApiFactory.Factories.Instance;
 using WebApiFactory.Factories.Interface;
+using WebApiFactory.Interceptors;
 using WebApiFactory.Middlewares;
 using WebApiFactory.Services.Instance;
 using WebApiFactory.Services.Interface;
@@ -36,14 +39,26 @@ builder.Services.Configure<ApiBehaviorOptions>(opt =>
     opt.SuppressModelStateInvalidFilter = true;
 });
 
-#region 註冊Swagger
+#region 設定Swagger
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 #endregion
 
-#region 註冊NLog
+#region 設定NLog
 builder.Logging.AddNLog("nlog.config");
+#endregion
+
+#region 設定AspectCore
+// 使用AspectCore取代預設IoC容器
+builder.Host.UseServiceProviderFactory(new DynamicProxyServiceProviderFactory());
+// 設定全域Interceptor攔截條件
+builder.Services.ConfigureDynamicProxy(config =>
+{
+    config.Interceptors.AddTyped<LogGlobalInterceptor>(Predicates.ForMethod("CreateContactInfoService"));
+    config.Interceptors.AddTyped<LogGlobalInterceptor>(Predicates.ForService("*Service"));
+    config.NonAspectPredicates.AddService("IRedisService");
+});
 #endregion
 
 #region 讀取appsettings.json設定

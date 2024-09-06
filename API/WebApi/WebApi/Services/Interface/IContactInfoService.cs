@@ -1,10 +1,13 @@
-﻿using WebApi.Models;
+﻿using AspectCore.DynamicProxy;
+using WebApi.Interceptors;
+using WebApi.Models;
 
 namespace WebApi.Services.Interface
 {
     /// <summary>
     /// 
     /// </summary>
+    [ServiceInterceptor(typeof(LogInterceptor))]
     public interface IContactInfoService
     {
         /// <summary>

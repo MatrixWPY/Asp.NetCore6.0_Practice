@@ -1,3 +1,4 @@
+using AspectCore.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi.Models;
@@ -12,6 +13,7 @@ using System.Text.Unicode;
 using WebApi.Commands.Instance;
 using WebApi.Commands.Interface;
 using WebApi.DtoModels.Common;
+using WebApi.Interceptors;
 using WebApi.Middlewares;
 using WebApi.Services.Instance;
 using WebApi.Services.Interface;
@@ -36,7 +38,7 @@ builder.Services.Configure<ApiBehaviorOptions>(opt =>
     opt.SuppressModelStateInvalidFilter = true;
 });
 
-#region 註冊Swagger
+#region 設定Swagger
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -64,8 +66,18 @@ builder.Services.AddSwaggerGen(c =>
 });
 #endregion
 
-#region 註冊NLog
+#region 設定NLog
 builder.Logging.AddNLog("nlog.config");
+#endregion
+
+#region 設定AspectCore
+// 使用AspectCore取代預設IoC容器
+builder.Host.UseServiceProviderFactory(new DynamicProxyServiceProviderFactory());
+builder.Services.ConfigureDynamicProxy();
+#endregion
+
+#region 註冊Interceptor
+builder.Services.AddScoped<LogInterceptor>();
 #endregion
 
 #region 讀取appsettings.json設定

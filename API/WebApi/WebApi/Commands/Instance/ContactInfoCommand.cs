@@ -1,4 +1,5 @@
-﻿using WebApi.Commands.Interface;
+﻿using AutoMapper;
+using WebApi.Commands.Interface;
 using WebApi.DtoModels.Common;
 using WebApi.DtoModels.ContactInfo;
 using WebApi.Models;
@@ -11,14 +12,20 @@ namespace WebApi.Commands.Instance
     /// </summary>
     public class ContactInfoCommand : BaseCommand, IContactInfoCommand
     {
+        private readonly IMapper _mapper;
         private readonly IContactInfoService _contactInfoService;
 
         /// <summary>
         /// 
         /// </summary>
+        /// <param name="mapper"></param>
         /// <param name="contactInfoService"></param>
-        public ContactInfoCommand(IContactInfoService contactInfoService)
+        public ContactInfoCommand(
+            IMapper mapper,
+            IContactInfoService contactInfoService
+        )
         {
+            _mapper = mapper;
             _contactInfoService = contactInfoService;
         }
 
@@ -37,16 +44,7 @@ namespace WebApi.Commands.Instance
             }
             else
             {
-                return SuccessRP(new QueryRP
-                {
-                    ContactInfoID = res.ContactInfoID,
-                    Name = res.Name,
-                    Nickname = res.Nickname,
-                    Gender = (short?)res.Gender,
-                    Age = res.Age,
-                    PhoneNo = res.PhoneNo,
-                    Address = res.Address
-                });
+                return SuccessRP(_mapper.Map<QueryRP>(res));
             }
         }
 
@@ -90,16 +88,7 @@ namespace WebApi.Commands.Instance
                         PageCnt = (int)Math.Ceiling((decimal)res.totalCnt / objRQ.PageSize),
                         TotalCnt = res.totalCnt
                     },
-                    Data = res.data.Select(e => new QueryRP
-                    {
-                        ContactInfoID = e.ContactInfoID,
-                        Name = e.Name,
-                        Nickname = e.Nickname,
-                        Gender = (short?)e.Gender,
-                        Age = e.Age,
-                        PhoneNo = e.PhoneNo,
-                        Address = e.Address
-                    })
+                    Data = _mapper.Map<IEnumerable<QueryRP>>(res.data)
                 });
             }
         }
@@ -111,15 +100,7 @@ namespace WebApi.Commands.Instance
         /// <returns></returns>
         public ApiResultRP<QueryRP> Create(CreateRQ objRQ)
         {
-            var objInsert = new ContactInfo
-            {
-                Name = objRQ.Name,
-                Nickname = objRQ.Nickname,
-                Gender = (ContactInfo.EnumGender?)objRQ.Gender,
-                Age = objRQ.Age,
-                PhoneNo = objRQ.PhoneNo,
-                Address = objRQ.Address
-            };
+            var objInsert = _mapper.Map<ContactInfo>(objRQ);
 
             var resInsert = _contactInfoService.Insert(objInsert);
 
@@ -131,16 +112,7 @@ namespace WebApi.Commands.Instance
             {
                 var resQuery = _contactInfoService.Query(objInsert.ContactInfoID);
 
-                return SuccessRP(new QueryRP
-                {
-                    ContactInfoID = resQuery.ContactInfoID,
-                    Name = resQuery.Name,
-                    Nickname = resQuery.Nickname,
-                    Gender = (short?)resQuery.Gender,
-                    Age = resQuery.Age,
-                    PhoneNo = resQuery.PhoneNo,
-                    Address = resQuery.Address
-                });
+                return SuccessRP(_mapper.Map<QueryRP>(resQuery));
             }
         }
 
@@ -156,16 +128,7 @@ namespace WebApi.Commands.Instance
             {
                 return FailRP<QueryRP>(1, "No Data");
             }
-            var objUpdate = new ContactInfo
-            {
-                ContactInfoID = objRQ.ID ?? 0,
-                Name = objRQ.Name,
-                Nickname = objRQ.Nickname,
-                Gender = (ContactInfo.EnumGender?)objRQ.Gender,
-                Age = objRQ.Age,
-                PhoneNo = objRQ.PhoneNo,
-                Address = objRQ.Address
-            };
+            var objUpdate = _mapper.Map<ContactInfo>(objRQ);
 
             var resUpdate = _contactInfoService.Update(objUpdate);
 
@@ -177,16 +140,7 @@ namespace WebApi.Commands.Instance
             {
                 var resQuery = _contactInfoService.Query(objUpdate.ContactInfoID);
 
-                return SuccessRP(new QueryRP
-                {
-                    ContactInfoID = resQuery.ContactInfoID,
-                    Name = resQuery.Name,
-                    Nickname = resQuery.Nickname,
-                    Gender = (short?)resQuery.Gender,
-                    Age = resQuery.Age,
-                    PhoneNo = resQuery.PhoneNo,
-                    Address = resQuery.Address
-                });
+                return SuccessRP(_mapper.Map<QueryRP>(resQuery));
             }
         }
 
@@ -202,16 +156,8 @@ namespace WebApi.Commands.Instance
             {
                 return FailRP<QueryRP>(1, "No Data");
             }
-            var objUpdate = new ContactInfo
-            {
-                ContactInfoID = objRQ.ID ?? 0,
-                Name = string.IsNullOrWhiteSpace(objRQ.Name) ? objOrigin.Name : objRQ.Name,
-                Nickname = string.IsNullOrWhiteSpace(objRQ.Nickname) ? objOrigin.Nickname : objRQ.Nickname,
-                Gender = (ContactInfo.EnumGender?)objRQ.Gender ?? objOrigin.Gender,
-                Age = objRQ.Age ?? objOrigin.Age,
-                PhoneNo = string.IsNullOrWhiteSpace(objRQ.PhoneNo) ? objOrigin.PhoneNo : objRQ.PhoneNo,
-                Address = string.IsNullOrWhiteSpace(objRQ.Address) ? objOrigin.Address : objRQ.Address
-            };
+            var objUpdate = _mapper.Map<ContactInfo>(objOrigin);
+            _mapper.Map(objRQ, objUpdate);
 
             var resUpdate = _contactInfoService.Update(objUpdate);
 
@@ -223,16 +169,7 @@ namespace WebApi.Commands.Instance
             {
                 var resQuery = _contactInfoService.Query(objUpdate.ContactInfoID);
 
-                return SuccessRP(new QueryRP
-                {
-                    ContactInfoID = resQuery.ContactInfoID,
-                    Name = resQuery.Name,
-                    Nickname = resQuery.Nickname,
-                    Gender = (short?)resQuery.Gender,
-                    Age = resQuery.Age,
-                    PhoneNo = resQuery.PhoneNo,
-                    Address = resQuery.Address
-                });
+                return SuccessRP(_mapper.Map<QueryRP>(resQuery));
             }
         }
 

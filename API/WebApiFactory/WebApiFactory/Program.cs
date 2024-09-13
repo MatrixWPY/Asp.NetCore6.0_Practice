@@ -16,6 +16,7 @@ using WebApiFactory.Factories.Instance;
 using WebApiFactory.Factories.Interface;
 using WebApiFactory.Interceptors;
 using WebApiFactory.Middlewares;
+using WebApiFactory.Profiles;
 using WebApiFactory.Services.Instance;
 using WebApiFactory.Services.Interface;
 
@@ -90,6 +91,10 @@ builder.Services.AddScoped<ContactInfoRedisHashCommand>();
 #region 註冊Factory
 builder.Services.AddScoped<IServiceFactory, ServiceFactory>();
 builder.Services.AddScoped<ICommandFactory, CommandFactory>();
+#endregion
+
+#region 設定AutoMapper
+builder.Services.AddAutoMapper(typeof(ContactInfoProfile));
 #endregion
 
 var app = builder.Build();

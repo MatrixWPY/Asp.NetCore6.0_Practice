@@ -15,6 +15,7 @@ using WebApi.Commands.Interface;
 using WebApi.DtoModels.Common;
 using WebApi.Interceptors;
 using WebApi.Middlewares;
+using WebApi.Profiles;
 using WebApi.Services.Instance;
 using WebApi.Services.Interface;
 
@@ -202,6 +203,10 @@ switch (queueType)
         builder.Services.AddScoped<IQueueCommand, QueueRedisStreamCommand>();
         break;
 }
+#endregion
+
+#region 設定AutoMapper
+builder.Services.AddAutoMapper(typeof(ContactInfoProfile));
 #endregion
 
 #endregion

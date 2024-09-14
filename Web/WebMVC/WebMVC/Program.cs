@@ -2,6 +2,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System.Data;
 using WebMVC.Models.Interface;
+using WebMVC.Profiles;
 using WebMVC.Repositories.Interface;
 using WebMVC.Services.Instance;
 using WebMVC.Services.Interface;
@@ -55,6 +56,10 @@ switch (ormType)
 
 #region 註冊Service
 builder.Services.AddScoped<IContactInfoService, ContactInfoService>();
+#endregion
+
+#region 設定AutoMapper
+builder.Services.AddAutoMapper(typeof(ContactInfoProfile));
 #endregion
 
 // Add services to the container.

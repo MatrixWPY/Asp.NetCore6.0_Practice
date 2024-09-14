@@ -1,4 +1,4 @@
-﻿using WebMVC.Models.Common;
+﻿using AutoMapper;
 using WebMVC.Models.Interface;
 using WebMVC.Repositories.Interface;
 using WebMVC.Services.Interface;
@@ -9,14 +9,17 @@ namespace WebMVC.Services.Instance
 {
     public class ContactInfoService : IContactInfoService
     {
+        private readonly IMapper _mapper;
         private IContactInfoModel _contactInfoModel;
         private IContactInfoRepository _contactInfoRepository;
 
         public ContactInfoService(
+            IMapper mapper,
             IContactInfoModel contactInfoModel,
             IContactInfoRepository contactInfoRepository
         )
         {
+            _mapper = mapper;
             _contactInfoModel = contactInfoModel;
             _contactInfoRepository = contactInfoRepository;
         }
@@ -25,16 +28,7 @@ namespace WebMVC.Services.Instance
         {
             var res = await _contactInfoRepository.QueryAsync(id);
 
-            return new QueryRes
-            {
-                ContactInfoID = res.ContactInfoID,
-                Name = res.Name,
-                Nickname = res.Nickname,
-                Gender = (short?)res.Gender,
-                Age = res.Age,
-                PhoneNo = res.PhoneNo,
-                Address = res.Address
-            };
+            return _mapper.Map<QueryRes>(res);
         }
 
         public async Task<PageDataRes<IEnumerable<QueryRes>>> QueryByConditionAsync(QueryReq req)
@@ -66,27 +60,13 @@ namespace WebMVC.Services.Instance
                     PageCnt = (res.totalCnt % req.PageSize == 0 ? res.totalCnt / req.PageSize : res.totalCnt / req.PageSize + 1),
                     TotalCnt = res.totalCnt
                 },
-                Data = res.data.Select(e => new QueryRes
-                {
-                    ContactInfoID = e.ContactInfoID,
-                    Name = e.Name,
-                    Nickname = e.Nickname,
-                    Gender = (short?)e.Gender,
-                    Age = e.Age,
-                    PhoneNo = e.PhoneNo,
-                    Address = e.Address
-                })
+                Data = _mapper.Map<IEnumerable<QueryRes>>(res.data)
             };
         }
 
         public async Task<bool> CreateAsync(CreateReq req)
         {
-            _contactInfoModel.Name = req.Name;
-            _contactInfoModel.Nickname = req.Nickname;
-            _contactInfoModel.Gender = (EnumGender?)req.Gender;
-            _contactInfoModel.Age = req.Age;
-            _contactInfoModel.PhoneNo = req.PhoneNo;
-            _contactInfoModel.Address = req.Address;
+            _mapper.Map(req, _contactInfoModel);
             _contactInfoModel.CreateTime = DateTime.Now;
 
             return await _contactInfoRepository.InsertAsync(_contactInfoModel);
@@ -100,12 +80,7 @@ namespace WebMVC.Services.Instance
                 return false;
             }
 
-            origin.Name = string.IsNullOrWhiteSpace(req.Name) ? origin.Name : req.Name;
-            origin.Nickname = string.IsNullOrWhiteSpace(req.Nickname) ? origin.Nickname : req.Nickname;
-            origin.Gender = (EnumGender?)req.Gender ?? origin.Gender;
-            origin.Age = req.Age ?? origin.Age;
-            origin.PhoneNo = string.IsNullOrWhiteSpace(req.PhoneNo) ? origin.PhoneNo : req.PhoneNo;
-            origin.Address = string.IsNullOrWhiteSpace(req.Address) ? origin.Address : req.Address;
+            _mapper.Map(req, origin);
             origin.UpdateTime = DateTime.Now;
 
             return await _contactInfoRepository.UpdateAsync(origin);

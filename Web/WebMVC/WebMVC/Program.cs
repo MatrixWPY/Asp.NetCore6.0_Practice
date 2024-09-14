@@ -26,6 +26,10 @@ switch (ormType)
         builder.Services.AddScoped<IDbConnection, SqlConnection>(e => new SqlConnection(dbConnectString));
         break;
 
+    case "DapperSimpleCRUD":
+        builder.Services.AddScoped<IDbConnection, SqlConnection>(e => new SqlConnection(dbConnectString));
+        break;
+
     case "EFCore":
         builder.Services.AddDbContext<WebMVC.Models.Instance.EFCore.WebMvcDbContext>(options => options.UseSqlServer(dbConnectString));
         break;
@@ -43,6 +47,10 @@ switch (ormType)
         builder.Services.AddTransient<IContactInfoModel, WebMVC.Models.Instance.DapperSP.ContactInfoModel>();
         break;
 
+    case "DapperSimpleCRUD":
+        builder.Services.AddTransient<IContactInfoModel, WebMVC.Models.Instance.DapperSimpleCRUD.ContactInfoModel>();
+        break;
+
     case "EFCore":
         builder.Services.AddTransient<IContactInfoModel, WebMVC.Models.Instance.EFCore.ContactInfoModel>();
         break;
@@ -58,6 +66,10 @@ switch (ormType)
 
     case "DapperSP":
         builder.Services.AddScoped<IContactInfoRepository, WebMVC.Repositories.Instance.DapperSP.ContactInfoRepository>();
+        break;
+
+    case "DapperSimpleCRUD":
+        builder.Services.AddScoped<IContactInfoRepository, WebMVC.Repositories.Instance.DapperSimpleCRUD.ContactInfoRepository> ();
         break;
 
     case "EFCore":

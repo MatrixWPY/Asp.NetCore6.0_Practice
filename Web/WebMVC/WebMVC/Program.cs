@@ -1,5 +1,6 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using PetaPoco;
 using System.Data;
 using WebMVC.Models.Interface;
 using WebMVC.Profiles;
@@ -30,6 +31,10 @@ switch (ormType)
         builder.Services.AddScoped<IDbConnection, SqlConnection>(e => new SqlConnection(dbConnectString));
         break;
 
+    case "PetaPoco":
+        builder.Services.AddScoped<Database>(e => new Database(dbConnectString, "Microsoft.Data.SqlClient"));
+        break;
+
     case "EFCore":
         builder.Services.AddDbContext<WebMVC.Models.Instance.EFCore.WebMvcDbContext>(options => options.UseSqlServer(dbConnectString));
         break;
@@ -51,6 +56,10 @@ switch (ormType)
         builder.Services.AddTransient<IContactInfoModel, WebMVC.Models.Instance.DapperSimpleCRUD.ContactInfoModel>();
         break;
 
+    case "PetaPoco":
+        builder.Services.AddTransient<IContactInfoModel, WebMVC.Models.Instance.PetaPoco.ContactInfoModel>();
+        break;
+
     case "EFCore":
         builder.Services.AddTransient<IContactInfoModel, WebMVC.Models.Instance.EFCore.ContactInfoModel>();
         break;
@@ -70,6 +79,10 @@ switch (ormType)
 
     case "DapperSimpleCRUD":
         builder.Services.AddScoped<IContactInfoRepository, WebMVC.Repositories.Instance.DapperSimpleCRUD.ContactInfoRepository> ();
+        break;
+
+    case "PetaPoco":
+        builder.Services.AddScoped<IContactInfoRepository, WebMVC.Repositories.Instance.PetaPoco.ContactInfoRepository>();
         break;
 
     case "EFCore":

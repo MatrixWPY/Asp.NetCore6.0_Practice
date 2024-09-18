@@ -100,8 +100,7 @@ namespace WebMVC.Repositories.Instance.PetaPoco
         {
             try
             {
-                var sql = new Sql("DELETE FROM dbo.Tbl_ContactInfo WHERE ContactInfoID IN (@ids)", new { ids });
-                return await _db.ExecuteAsync(sql) > 0;
+                return await _db.DeleteAsync<ContactInfoModel>("WHERE ContactInfoID IN (@0)", ids) > 0;
             }
             catch
             {

@@ -108,7 +108,7 @@ namespace WebMVC.Repositories.Instance.DapperSimpleCRUD
         {
             try
             {
-                return await _dbConnection.DeleteListAsync<ContactInfoModel>($"WHERE ContactInfoID IN ({string.Join(",", ids)})") > 0;
+                return await _dbConnection.DeleteListAsync<ContactInfoModel>($"WHERE ContactInfoID IN @ids", new { ids }) > 0;
             }
             catch
             {

@@ -1,6 +1,7 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using PetaPoco;
+using SqlSugar;
 using System.Data;
 using WebMVC.Models.Interface;
 using WebMVC.Profiles;
@@ -19,6 +20,10 @@ var ormType = builder.Configuration["OrmType"];
 #region 註冊DB連線
 switch (ormType)
 {
+    case "EFCore":
+        builder.Services.AddDbContext<WebMVC.Models.Instance.EFCore.WebMvcDbContext>(options => options.UseSqlServer(dbConnectString));
+        break;
+
     case "Dapper":
         builder.Services.AddScoped<IDbConnection, SqlConnection>(e => new SqlConnection(dbConnectString));
         break;
@@ -35,8 +40,13 @@ switch (ormType)
         builder.Services.AddScoped<Database>(e => new Database(dbConnectString, "Microsoft.Data.SqlClient"));
         break;
 
-    case "EFCore":
-        builder.Services.AddDbContext<WebMVC.Models.Instance.EFCore.WebMvcDbContext>(options => options.UseSqlServer(dbConnectString));
+    case "SqlSugar":
+        builder.Services.AddScoped<ISqlSugarClient>(e => new SqlSugarClient(new ConnectionConfig()
+        {
+            DbType = SqlSugar.DbType.SqlServer,
+            ConnectionString = dbConnectString,
+            IsAutoCloseConnection = true
+        }));
         break;
 }
 #endregion
@@ -44,6 +54,10 @@ switch (ormType)
 #region 註冊Model
 switch (ormType)
 {
+    case "EFCore":
+        builder.Services.AddTransient<IContactInfoModel, WebMVC.Models.Instance.EFCore.ContactInfoModel>();
+        break;
+
     case "Dapper":
         builder.Services.AddTransient<IContactInfoModel, WebMVC.Models.Instance.Dapper.ContactInfoModel>();
         break;
@@ -60,8 +74,8 @@ switch (ormType)
         builder.Services.AddTransient<IContactInfoModel, WebMVC.Models.Instance.PetaPoco.ContactInfoModel>();
         break;
 
-    case "EFCore":
-        builder.Services.AddTransient<IContactInfoModel, WebMVC.Models.Instance.EFCore.ContactInfoModel>();
+    case "SqlSugar":
+        builder.Services.AddTransient<IContactInfoModel, WebMVC.Models.Instance.SqlSugar.ContactInfoModel>();
         break;
 }
 #endregion
@@ -69,6 +83,10 @@ switch (ormType)
 #region 註冊Repository
 switch (ormType)
 {
+    case "EFCore":
+        builder.Services.AddScoped<IContactInfoRepository, WebMVC.Repositories.Instance.EFCore.ContactInfoRepository>();
+        break;
+
     case "Dapper":
         builder.Services.AddScoped<IContactInfoRepository, WebMVC.Repositories.Instance.Dapper.ContactInfoRepository>();
         break;
@@ -85,8 +103,8 @@ switch (ormType)
         builder.Services.AddScoped<IContactInfoRepository, WebMVC.Repositories.Instance.PetaPoco.ContactInfoRepository>();
         break;
 
-    case "EFCore":
-        builder.Services.AddScoped<IContactInfoRepository, WebMVC.Repositories.Instance.EFCore.ContactInfoRepository>();
+    case "SqlSugar":
+        builder.Services.AddScoped<IContactInfoRepository, WebMVC.Repositories.Instance.SqlSugar.ContactInfoRepository>();
         break;
 }
 #endregion

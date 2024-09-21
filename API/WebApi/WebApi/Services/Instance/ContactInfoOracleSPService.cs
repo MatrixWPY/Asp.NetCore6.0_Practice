@@ -135,14 +135,16 @@ namespace WebApi.Services.Instance
                 dynamicParam.Add("i_age", objContactInfo.Age);
                 dynamicParam.Add("i_phoneNo", objContactInfo.PhoneNo);
                 dynamicParam.Add("i_address", objContactInfo.Address);
+                dynamicParam.Add("o_result", dbType: OracleMappingType.Int64, direction: ParameterDirection.Output);
 
                 _dbConnection.Execute(
                     "SP_UPDATE_CONTACTINFO",
                     dynamicParam,
                     commandType: CommandType.StoredProcedure
                 );
+                var rowsAffected = dynamicParam.Get<long?>("o_result") ?? 0;
 
-                return true;
+                return rowsAffected > 0;
             }
             catch (Exception ex)
             {
@@ -162,14 +164,16 @@ namespace WebApi.Services.Instance
             {
                 var dynamicParam = new OracleDynamicParameters();
                 dynamicParam.Add("i_contactInfoIDs", string.Join(",", ids));
+                dynamicParam.Add("o_result", dbType: OracleMappingType.Int64, direction: ParameterDirection.Output);
 
                 _dbConnection.Execute(
                     "SP_DELETE_CONTACTINFO",
                     dynamicParam,
                     commandType: CommandType.StoredProcedure
                 );
+                var rowsAffected = dynamicParam.Get<long?>("o_result") ?? 0;
 
-                return true;
+                return rowsAffected > 0;
             }
             catch (Exception ex)
             {

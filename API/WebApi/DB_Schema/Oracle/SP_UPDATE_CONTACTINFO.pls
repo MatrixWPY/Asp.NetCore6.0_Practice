@@ -6,7 +6,8 @@ CREATE OR REPLACE PROCEDURE SP_UPDATE_CONTACTINFO
     i_gender NUMBER DEFAULT NULL,
     i_age NUMBER DEFAULT NULL,
     i_phoneNo VARCHAR2,
-    i_address NVARCHAR2
+    i_address NVARCHAR2,
+	o_result OUT NUMBER
 )
 AS 
 BEGIN
@@ -21,5 +22,7 @@ BEGIN
         UPDATE_TIME = sysdate
     WHERE
         CONTACTINFO_ID = i_contactInfoID;
+
+	o_result := SQL%ROWCOUNT; --受影響行數
 
 END SP_UPDATE_CONTACTINFO;

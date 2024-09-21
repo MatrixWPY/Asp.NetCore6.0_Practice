@@ -1,6 +1,7 @@
 CREATE OR REPLACE PROCEDURE SP_DELETE_CONTACTINFO
 (
-    i_contactInfoIDs VARCHAR2
+    i_contactInfoIDs VARCHAR2,
+	o_result OUT NUMBER
 )
 AS 
 BEGIN
@@ -9,5 +10,7 @@ BEGIN
         TBL_CONTACTINFO
     WHERE
         INSTR(','||i_contactInfoIDs||',', ','||CONTACTINFO_ID||',') > 0;
+
+	o_result := SQL%ROWCOUNT; --受影響行數
 
 END SP_DELETE_CONTACTINFO;

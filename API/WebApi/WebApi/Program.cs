@@ -5,6 +5,7 @@ using Microsoft.OpenApi.Models;
 using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
 using NLog.Extensions.Logging;
+using Oracle.ManagedDataAccess.Client;
 using System.Data;
 using System.Data.SqlClient;
 using System.Net;
@@ -111,6 +112,14 @@ switch (dbType)
     case "MySqlSP":
         dbConnectString = builder.Configuration["ConnectionStrings:MySqlSP"];
         break;
+
+    case "Oracle":
+        dbConnectString = builder.Configuration["ConnectionStrings:Oracle"];
+        break;
+
+    case "OracleSP":
+        dbConnectString = builder.Configuration["ConnectionStrings:OracleSP"];
+        break;
 }
 #endregion
 
@@ -146,6 +155,14 @@ switch (dbType)
     case "MySqlSP":
         builder.Services.AddScoped<IDbConnection, MySqlConnection>(db => new MySqlConnection(dbConnectString));
         break;
+
+    case "Oracle":
+        builder.Services.AddScoped<IDbConnection, OracleConnection>(db => new OracleConnection(dbConnectString));
+        break;
+
+    case "OracleSP":
+        builder.Services.AddScoped<IDbConnection, OracleConnection>(db => new OracleConnection(dbConnectString));
+        break;
 }
 #endregion
 
@@ -166,6 +183,14 @@ switch (dbType)
 
     case "MySqlSP":
         builder.Services.AddScoped<IContactInfoService, ContactInfoMysqlSPService>();
+        break;
+
+    case "Oracle":
+        builder.Services.AddScoped<IContactInfoService, ContactInfoOracleService>();
+        break;
+
+    case "OracleSP":
+        builder.Services.AddScoped<IContactInfoService, ContactInfoOracleSPService>();
         break;
 }
 #endregion

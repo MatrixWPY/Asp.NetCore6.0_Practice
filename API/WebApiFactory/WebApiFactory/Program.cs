@@ -6,6 +6,7 @@ using Microsoft.Data.SqlClient;
 using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
 using NLog.Extensions.Logging;
+using Oracle.ManagedDataAccess.Client;
 using System.Data;
 using System.Net;
 using System.Text.Encodings.Web;
@@ -73,6 +74,7 @@ builder.Services.AddSingleton<IRedisService, RedisService>();
 #region 註冊DB連線
 builder.Services.AddScoped<SqlConnection>(db => new SqlConnection(builder.Configuration["ConnectionStrings:MsSql"]));
 builder.Services.AddScoped<MySqlConnection>(db => new MySqlConnection(builder.Configuration["ConnectionStrings:MySql"]));
+builder.Services.AddScoped<OracleConnection>(db => new OracleConnection(builder.Configuration["ConnectionStrings:Oracle"]));
 #endregion
 
 #region 註冊Service
@@ -80,6 +82,8 @@ builder.Services.AddScoped<ContactInfoMssqlService>();
 builder.Services.AddScoped<ContactInfoMssqlSPService>();
 builder.Services.AddScoped<ContactInfoMysqlService>();
 builder.Services.AddScoped<ContactInfoMysqlSPService>();
+builder.Services.AddScoped<ContactInfoOracleService>();
+builder.Services.AddScoped<ContactInfoOracleSPService>();
 #endregion
 
 #region 註冊Command

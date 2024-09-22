@@ -49,7 +49,7 @@ namespace WebApiFactory.DtoModels.Common
         string CommandType { get; set; }
 
         /// <summary>
-        /// Service實作 (MsSql, MsSqlSP, MySql, MySqlSP)
+        /// Service實作 (MsSql, MsSqlSP, MySql, MySqlSP , Oracle , OracleSP)
         /// </summary>
         string ServiceType { get; set; }
     }

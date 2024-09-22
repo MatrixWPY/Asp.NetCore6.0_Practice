@@ -21,6 +21,8 @@ namespace WebApiFactory.Factories.Instance
                 "MsSqlSP" => _serviceProvider.GetRequiredService<ContactInfoMssqlSPService>(),
                 "MySql" => _serviceProvider.GetRequiredService<ContactInfoMysqlService>(),
                 "MySqlSP" => _serviceProvider.GetRequiredService<ContactInfoMysqlSPService>(),
+                "Oracle" => _serviceProvider.GetRequiredService<ContactInfoOracleService>(),
+                "OracleSP" => _serviceProvider.GetRequiredService<ContactInfoOracleSPService>(),
                 _ => throw new ArgumentException("Invalid ServiceType")
             };
         }

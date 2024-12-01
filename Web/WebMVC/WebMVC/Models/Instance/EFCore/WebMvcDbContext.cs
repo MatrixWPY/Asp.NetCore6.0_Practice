@@ -18,6 +18,10 @@ namespace WebMVC.Models.Instance.EFCore
             modelBuilder.Entity<ContactInfoModel>()
                 .Property(e => e.CreateTime)
                 .HasDefaultValueSql("GETDATE()");
+
+            modelBuilder.Entity<ContactInfoModel>()
+                .Property(e => e.RowVersion)
+                .IsRowVersion();
             #endregion
         }
     }

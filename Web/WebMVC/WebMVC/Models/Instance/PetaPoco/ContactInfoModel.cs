@@ -57,5 +57,8 @@ namespace WebMVC.Models.Instance.PetaPoco
         /// 修改時間
         /// </summary>
         public DateTime? UpdateTime { get; set; }
+
+        [ResultColumn(IncludeInAutoSelect.Yes)]
+        public byte[] RowVersion { get; set; }
     }
 }

@@ -67,17 +67,18 @@ namespace WebMVC.Services.Instance
         public async Task<bool> CreateAsync(CreateReq req)
         {
             _mapper.Map(req, _contactInfoModel);
+            _contactInfoModel.IsEnable = true;
             _contactInfoModel.CreateTime = DateTime.Now;
 
             return await _contactInfoRepository.InsertAsync(_contactInfoModel);
         }
 
-        public async Task<bool> EditAsync(EditReq req)
+        public async Task<(bool result, string errorMsg)> EditAsync(EditReq req)
         {
             var origin = await _contactInfoRepository.QueryAsync(req.Id ?? 0);
             if (origin == null)
             {
-                return false;
+                return (false, "資料不存在");
             }
 
             _mapper.Map(req, origin);

@@ -109,9 +109,9 @@ namespace WebMVC.Repositories.Instance.Dapper
                 var sbSQL = new StringBuilder();
                 sbSQL.AppendLine(@"
                     INSERT INTO dbo.Tbl_ContactInfo
-                        (Name, Nickname, Gender, Age, PhoneNo, Address, CreateTime)
+                        (Name, Nickname, Gender, Age, PhoneNo, Address, IsEnable, CreateTime)
                     VALUES
-                        (@Name, @Nickname, @Gender, @Age, @PhoneNo, @Address, @CreateTime)
+                        (@Name, @Nickname, @Gender, @Age, @PhoneNo, @Address, @IsEnable, @CreateTime)
                     SELECT SCOPE_IDENTITY()
                 ");
 
@@ -124,7 +124,7 @@ namespace WebMVC.Repositories.Instance.Dapper
             }
         }
 
-        public async Task<bool> UpdateAsync(IContactInfoModel contactInfo)
+        public async Task<(bool result, string errorMsg)> UpdateAsync(IContactInfoModel contactInfo)
         {
             try
             {
@@ -134,9 +134,13 @@ namespace WebMVC.Repositories.Instance.Dapper
                         Name = @Name, Nickname = @Nickname, Gender = @Gender, Age = @Age, PhoneNo = @PhoneNo, Address = @Address, UpdateTime = @UpdateTime
                     WHERE
                         ContactInfoID = @ContactInfoID
+                    AND
+                        RowVersion = @RowVersion
                 ");
 
-                return await _dbConnection.ExecuteAsync(sbSQL.ToString(), contactInfo) > 0;
+                var res = await _dbConnection.ExecuteAsync(sbSQL.ToString(), contactInfo);
+
+                return res == 0 ? (false, "資料已被修改") : (true, string.Empty);
             }
             catch
             {

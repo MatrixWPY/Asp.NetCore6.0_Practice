@@ -90,7 +90,8 @@ namespace WebMVC.Controllers
                 Gender = res.Gender,
                 Age = res.Age,
                 PhoneNo = res.PhoneNo,
-                Address = res.Address
+                Address = res.Address,
+                RowVersion = res.RowVersion
             });
         }
 
@@ -100,13 +101,13 @@ namespace WebMVC.Controllers
             if (ModelState.IsValid)
             {
                 var res = await _contactInfoService.EditAsync(req);
-                if (res)
+                if (res.result)
                 {
                     return RedirectToAction("Index");
                 }
                 else
                 {
-                    ModelState.AddModelError("EditError", "更新失敗!");
+                    ModelState.AddModelError("EditError", $"更新失敗 : {res.errorMsg}");
                     return View(req);
                 }
             }

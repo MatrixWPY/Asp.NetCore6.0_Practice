@@ -54,5 +54,7 @@ namespace WebMVC.Models.Instance.DapperSP
         /// 修改時間
         /// </summary>
         public DateTime? UpdateTime { get; set; }
+
+        public byte[] RowVersion { get; set; }
     }
 }

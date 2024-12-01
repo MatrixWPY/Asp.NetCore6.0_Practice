@@ -57,5 +57,8 @@ namespace WebMVC.Models.Instance.SqlSugar
         /// 修改時間
         /// </summary>
         public DateTime? UpdateTime { get; set; }
+
+        [SugarColumn(IsOnlyIgnoreInsert = true, IsOnlyIgnoreUpdate = true)]
+        public byte[] RowVersion { get; set; }
     }
 }

@@ -69,6 +69,7 @@ namespace WebMVC.Repositories.Instance.DapperSP
                         contactInfo.Age,
                         contactInfo.PhoneNo,
                         contactInfo.Address,
+                        contactInfo.IsEnable,
                         contactInfo.CreateTime
                     },
                     commandType: CommandType.StoredProcedure
@@ -81,11 +82,11 @@ namespace WebMVC.Repositories.Instance.DapperSP
             }
         }
 
-        public async Task<bool> UpdateAsync(IContactInfoModel contactInfo)
+        public async Task<(bool result, string errorMsg)> UpdateAsync(IContactInfoModel contactInfo)
         {
             try
             {
-                return await _dbConnection.ExecuteAsync(
+                var res = await _dbConnection.ExecuteAsync(
                     "dbo.Sp_EditContactInfo",
                     new
                     {
@@ -96,10 +97,12 @@ namespace WebMVC.Repositories.Instance.DapperSP
                         contactInfo.Age,
                         contactInfo.PhoneNo,
                         contactInfo.Address,
-                        contactInfo.UpdateTime
+                        contactInfo.UpdateTime,
+                        contactInfo.RowVersion
                     },
                     commandType: CommandType.StoredProcedure
-                ) > 0;
+                );
+                return res == 0 ? (false, "資料已被修改") : (true, string.Empty);
             }
             catch
             {

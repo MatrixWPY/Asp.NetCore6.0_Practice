@@ -121,5 +121,7 @@ namespace WebMVC.ViewModels.ContactInfo
         [MaxLength(100, ErrorMessage = "{0} 限定最大長度為100。")]
         [Display(Name = "住址")]
         public string? Address { get; set; }
+
+        public byte[] RowVersion { get; set; }
     }
 }

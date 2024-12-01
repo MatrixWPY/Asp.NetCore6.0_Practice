@@ -77,5 +77,8 @@ namespace WebMVC.Models.Instance.EFCore
         /// </summary>
         [Column(TypeName = "DATETIME")]
         public DateTime? UpdateTime { get; set; }
+
+        [Timestamp]
+        public byte[] RowVersion { get; set; }
     }
 }

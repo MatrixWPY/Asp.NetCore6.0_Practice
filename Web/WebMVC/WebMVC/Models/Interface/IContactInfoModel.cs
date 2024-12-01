@@ -53,5 +53,7 @@ namespace WebMVC.Models.Interface
         /// 修改時間
         /// </summary>
         DateTime? UpdateTime { get; set; }
+
+        public byte[] RowVersion { get; set; }
     }
 }

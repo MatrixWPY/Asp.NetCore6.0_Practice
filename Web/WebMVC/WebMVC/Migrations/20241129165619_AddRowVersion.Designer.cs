@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WebMVC.Models.Instance.EFCore;
 
@@ -11,9 +12,11 @@ using WebMVC.Models.Instance.EFCore;
 namespace WebMVC.Migrations
 {
     [DbContext(typeof(WebMvcDbContext))]
-    partial class WebMvcDbContextModelSnapshot : ModelSnapshot
+    [Migration("20241129165619_AddRowVersion")]
+    partial class AddRowVersion
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

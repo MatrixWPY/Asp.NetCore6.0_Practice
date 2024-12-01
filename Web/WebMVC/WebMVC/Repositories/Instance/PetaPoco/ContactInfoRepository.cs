@@ -84,11 +84,20 @@ namespace WebMVC.Repositories.Instance.PetaPoco
             }
         }
 
-        public async Task<bool> UpdateAsync(IContactInfoModel contactInfo)
+        public async Task<(bool result, string errorMsg)> UpdateAsync(IContactInfoModel contactInfo)
         {
             try
             {
-                return await _db.UpdateAsync(contactInfo) > 0;
+                var res = await _db.UpdateAsync<ContactInfoModel>(@"
+                    SET
+                        Name = @Name, Nickname = @Nickname, Gender = @Gender, Age = @Age, PhoneNo = @PhoneNo, Address = @Address, UpdateTime = @UpdateTime
+                    WHERE
+                        ContactInfoID = @ContactInfoID
+                    AND
+                        RowVersion = @RowVersion",
+                    contactInfo
+                );
+                return res == 0 ? (false, "資料已被修改") : (true, string.Empty);
             }
             catch
             {

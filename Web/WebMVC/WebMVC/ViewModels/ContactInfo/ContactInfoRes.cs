@@ -24,5 +24,7 @@ namespace WebMVC.ViewModels.ContactInfo
 
         [Display(Name = "住址")]
         public string? Address { get; set; }
+
+        public byte[] RowVersion { get; set; }
     }
 }

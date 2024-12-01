@@ -85,11 +85,14 @@ namespace WebMVC.Repositories.Instance.SqlSugar
             }
         }
 
-        public async Task<bool> UpdateAsync(IContactInfoModel contactInfo)
+        public async Task<(bool result, string errorMsg)> UpdateAsync(IContactInfoModel contactInfo)
         {
             try
             {
-                return await _client.Updateable<ContactInfoModel>(contactInfo).ExecuteCommandAsync() > 0;
+                var res = await _client.Updateable<ContactInfoModel>(contactInfo)
+                            .Where(e => e.ContactInfoID == contactInfo.ContactInfoID && e.RowVersion == contactInfo.RowVersion)
+                            .ExecuteCommandAsync();
+                return res == 0 ? (false, "資料已被修改") : (true, string.Empty);
             }
             catch
             {

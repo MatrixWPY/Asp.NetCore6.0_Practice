@@ -9,13 +9,14 @@ CREATE TABLE [dbo].[Tbl_ContactInfo](
 	[IsEnable] [bit] NOT NULL,
 	[CreateTime] [datetime] NOT NULL,
 	[UpdateTime] [datetime] NULL,
-PRIMARY KEY CLUSTERED 
+	[RowVersion] [timestamp] NOT NULL,
+ CONSTRAINT [PK_Tbl_ContactInfo] PRIMARY KEY CLUSTERED 
 (
 	[ContactInfoID] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-ALTER TABLE [dbo].[Tbl_ContactInfo] ADD  CONSTRAINT [DF_Tbl_ContactInfo_IsEnable]  DEFAULT ((1)) FOR [IsEnable]
+ALTER TABLE [dbo].[Tbl_ContactInfo] ADD  DEFAULT (CONVERT([bit],(1))) FOR [IsEnable]
 GO
-ALTER TABLE [dbo].[Tbl_ContactInfo] ADD  CONSTRAINT [DF_Tbl_ContactInfo_CreateTime]  DEFAULT (getdate()) FOR [CreateTime]
+ALTER TABLE [dbo].[Tbl_ContactInfo] ADD  DEFAULT (getdate()) FOR [CreateTime]
 GO

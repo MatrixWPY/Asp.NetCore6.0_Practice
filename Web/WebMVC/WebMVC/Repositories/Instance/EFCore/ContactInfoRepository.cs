@@ -87,14 +87,21 @@ namespace WebMVC.Repositories.Instance.EFCore
             }
         }
 
-        public async Task<bool> UpdateAsync(IContactInfoModel contactInfo)
+        public async Task<(bool result, string errorMsg)> UpdateAsync(IContactInfoModel contactInfo)
         {
             try
             {
+                // EFCore中樂觀併發控制依賴於 OriginalValue 進行版本檢查
+                // 顯式手動設置 OriginalValue = CurrentValue
+                _dbContext.Entry(contactInfo).Property(e => e.RowVersion).OriginalValue = contactInfo.RowVersion;
                 _dbContext.Update(contactInfo);
                 await _dbContext.SaveChangesAsync();
 
-                return true;
+                return (true, string.Empty);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                return (false, "資料已被修改");
             }
             catch
             {

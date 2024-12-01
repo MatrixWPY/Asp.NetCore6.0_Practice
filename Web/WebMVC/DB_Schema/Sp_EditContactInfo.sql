@@ -17,7 +17,8 @@ CREATE PROCEDURE [dbo].[Sp_EditContactInfo]
 	@Age			TINYINT = NULL,
 	@PhoneNo		VARCHAR(20),
 	@Address		NVARCHAR(100),
-	@UpdateTime		DATETIME
+	@UpdateTime		DATETIME,
+	@RowVersion     TIMESTAMP
 AS
 BEGIN
     UPDATE dbo.Tbl_ContactInfo SET
@@ -30,5 +31,7 @@ BEGIN
 		UpdateTime = @UpdateTime
 	WHERE
 		ContactInfoID = @ContactInfoID
+	AND
+		RowVersion = @RowVersion
 END
 GO

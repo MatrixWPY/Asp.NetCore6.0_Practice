@@ -51,11 +51,17 @@ namespace WebMVC.Models.Instance.DapperSimpleCRUD
         /// <summary>
         /// 建立時間
         /// </summary>
+        [IgnoreUpdate]
         public DateTime CreateTime { get; set; }
 
         /// <summary>
         /// 修改時間
         /// </summary>
+        [IgnoreInsert]
         public DateTime? UpdateTime { get; set; }
+
+        [IgnoreInsert]
+        [IgnoreUpdate]
+        public byte[] RowVersion { get; set; }
     }
 }

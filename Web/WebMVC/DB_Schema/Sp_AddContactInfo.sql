@@ -16,13 +16,14 @@ CREATE PROCEDURE [dbo].[Sp_AddContactInfo]
 	@Age		TINYINT = NULL,
 	@PhoneNo	VARCHAR(20),
 	@Address	NVARCHAR(100),
+	@IsEnable	BIT,
 	@CreateTime DATETIME
 AS
 BEGIN
     INSERT INTO dbo.Tbl_ContactInfo
-		(Name, Nickname, Gender, Age, PhoneNo, Address, CreateTime)
+		(Name, Nickname, Gender, Age, PhoneNo, Address, IsEnable, CreateTime)
 	VALUES
-		(@Name, @Nickname, @Gender, @Age, @PhoneNo, @Address, @CreateTime)
+		(@Name, @Nickname, @Gender, @Age, @PhoneNo, @Address, @IsEnable, @CreateTime)
 
 	SELECT SCOPE_IDENTITY()
 END

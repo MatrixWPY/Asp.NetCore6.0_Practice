@@ -92,11 +92,23 @@ namespace WebMVC.Repositories.Instance.DapperSimpleCRUD
             }
         }
 
-        public async Task<bool> UpdateAsync(IContactInfoModel contactInfo)
+        public async Task<(bool result, string errorMsg)> UpdateAsync(IContactInfoModel contactInfo)
         {
             try
             {
-                return await _dbConnection.UpdateAsync(contactInfo) > 0;
+                var sbSQL = new StringBuilder();
+                sbSQL.AppendLine(@"
+                    UPDATE dbo.Tbl_ContactInfo SET
+                        Name = @Name, Nickname = @Nickname, Gender = @Gender, Age = @Age, PhoneNo = @PhoneNo, Address = @Address, UpdateTime = @UpdateTime
+                    WHERE
+                        ContactInfoID = @ContactInfoID
+                    AND
+                        RowVersion = @RowVersion
+                ");
+
+                var res = await _dbConnection.ExecuteAsync(sbSQL.ToString(), contactInfo);
+
+                return res == 0 ? (false, "資料已被修改") : (true, string.Empty);
             }
             catch
             {

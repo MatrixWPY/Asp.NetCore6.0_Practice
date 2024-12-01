@@ -11,7 +11,7 @@ namespace WebMVC.Services.Interface
 
         Task<bool> CreateAsync(CreateReq req);
 
-        Task<bool> EditAsync(EditReq req);
+        Task<(bool result, string errorMsg)> EditAsync(EditReq req);
 
         Task<bool> RemoveAsync(IEnumerable<long> ids);
     }

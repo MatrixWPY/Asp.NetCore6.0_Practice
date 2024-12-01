@@ -10,7 +10,7 @@ namespace WebMVC.Repositories.Interface
 
         Task<bool> InsertAsync(IContactInfoModel contactInfo);
 
-        Task<bool> UpdateAsync(IContactInfoModel contactInfo);
+        Task<(bool result, string errorMsg)> UpdateAsync(IContactInfoModel contactInfo);
 
         Task<bool> DeleteAsync(IEnumerable<long> ids);
     }

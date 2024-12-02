@@ -19,7 +19,9 @@
     </PackageReference>
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="6.0.16" />
     <PackageReference Include="PetaPoco.Compiled" Version="6.0.677" />
+    <PackageReference Include="RedLock.net" Version="2.3.2" />
     <PackageReference Include="SqlSugarCoreNoDrive" Version="5.1.4.169" />
+    <PackageReference Include="StackExchange.Redis" Version="2.8.22" />
     <PackageReference Include="X.PagedList.Mvc.Bootstrap4" Version="9.0.0" />
     <PackageReference Include="X.PagedList.Mvc.Core" Version="9.1.2" />
   </ItemGroup>

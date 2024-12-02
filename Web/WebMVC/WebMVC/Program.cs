@@ -51,6 +51,11 @@ switch (ormType)
 }
 #endregion
 
+#region 註冊Redis
+builder.Services.AddSingleton<IRedisBase, RedisBase>();
+builder.Services.AddSingleton<IRedlockService, RedlockService>();
+#endregion
+
 #region 註冊Model
 switch (ormType)
 {

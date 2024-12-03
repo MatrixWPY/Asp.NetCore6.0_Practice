@@ -12,16 +12,19 @@ namespace WebMVC.Services.Instance
         private readonly IMapper _mapper;
         private IContactInfoModel _contactInfoModel;
         private IContactInfoRepository _contactInfoRepository;
+        private IRedlockService _redlockService;
 
         public ContactInfoService(
             IMapper mapper,
             IContactInfoModel contactInfoModel,
-            IContactInfoRepository contactInfoRepository
+            IContactInfoRepository contactInfoRepository,
+            IRedlockService redlockService
         )
         {
             _mapper = mapper;
             _contactInfoModel = contactInfoModel;
             _contactInfoRepository = contactInfoRepository;
+            _redlockService = redlockService;
         }
 
         public async Task<QueryRes> QueryByIdAsync(long id)
@@ -84,7 +87,20 @@ namespace WebMVC.Services.Instance
             _mapper.Map(req, origin);
             origin.UpdateTime = DateTime.Now;
 
-            return await _contactInfoRepository.UpdateAsync(origin);
+            return await _redlockService.AcquireLockAsync(
+                $"EditLock_{origin.ContactInfoID}", //lock key
+                TimeSpan.FromSeconds(30),           //lock key expiry
+                TimeSpan.FromSeconds(15),           //放棄重試時間
+                TimeSpan.FromMilliseconds(100),     //重試間隔時間
+                async () =>                         //取得lock執行的工作
+                {
+                    return await _contactInfoRepository.UpdateAsync(origin);
+                },
+                async () =>                         //未取得lock執行的工作
+                {
+                    return await Task.FromResult((false, "無法併發修改"));
+                }
+            );
         }
 
         public async Task<bool> RemoveAsync(IEnumerable<long> ids)

@@ -7,14 +7,15 @@ var redis = RedisConnection.Instance.ConnectionMultiplexer;
 var db = redis.GetDatabase();
 
 string channelName = "StreamChannel";
-string queueName = "StreamQueue";
-string groupName = "QueueGroup";
 string consumerName = $"GroupConsumer_{Process.GetCurrentProcess().Id}";
 
-Console.WriteLine("Subscribe from StreamChannel");
+Console.WriteLine($"Subscribe from {channelName}");
 var sub = redis.GetSubscriber();
 sub.Subscribe(channelName, (chl, msg) =>
 {
+    string queueName = msg.ToString().Split(':')[0];
+    string groupName = msg.ToString().Split(':')[1];
+
     #region 前置判斷
     var hasKey = db.KeyExists(queueName, CommandFlags.None);
     if (hasKey == false)
@@ -33,7 +34,7 @@ sub.Subscribe(channelName, (chl, msg) =>
     }
     #endregion
 
-    Console.WriteLine("Consume from StreamQueue:");
+    Console.WriteLine($"Consume from {queueName}:");
     var data = db.StreamReadGroup(queueName, groupName, consumerName, ">", count: (int)db.StreamLength(queueName), noAck: false);
     if (data.Any())
     {

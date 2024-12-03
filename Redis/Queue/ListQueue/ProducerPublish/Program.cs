@@ -4,10 +4,10 @@ RedisConnection.Init("127.0.0.1:6379");
 var redis = RedisConnection.Instance.ConnectionMultiplexer;
 var db = redis.GetDatabase();
 
-string channelName = "ListChannel";
 string queueName = "ListQueue";
+string channelName = "ListChannel";
 
-Console.WriteLine("Produce to ListQueue:");
+Console.WriteLine($"Produce to {queueName}:");
 for (int i = 0; i < 10; i++)
 {
     Console.WriteLine($"{i + 1}:Test_{i + 1}");
@@ -15,7 +15,7 @@ for (int i = 0; i < 10; i++)
 }
 Console.WriteLine("Produce Finish");
 
-Console.WriteLine("Publish to ListChannel");
-db.Publish(channelName, string.Empty);
+Console.WriteLine($"Publish to {channelName}");
+db.Publish(channelName, queueName);
 
 Console.ReadKey();

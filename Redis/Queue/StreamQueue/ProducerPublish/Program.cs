@@ -5,9 +5,9 @@ RedisConnection.Init("127.0.0.1:6379");
 var redis = RedisConnection.Instance.ConnectionMultiplexer;
 var db = redis.GetDatabase();
 
-string channelName = "StreamChannel";
 string queueName = "StreamQueue";
 string groupName = "QueueGroup";
+string channelName = "StreamChannel";
 
 #region 前置設定 Consumer Group
 // 因需先 StreamCreateConsumerGroup 後再 StreamAdd，後續 StreamReadGroup 才讀的到資料
@@ -39,7 +39,7 @@ if (groups == null || groups?.Any(x => x.Name.Equals(groupName, StringComparison
 }
 #endregion
 
-Console.WriteLine("Produce to StreamQueue:");
+Console.WriteLine($"Produce to {queueName}:");
 for (int i = 0; i < 10; i++)
 {
     Console.WriteLine($"{i + 1}:Test_{i + 1}");
@@ -47,7 +47,7 @@ for (int i = 0; i < 10; i++)
 }
 Console.WriteLine("Produce Finish");
 
-Console.WriteLine("Publish to StreamChannel");
-db.Publish(channelName, string.Empty);
+Console.WriteLine($"Publish to {channelName}");
+db.Publish(channelName, $"{queueName}:{groupName}");
 
 Console.ReadKey();

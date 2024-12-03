@@ -5,13 +5,13 @@ var redis = RedisConnection.Instance.ConnectionMultiplexer;
 var db = redis.GetDatabase();
 
 string channelName = "ListChannel";
-string queueName = "ListQueue";
 
-Console.WriteLine("Subscribe from ListChannel");
+Console.WriteLine($"Subscribe from {channelName}");
 var sub = redis.GetSubscriber();
 sub.Subscribe(channelName, (chl, msg) =>
 {
-    Console.WriteLine("Consume from ListQueue:");
+    string queueName = msg;
+    Console.WriteLine($"Consume from {queueName}:");
 
     var data = db.ListRightPop(queueName, count: db.ListLength(queueName));
     if (data?.Any() ?? false)

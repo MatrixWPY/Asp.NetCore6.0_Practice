@@ -11,6 +11,7 @@ using System.Data.SqlClient;
 using System.Net;
 using System.Text.Encodings.Web;
 using System.Text.Unicode;
+using WebApi.BackServices;
 using WebApi.Commands.Instance;
 using WebApi.Commands.Interface;
 using WebApi.DtoModels.Common;
@@ -86,14 +87,15 @@ builder.Services.AddScoped<LogInterceptor>();
 builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
 
 var isOpenSwagger = (bool)builder.Configuration.GetValue(typeof(bool), "IsOpenSwagger");
-
 var isUseRedis = (bool)builder.Configuration.GetValue(typeof(bool), "IsUseRedis");
-var redisType = builder.Configuration["RedisType"];
-
 var isUseRabbitMQ = (bool)builder.Configuration.GetValue(typeof(bool), "IsUseRabbitMQ");
-var queueType = builder.Configuration["QueueType"];
+var isUseBackService = (bool)builder.Configuration.GetValue(typeof(bool), "IsUseBackService");
 
 var dbType = builder.Configuration["DbType"];
+var redisType = builder.Configuration["RedisType"];
+var queueType = builder.Configuration["QueueType"];
+var pubsubType = builder.Configuration["PubSubType"];
+
 var dbConnectString = string.Empty;
 switch (dbType)
 {
@@ -227,6 +229,21 @@ switch (queueType)
     case "RedisStream" when isUseRedis:
         builder.Services.AddScoped<IQueueCommand, QueueRedisStreamCommand>();
         break;
+}
+
+switch (pubsubType)
+{
+    case "RedisList" when isUseRedis:
+        builder.Services.AddScoped<IPublishCommand, PublishRedisListCommand>();
+        builder.Services.AddScoped<ISubscribeCommand, SubscribeRedisListCommand>();
+        break;
+}
+#endregion
+
+#region 註冊BackService
+if (isUseBackService)
+{
+    builder.Services.AddHostedService<ContactInfoSubscribeBackService>();
 }
 #endregion
 

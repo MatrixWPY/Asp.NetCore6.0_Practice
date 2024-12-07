@@ -806,5 +806,237 @@ namespace WebApi.Services.Instance
             await _redisConnection.GetDatabase().StreamAddAsync(queueName, redisKey.ToString(), JsonConvert.SerializeObject(redisValue));
         }
         #endregion
+
+        #region Publish/Subscribe ListQueue
+        /// <summary>
+        /// 訂閱 Channel 通知
+        /// 接收資料從 List Queue
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="channelName"></param>
+        /// <param name="action"></param>
+        public void SubscribeListQueue<T>(string channelName, Action<T> action)
+        {
+            if (string.IsNullOrWhiteSpace(channelName))
+            {
+                return;
+            }
+
+            var sub = _redisConnection.GetSubscriber();
+            sub.Subscribe(channelName, (chl, msg) =>
+            {
+                string queueName = msg;
+                if (queueName != $"Queue_{typeof(T).Name}")
+                {
+                    return;
+                }
+
+                var db = _redisConnection.GetDatabase();
+
+                while (db.ListLength(queueName) > 0)
+                {
+                    var data = db.ListRightPop(queueName);
+                    if (data.IsNullOrEmpty)
+                    {
+                        break;
+                    }
+                    action(JsonConvert.DeserializeObject<T>(data));
+                }
+            });
+        }
+
+        /// <summary>
+        /// 異步
+        /// 訂閱 Channel 通知
+        /// 接收資料從 List Queue
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="channelName"></param>
+        /// <param name="func"></param>
+        /// <returns></returns>
+        public async Task SubscribeListQueueAsync<T>(string channelName, Func<T, Task> func)
+        {
+            if (string.IsNullOrWhiteSpace(channelName))
+            {
+                return;
+            }
+
+            var sub = _redisConnection.GetSubscriber();
+            await sub.SubscribeAsync(channelName, async (chl, msg) =>
+            {
+                string queueName = msg;
+                if (queueName != $"Queue_{typeof(T).Name}")
+                {
+                    return;
+                }
+
+                var db = _redisConnection.GetDatabase();
+
+                while (await db.ListLengthAsync(queueName) > 0)
+                {
+                    var data = await db.ListRightPopAsync(queueName);
+                    if (data.IsNullOrEmpty)
+                    {
+                        break;
+                    }
+                    await func(JsonConvert.DeserializeObject<T>(data));
+                }
+            });
+        }
+
+        /// <summary>
+        /// 訂閱 Channel 通知
+        /// 接收資料從 List Queue
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="channelName"></param>
+        /// <param name="action"></param>
+        public void SubscribeListQueue<T>(string channelName, Action<IEnumerable<T>> action)
+        {
+            if (string.IsNullOrWhiteSpace(channelName))
+            {
+                return;
+            }
+
+            var sub = _redisConnection.GetSubscriber();
+            sub.Subscribe(channelName, (chl, msg) =>
+            {
+                string queueName = msg;
+                if (queueName != $"Queue_{typeof(T).Name}")
+                {
+                    return;
+                }
+
+                var db = _redisConnection.GetDatabase();
+
+                var datas = db.ListRightPop(queueName, db.ListLength(queueName));
+                if (datas == null)
+                {
+                    return;
+                }
+                action(datas.Select(e => JsonConvert.DeserializeObject<T>(e)));
+            });
+        }
+
+        /// <summary>
+        /// 異步
+        /// 訂閱 Channel 通知
+        /// 接收資料從 List Queue
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="channelName"></param>
+        /// <param name="func"></param>
+        /// <returns></returns>
+        public async Task SubscribeListQueueAsync<T>(string channelName, Func<IEnumerable<T>, Task> func)
+        {
+            if (string.IsNullOrWhiteSpace(channelName))
+            {
+                return;
+            }
+
+            var sub = _redisConnection.GetSubscriber();
+            await sub.SubscribeAsync(channelName, async (chl, msg) =>
+            {
+                string queueName = msg;
+                if (queueName != $"Queue_{typeof(T).Name}")
+                {
+                    return;
+                }
+
+                var db = _redisConnection.GetDatabase();
+
+                var datas = await db.ListRightPopAsync(queueName, await db.ListLengthAsync(queueName));
+                if (datas == null)
+                {
+                    return;
+                }
+                await func(datas.Select(e => JsonConvert.DeserializeObject<T>(e)));
+            });
+        }
+
+        /// <summary>
+        /// 傳送資料至 List Queue
+        /// 發佈 Channel 通知
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="channelName"></param>
+        /// <param name="data"></param>
+        public void PublishListQueue<T>(string channelName, T data)
+        {
+            if (string.IsNullOrWhiteSpace(channelName) || data == null)
+            {
+                return;
+            }
+
+            var db = _redisConnection.GetDatabase();
+            string queueName = $"Queue_{typeof(T).Name}";
+            db.ListLeftPush(queueName, JsonConvert.SerializeObject(data));
+            db.Publish(channelName, queueName);
+        }
+
+        /// <summary>
+        /// 異步
+        /// 傳送資料至 List Queue
+        /// 發佈 Channel 通知
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="channelName"></param>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        public async Task PublishListQueueAsync<T>(string channelName, T data)
+        {
+            if (string.IsNullOrWhiteSpace(channelName) || data == null)
+            {
+                return;
+            }
+
+            var db = _redisConnection.GetDatabase();
+            string queueName = $"Queue_{typeof(T).Name}";
+            await db.ListLeftPushAsync(queueName, JsonConvert.SerializeObject(data));
+            await db.PublishAsync(channelName, queueName);
+        }
+
+        /// <summary>
+        /// 傳送資料至 List Queue
+        /// 發佈 Channel 通知
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="channelName"></param>
+        /// <param name="datas"></param>
+        public void PublishListQueue<T>(string channelName, IEnumerable<T> datas)
+        {
+            if (string.IsNullOrWhiteSpace(channelName) || datas == null)
+            {
+                return;
+            }
+
+            var db = _redisConnection.GetDatabase();
+            string queueName = $"Queue_{typeof(T).Name}";
+            db.ListLeftPush(queueName, datas.Select(e => new RedisValue(JsonConvert.SerializeObject(e))).ToArray());
+            db.Publish(channelName, queueName);
+        }
+
+        /// <summary>
+        /// 異步
+        /// 傳送資料至 List Queue
+        /// 發佈 Channel 通知
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="channelName"></param>
+        /// <param name="datas"></param>
+        /// <returns></returns>
+        public async Task PublishListQueueAsync<T>(string channelName, IEnumerable<T> datas)
+        {
+            if (string.IsNullOrWhiteSpace(channelName) || datas == null)
+            {
+                return;
+            }
+
+            var db = _redisConnection.GetDatabase();
+            string queueName = $"Queue_{typeof(T).Name}";
+            await db.ListLeftPushAsync(queueName, datas.Select(e => new RedisValue(JsonConvert.SerializeObject(e))).ToArray());
+            await db.PublishAsync(channelName, queueName);
+        }
+        #endregion
     }
 }

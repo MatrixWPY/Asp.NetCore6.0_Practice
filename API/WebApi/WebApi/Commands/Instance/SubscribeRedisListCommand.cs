@@ -19,9 +19,9 @@ namespace WebApi.Commands.Instance
             _redisService = redisService;
         }
 
-        public void Subscribe<T>(Action<T> action)
+        public void Subscribe<T>(Func<T, bool> func)
         {
-            _redisService.SubscribeListQueue("Channel_ListQueue", action);
+            _redisService.SubscribeListQueue("Channel_ListQueue", func);
         }
     }
 }

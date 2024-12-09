@@ -76,6 +76,30 @@ namespace WebApi.Services.Instance
 
         public void ReceiveDirect<T>(string queueName, Func<T, bool> cbFunc)
         {
+            var channel = _connection.CreateModel();
+            channel.QueueDeclare(queueName, durable: true, exclusive: false, autoDelete: false, arguments: null);
+            //prefetchSize : 每條消息大小，一般設為0，表示不限制
+            //prefetchCount=N : 告知RabbitMQ，不要同時給一個消費者推送多於 N 個消息，也確保了消費速度和性能
+            //global : 是否為全局設置
+            channel.BasicQos(prefetchSize: 0, prefetchCount: 1, global: false);
+
+            var consumer = new EventingBasicConsumer(channel);
+            consumer.Received += (model, ea) =>
+            {
+                var message = Encoding.UTF8.GetString(ea.Body.ToArray());
+
+                var isProcess = cbFunc(JsonConvert.DeserializeObject<T>(message));
+                if (isProcess)
+                {
+                    channel.BasicAck(ea.DeliveryTag, false);
+                }
+            };
+
+            channel.BasicConsume(queueName, autoAck: false, consumer);
+        }
+
+        public void ReceiveDirectWithBlock<T>(string queueName, Func<T, bool> cbFunc)
+        {
             _waitReceived = new ManualResetEventSlim();
 
             using (var channel = _connection.CreateModel())
@@ -103,7 +127,7 @@ namespace WebApi.Services.Instance
             }
         }
 
-        public void ReceiveDirect<T>(string queueName, int receiveCnt, int timeoutSec, Func<T, bool> cbFunc)
+        public void ReceiveDirectWithBlock<T>(string queueName, int receiveCnt, int timeoutSec, Func<T, bool> cbFunc)
         {
             _waitReceived = new ManualResetEventSlim();
             bool continueReceiving = true;

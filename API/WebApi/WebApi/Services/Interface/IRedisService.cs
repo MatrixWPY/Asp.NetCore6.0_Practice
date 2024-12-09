@@ -419,6 +419,26 @@
         Task SubscribeListQueueAsync<T>(string channelName, Func<IEnumerable<T>, Task> func);
 
         /// <summary>
+        /// 訂閱 Channel 通知
+        /// 接收資料從 List Queue
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="channelName"></param>
+        /// <param name="func"></param>
+        void SubscribeListQueue<T>(string channelName, Func<T, bool> func);
+
+        /// <summary>
+        /// 異步
+        /// 訂閱 Channel 通知
+        /// 接收資料從 List Queue
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="channelName"></param>
+        /// <param name="func"></param>
+        /// <returns></returns>
+        Task SubscribeListQueueAsync<T>(string channelName, Func<T, Task<bool>> func);
+
+        /// <summary>
         /// 傳送資料至 List Queue
         /// 發佈 Channel 通知
         /// </summary>

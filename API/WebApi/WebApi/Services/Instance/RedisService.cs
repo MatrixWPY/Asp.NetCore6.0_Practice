@@ -955,6 +955,90 @@ namespace WebApi.Services.Instance
         }
 
         /// <summary>
+        /// 訂閱 Channel 通知
+        /// 接收資料從 List Queue
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="channelName"></param>
+        /// <param name="func"></param>
+        public void SubscribeListQueue<T>(string channelName, Func<T, bool> func)
+        {
+            if (string.IsNullOrWhiteSpace(channelName))
+            {
+                return;
+            }
+
+            var sub = _redisConnection.GetSubscriber();
+            sub.Subscribe(channelName, (chl, msg) =>
+            {
+                string queueName = msg;
+                if (queueName != $"Queue_{typeof(T).Name}")
+                {
+                    return;
+                }
+
+                var db = _redisConnection.GetDatabase();
+
+                while (db.ListLength(queueName) > 0)
+                {
+                    var data = db.ListRightPop(queueName);
+                    if (data.IsNullOrEmpty)
+                    {
+                        break;
+                    }
+                    var res = func(JsonConvert.DeserializeObject<T>(data));
+                    if (res == false)
+                    {
+                        break;
+                    }
+                }
+            });
+        }
+
+        /// <summary>
+        /// 異步
+        /// 訂閱 Channel 通知
+        /// 接收資料從 List Queue
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="channelName"></param>
+        /// <param name="func"></param>
+        /// <returns></returns>
+        public async Task SubscribeListQueueAsync<T>(string channelName, Func<T, Task<bool>> func)
+        {
+            if (string.IsNullOrWhiteSpace(channelName))
+            {
+                return;
+            }
+
+            var sub = _redisConnection.GetSubscriber();
+            await sub.SubscribeAsync(channelName, async (chl, msg) =>
+            {
+                string queueName = msg;
+                if (queueName != $"Queue_{typeof(T).Name}")
+                {
+                    return;
+                }
+
+                var db = _redisConnection.GetDatabase();
+
+                while (await db.ListLengthAsync(queueName) > 0)
+                {
+                    var data = await db.ListRightPopAsync(queueName);
+                    if (data.IsNullOrEmpty)
+                    {
+                        break;
+                    }
+                    var res = await func(JsonConvert.DeserializeObject<T>(data));
+                    if (res == false)
+                    {
+                        break;
+                    }
+                }
+            });
+        }
+
+        /// <summary>
         /// 傳送資料至 List Queue
         /// 發佈 Channel 通知
         /// </summary>

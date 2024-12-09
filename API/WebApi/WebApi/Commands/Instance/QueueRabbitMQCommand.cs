@@ -24,7 +24,7 @@ namespace WebApi.Commands.Instance
         {
             List<T> res = new List<T>();
 
-            _rabbitMQService.ReceiveDirect<T>(typeof(T).Name, cnt, 3,
+            _rabbitMQService.ReceiveDirectWithBlock<T>(typeof(T).Name, cnt, 3,
                 (obj) =>
                 {
                     res.Add(obj);

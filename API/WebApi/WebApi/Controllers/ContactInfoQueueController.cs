@@ -43,7 +43,7 @@ namespace WebApi.Controllers
                     ContactInfoID = e.ContactInfoID,
                     Name = e.Name,
                     Nickname = e.Nickname,
-                    Gender = (short)e.Gender,
+                    Gender = (short?)e.Gender,
                     Age = e.Age,
                     PhoneNo = e.PhoneNo,
                     Address = e.Address

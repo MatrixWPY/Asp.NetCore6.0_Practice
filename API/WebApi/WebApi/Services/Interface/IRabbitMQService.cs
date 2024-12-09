@@ -28,9 +28,17 @@
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="queueName"></param>
+        /// <param name="cbFunc"></param>
+        void ReceiveDirectWithBlock<T>(string queueName, Func<T, bool> cbFunc);
+
+        /// <summary>
+        /// 接收資料從 RabbitMQ
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="queueName"></param>
         /// <param name="receiveCnt"></param>
         /// <param name="timeoutSec"></param>
         /// <param name="cbFunc"></param>
-        void ReceiveDirect<T>(string queueName, int receiveCnt, int timeoutSec, Func<T, bool> cbFunc);
+        void ReceiveDirectWithBlock<T>(string queueName, int receiveCnt, int timeoutSec, Func<T, bool> cbFunc);
     }
 }

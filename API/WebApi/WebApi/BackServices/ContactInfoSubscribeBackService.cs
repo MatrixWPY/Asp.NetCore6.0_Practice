@@ -34,7 +34,7 @@ namespace WebApi.BackServices
         {
             _subscribeCommand.Subscribe<ContactInfo>((obj) =>
             {
-                _contactInfoService.Insert(obj);
+                return _contactInfoService.Insert(obj);
             });
             return Task.CompletedTask;
         }

@@ -233,6 +233,11 @@ switch (queueType)
 
 switch (pubsubType)
 {
+    case "RabbitMQ" when isUseRabbitMQ:
+        builder.Services.AddScoped<IPublishCommand, PublishRabbitMQCommand>();
+        builder.Services.AddScoped<ISubscribeCommand, SubscribeRabbitMQCommand>();
+        break;
+
     case "RedisList" when isUseRedis:
         builder.Services.AddScoped<IPublishCommand, PublishRedisListCommand>();
         builder.Services.AddScoped<ISubscribeCommand, SubscribeRedisListCommand>();

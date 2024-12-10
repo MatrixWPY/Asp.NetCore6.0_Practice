@@ -10,19 +10,19 @@ namespace WebApi.BackServices
     public class ContactInfoSubscribeBackService : BackgroundService
     {
         private readonly ISubscribeCommand _subscribeCommand;
-        private readonly IContactInfoService _contactInfoService;
+        private readonly IServiceScopeFactory _serviceScopeFactory;
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="subscribeCommand"></param>
-        /// <param name="contactInfoService"></param>
+        /// <param name="serviceScopeFactory"></param>
         public ContactInfoSubscribeBackService(
             ISubscribeCommand subscribeCommand,
-            IContactInfoService contactInfoService)
+            IServiceScopeFactory serviceScopeFactory)
         {
             _subscribeCommand = subscribeCommand;
-            _contactInfoService = contactInfoService;
+            _serviceScopeFactory = serviceScopeFactory;
         }
 
         /// <summary>
@@ -34,7 +34,11 @@ namespace WebApi.BackServices
         {
             _subscribeCommand.Subscribe<ContactInfo>((obj) =>
             {
-                return _contactInfoService.Insert(obj);
+                using (var scope = _serviceScopeFactory.CreateScope())
+                {
+                    var contactInfoService = scope.ServiceProvider.GetRequiredService<IContactInfoService>();
+                    return contactInfoService.Insert(obj);
+                }
             });
             return Task.CompletedTask;
         }

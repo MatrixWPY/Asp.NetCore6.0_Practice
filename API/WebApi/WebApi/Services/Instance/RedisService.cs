@@ -989,7 +989,7 @@ namespace WebApi.Services.Instance
                     var res = func(JsonConvert.DeserializeObject<T>(data));
                     if (res == false)
                     {
-                        break;
+                        db.ListRightPush(queueName, data);
                     }
                 }
             });
@@ -1002,9 +1002,9 @@ namespace WebApi.Services.Instance
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="channelName"></param>
-        /// <param name="func"></param>
+        /// <param name="funcAsync"></param>
         /// <returns></returns>
-        public async Task SubscribeListQueueAsync<T>(string channelName, Func<T, Task<bool>> func)
+        public async Task SubscribeListQueueAsync<T>(string channelName, Func<T, Task<bool>> funcAsync)
         {
             if (string.IsNullOrWhiteSpace(channelName))
             {
@@ -1029,10 +1029,10 @@ namespace WebApi.Services.Instance
                     {
                         break;
                     }
-                    var res = await func(JsonConvert.DeserializeObject<T>(data));
+                    var res = await funcAsync(JsonConvert.DeserializeObject<T>(data));
                     if (res == false)
                     {
-                        break;
+                        await db.ListRightPushAsync(queueName, data);
                     }
                 }
             });

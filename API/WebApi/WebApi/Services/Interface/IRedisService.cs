@@ -434,9 +434,9 @@
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="channelName"></param>
-        /// <param name="func"></param>
+        /// <param name="funcAsync"></param>
         /// <returns></returns>
-        Task SubscribeListQueueAsync<T>(string channelName, Func<T, Task<bool>> func);
+        Task SubscribeListQueueAsync<T>(string channelName, Func<T, Task<bool>> funcAsync);
 
         /// <summary>
         /// 傳送資料至 List Queue

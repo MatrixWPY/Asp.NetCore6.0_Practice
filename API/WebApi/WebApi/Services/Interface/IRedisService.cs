@@ -400,7 +400,7 @@
 
         /// <summary>
         /// 訂閱 Channel 通知
-        /// 接收資料從 List Queue
+        /// 接收多筆資料從 List Queue
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="channelName"></param>
@@ -410,7 +410,7 @@
         /// <summary>
         /// 異步
         /// 訂閱 Channel 通知
-        /// 接收資料從 List Queue
+        /// 接收多筆資料從 List Queue
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="channelName"></param>
@@ -420,7 +420,7 @@
 
         /// <summary>
         /// 訂閱 Channel 通知
-        /// 接收資料從 List Queue
+        /// 接收資料從 List Queue (Simulate Ack)
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="channelName"></param>
@@ -430,7 +430,7 @@
         /// <summary>
         /// 異步
         /// 訂閱 Channel 通知
-        /// 接收資料從 List Queue
+        /// 接收資料從 List Queue (Simulate Ack)
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="channelName"></param>
@@ -459,7 +459,7 @@
         Task PublishListQueueAsync<T>(string channelName, T data);
 
         /// <summary>
-        /// 傳送資料至 List Queue
+        /// 傳送多筆資料至 List Queue
         /// 發佈 Channel 通知
         /// </summary>
         /// <typeparam name="T"></typeparam>
@@ -469,7 +469,7 @@
 
         /// <summary>
         /// 異步
-        /// 傳送資料至 List Queue
+        /// 傳送多筆資料至 List Queue
         /// 發佈 Channel 通知
         /// </summary>
         /// <typeparam name="T"></typeparam>
@@ -477,6 +477,46 @@
         /// <param name="datas"></param>
         /// <returns></returns>
         Task PublishListQueueAsync<T>(string channelName, IEnumerable<T> datas);
+
+        /// <summary>
+        /// 傳送資料至多個 List Queue
+        /// 發佈多個 Channel 通知
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="channelNames"></param>
+        /// <param name="data"></param>
+        void PublishListQueue<T>(IEnumerable<string> channelNames, T data);
+
+        /// <summary>
+        /// 異步
+        /// 傳送資料至多個 List Queue
+        /// 發佈多個 Channel 通知
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="channelNames"></param>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        Task PublishListQueueAsync<T>(IEnumerable<string> channelNames, T data);
+
+        /// <summary>
+        /// 傳送多筆資料至多個 List Queue
+        /// 發佈多個 Channel 通知
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="channelNames"></param>
+        /// <param name="datas"></param>
+        void PublishListQueue<T>(IEnumerable<string> channelNames, IEnumerable<T> datas);
+
+        /// <summary>
+        /// 異步
+        /// 傳送多筆資料至多個 List Queue
+        /// 發佈多個 Channel 通知
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="channelNames"></param>
+        /// <param name="datas"></param>
+        /// <returns></returns>
+        Task PublishListQueueAsync<T>(IEnumerable<string> channelNames, IEnumerable<T> datas);
         #endregion
     }
 }

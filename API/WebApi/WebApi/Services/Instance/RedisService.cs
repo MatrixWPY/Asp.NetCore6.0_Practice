@@ -823,16 +823,19 @@ namespace WebApi.Services.Instance
             }
 
             var sub = _redisConnection.GetSubscriber();
-            sub.Subscribe(channelName, (chl, msg) =>
+            var patternMode = channelName.StartsWith("*") || channelName.EndsWith("*")
+                            ? RedisChannel.PatternMode.Pattern : RedisChannel.PatternMode.Literal;
+            var channel = new RedisChannel(channelName, patternMode);
+
+            sub.Subscribe(channel, (chl, msg) =>
             {
                 string queueName = msg;
-                if (queueName != $"Queue_{typeof(T).Name}")
+                if (queueName.EndsWith($":{typeof(T).Name}") == false)
                 {
                     return;
                 }
 
                 var db = _redisConnection.GetDatabase();
-
                 while (db.ListLength(queueName) > 0)
                 {
                     var data = db.ListRightPop(queueName);
@@ -840,6 +843,7 @@ namespace WebApi.Services.Instance
                     {
                         break;
                     }
+
                     action(JsonConvert.DeserializeObject<T>(data));
                 }
             });
@@ -862,16 +866,19 @@ namespace WebApi.Services.Instance
             }
 
             var sub = _redisConnection.GetSubscriber();
-            await sub.SubscribeAsync(channelName, async (chl, msg) =>
+            var patternMode = channelName.StartsWith("*") || channelName.EndsWith("*")
+                            ? RedisChannel.PatternMode.Pattern : RedisChannel.PatternMode.Literal;
+            var channel = new RedisChannel(channelName, patternMode);
+
+            await sub.SubscribeAsync(channel, async (chl, msg) =>
             {
                 string queueName = msg;
-                if (queueName != $"Queue_{typeof(T).Name}")
+                if (queueName.EndsWith($":{typeof(T).Name}") == false)
                 {
                     return;
                 }
 
                 var db = _redisConnection.GetDatabase();
-
                 while (await db.ListLengthAsync(queueName) > 0)
                 {
                     var data = await db.ListRightPopAsync(queueName);
@@ -879,6 +886,7 @@ namespace WebApi.Services.Instance
                     {
                         break;
                     }
+
                     await func(JsonConvert.DeserializeObject<T>(data));
                 }
             });
@@ -886,7 +894,7 @@ namespace WebApi.Services.Instance
 
         /// <summary>
         /// 訂閱 Channel 通知
-        /// 接收資料從 List Queue
+        /// 接收多筆資料從 List Queue
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="channelName"></param>
@@ -899,21 +907,25 @@ namespace WebApi.Services.Instance
             }
 
             var sub = _redisConnection.GetSubscriber();
-            sub.Subscribe(channelName, (chl, msg) =>
+            var patternMode = channelName.StartsWith("*") || channelName.EndsWith("*")
+                            ? RedisChannel.PatternMode.Pattern : RedisChannel.PatternMode.Literal;
+            var channel = new RedisChannel(channelName, patternMode);
+
+            sub.Subscribe(channel, (chl, msg) =>
             {
                 string queueName = msg;
-                if (queueName != $"Queue_{typeof(T).Name}")
+                if (queueName.EndsWith($":{typeof(T).Name}") == false)
                 {
                     return;
                 }
 
                 var db = _redisConnection.GetDatabase();
-
                 var datas = db.ListRightPop(queueName, db.ListLength(queueName));
                 if (datas == null)
                 {
                     return;
                 }
+
                 action(datas.Select(e => JsonConvert.DeserializeObject<T>(e)));
             });
         }
@@ -921,7 +933,7 @@ namespace WebApi.Services.Instance
         /// <summary>
         /// 異步
         /// 訂閱 Channel 通知
-        /// 接收資料從 List Queue
+        /// 接收多筆資料從 List Queue
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="channelName"></param>
@@ -935,28 +947,32 @@ namespace WebApi.Services.Instance
             }
 
             var sub = _redisConnection.GetSubscriber();
-            await sub.SubscribeAsync(channelName, async (chl, msg) =>
+            var patternMode = channelName.StartsWith("*") || channelName.EndsWith("*")
+                            ? RedisChannel.PatternMode.Pattern : RedisChannel.PatternMode.Literal;
+            var channel = new RedisChannel(channelName, patternMode);
+
+            await sub.SubscribeAsync(channel, async (chl, msg) =>
             {
                 string queueName = msg;
-                if (queueName != $"Queue_{typeof(T).Name}")
+                if (queueName.EndsWith($":{typeof(T).Name}") == false)
                 {
                     return;
                 }
 
                 var db = _redisConnection.GetDatabase();
-
                 var datas = await db.ListRightPopAsync(queueName, await db.ListLengthAsync(queueName));
                 if (datas == null)
                 {
                     return;
                 }
+
                 await func(datas.Select(e => JsonConvert.DeserializeObject<T>(e)));
             });
         }
 
         /// <summary>
         /// 訂閱 Channel 通知
-        /// 接收資料從 List Queue
+        /// 接收資料從 List Queue (Simulate Ack)
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="channelName"></param>
@@ -969,16 +985,19 @@ namespace WebApi.Services.Instance
             }
 
             var sub = _redisConnection.GetSubscriber();
-            sub.Subscribe(channelName, (chl, msg) =>
+            var patternMode = channelName.StartsWith("*") || channelName.EndsWith("*")
+                            ? RedisChannel.PatternMode.Pattern : RedisChannel.PatternMode.Literal;
+            var channel = new RedisChannel(channelName, patternMode);
+
+            sub.Subscribe(channel, (chl, msg) =>
             {
                 string queueName = msg;
-                if (queueName != $"Queue_{typeof(T).Name}")
+                if (queueName.EndsWith($":{typeof(T).Name}") == false)
                 {
                     return;
                 }
 
                 var db = _redisConnection.GetDatabase();
-
                 while (db.ListLength(queueName) > 0)
                 {
                     var data = db.ListRightPop(queueName);
@@ -986,6 +1005,7 @@ namespace WebApi.Services.Instance
                     {
                         break;
                     }
+
                     var res = func(JsonConvert.DeserializeObject<T>(data));
                     if (res == false)
                     {
@@ -998,7 +1018,7 @@ namespace WebApi.Services.Instance
         /// <summary>
         /// 異步
         /// 訂閱 Channel 通知
-        /// 接收資料從 List Queue
+        /// 接收資料從 List Queue (Simulate Ack)
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="channelName"></param>
@@ -1012,10 +1032,14 @@ namespace WebApi.Services.Instance
             }
 
             var sub = _redisConnection.GetSubscriber();
-            await sub.SubscribeAsync(channelName, async (chl, msg) =>
+            var patternMode = channelName.StartsWith("*") || channelName.EndsWith("*")
+                            ? RedisChannel.PatternMode.Pattern : RedisChannel.PatternMode.Literal;
+            var channel = new RedisChannel(channelName, patternMode);
+
+            await sub.SubscribeAsync(channel, async (chl, msg) =>
             {
                 string queueName = msg;
-                if (queueName != $"Queue_{typeof(T).Name}")
+                if (queueName.EndsWith($":{typeof(T).Name}") == false)
                 {
                     return;
                 }
@@ -1029,6 +1053,7 @@ namespace WebApi.Services.Instance
                     {
                         break;
                     }
+
                     var res = await funcAsync(JsonConvert.DeserializeObject<T>(data));
                     if (res == false)
                     {
@@ -1053,7 +1078,7 @@ namespace WebApi.Services.Instance
             }
 
             var db = _redisConnection.GetDatabase();
-            string queueName = $"Queue_{typeof(T).Name}";
+            string queueName = $"{channelName}:{typeof(T).Name}";
             db.ListLeftPush(queueName, JsonConvert.SerializeObject(data));
             db.Publish(channelName, queueName);
         }
@@ -1075,13 +1100,13 @@ namespace WebApi.Services.Instance
             }
 
             var db = _redisConnection.GetDatabase();
-            string queueName = $"Queue_{typeof(T).Name}";
+            string queueName = $"{channelName}:{typeof(T).Name}";
             await db.ListLeftPushAsync(queueName, JsonConvert.SerializeObject(data));
             await db.PublishAsync(channelName, queueName);
         }
 
         /// <summary>
-        /// 傳送資料至 List Queue
+        /// 傳送多筆資料至 List Queue
         /// 發佈 Channel 通知
         /// </summary>
         /// <typeparam name="T"></typeparam>
@@ -1095,14 +1120,14 @@ namespace WebApi.Services.Instance
             }
 
             var db = _redisConnection.GetDatabase();
-            string queueName = $"Queue_{typeof(T).Name}";
+            string queueName = $"{channelName}:{typeof(T).Name}";
             db.ListLeftPush(queueName, datas.Select(e => new RedisValue(JsonConvert.SerializeObject(e))).ToArray());
             db.Publish(channelName, queueName);
         }
 
         /// <summary>
         /// 異步
-        /// 傳送資料至 List Queue
+        /// 傳送多筆資料至 List Queue
         /// 發佈 Channel 通知
         /// </summary>
         /// <typeparam name="T"></typeparam>
@@ -1117,9 +1142,105 @@ namespace WebApi.Services.Instance
             }
 
             var db = _redisConnection.GetDatabase();
-            string queueName = $"Queue_{typeof(T).Name}";
+            string queueName = $"{channelName}:{typeof(T).Name}";
             await db.ListLeftPushAsync(queueName, datas.Select(e => new RedisValue(JsonConvert.SerializeObject(e))).ToArray());
             await db.PublishAsync(channelName, queueName);
+        }
+
+        /// <summary>
+        /// 傳送資料至多個 List Queue
+        /// 發佈多個 Channel 通知
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="channelNames"></param>
+        /// <param name="data"></param>
+        public void PublishListQueue<T>(IEnumerable<string> channelNames, T data)
+        {
+            if (channelNames == null || channelNames.Any() == false || data == null)
+            {
+                return;
+            }
+
+            var db = _redisConnection.GetDatabase();
+            foreach (var channelName in channelNames)
+            {
+                string queueName = $"{channelName}:{typeof(T).Name}";
+                db.ListLeftPush(queueName, JsonConvert.SerializeObject(data));
+                db.Publish(channelName, queueName);
+            }
+        }
+
+        /// <summary>
+        /// 異步
+        /// 傳送資料至多個 List Queue
+        /// 發佈多個 Channel 通知
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="channelNames"></param>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        public async Task PublishListQueueAsync<T>(IEnumerable<string> channelNames, T data)
+        {
+            if (channelNames == null || channelNames.Any() == false || data == null)
+            {
+                return;
+            }
+
+            var db = _redisConnection.GetDatabase();
+            foreach (var channelName in channelNames)
+            {
+                string queueName = $"{channelName}:{typeof(T).Name}";
+                await db.ListLeftPushAsync(queueName, JsonConvert.SerializeObject(data));
+                await db.PublishAsync(channelName, queueName);
+            }
+        }
+
+        /// <summary>
+        /// 傳送多筆資料至多個 List Queue
+        /// 發佈多個 Channel 通知
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="channelNames"></param>
+        /// <param name="datas"></param>
+        public void PublishListQueue<T>(IEnumerable<string> channelNames, IEnumerable<T> datas)
+        {
+            if (channelNames == null || channelNames.Any() == false || datas == null)
+            {
+                return;
+            }
+
+            var db = _redisConnection.GetDatabase();
+            foreach (var channelName in channelNames)
+            {
+                string queueName = $"{channelName}:{typeof(T).Name}";
+                db.ListLeftPush(queueName, datas.Select(e => new RedisValue(JsonConvert.SerializeObject(e))).ToArray());
+                db.Publish(channelName, queueName);
+            }
+        }
+
+        /// <summary>
+        /// 異步
+        /// 傳送多筆資料至多個 List Queue
+        /// 發佈多個 Channel 通知
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="channelNames"></param>
+        /// <param name="datas"></param>
+        /// <returns></returns>
+        public async Task PublishListQueueAsync<T>(IEnumerable<string> channelNames, IEnumerable<T> datas)
+        {
+            if (channelNames == null || channelNames.Any() == false || datas == null)
+            {
+                return;
+            }
+
+            var db = _redisConnection.GetDatabase();
+            foreach (var channelName in channelNames)
+            {
+                string queueName = $"{channelName}:{typeof(T).Name}";
+                await db.ListLeftPushAsync(queueName, datas.Select(e => new RedisValue(JsonConvert.SerializeObject(e))).ToArray());
+                await db.PublishAsync(channelName, queueName);
+            }
         }
         #endregion
     }

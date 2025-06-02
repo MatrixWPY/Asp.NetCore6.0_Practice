@@ -22,11 +22,11 @@ namespace BasicTest
             {
                 SetSchTask(nameof(WriteLogPerMinuteJob),
                     scope.ServiceProvider.GetRequiredService<WriteLogPerMinuteJob>(),
-                    "0 0/1 * * * ?");
+                    "*/1 * * * *");
 
                 SetSchTask(nameof(WriteLogOnTimeJob),
                     scope.ServiceProvider.GetRequiredService<WriteLogOnTimeJob>(),
-                    "0 0 6 * * ?");
+                    "0 6 * * *");
             }
         }
 

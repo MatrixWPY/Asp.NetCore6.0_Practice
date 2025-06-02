@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Worker">
+﻿<Project Sdk="Microsoft.NET.Sdk.Worker">
 
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
@@ -9,8 +9,24 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="6.0.1" />
     <PackageReference Include="NLog.Web.AspNetCore" Version="5.5.0" />
     <PackageReference Include="Quartz" Version="3.14.0" />
     <PackageReference Include="Quartz.Extensions.Hosting" Version="3.14.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Batch\CreateService.bat">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Batch\DeleteService.bat">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Batch\StartService.bat">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Batch\StopService.bat">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 </Project>

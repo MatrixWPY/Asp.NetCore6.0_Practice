@@ -5,6 +5,10 @@ using WorkerService.Jobs;
 
 var builder = Host.CreateDefaultBuilder(args);
 
+#region 設定 Windows Service 模式執行
+builder.UseWindowsService();
+#endregion
+
 #region 註冊NLog
 builder.ConfigureLogging(logging =>
 {

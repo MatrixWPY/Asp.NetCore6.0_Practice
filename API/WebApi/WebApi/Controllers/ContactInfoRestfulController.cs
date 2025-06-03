@@ -1,9 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using WebApi.Commands.Interface;
+using WebApi.DtoModels.Common;
+using WebApi.DtoModels.ContactInfo;
 using WebApi.Filters;
-using WebApi.Models.Data;
-using WebApi.Models.Request;
-using WebApi.Models.Response;
 
 namespace WebApi.Controllers
 {
@@ -32,7 +31,7 @@ namespace WebApi.Controllers
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpGet, Route("{id}")]
-        public ApiResultRP<ContactInfo> Get(long id)
+        public ApiResultRP<QueryRP> Get([FromRoute] long id)
         {
             return _contactInfoCommand.QueryByID(id);
         }
@@ -43,7 +42,7 @@ namespace WebApi.Controllers
         /// <param name="objRQ"></param>
         /// <returns></returns>
         [HttpGet]
-        public ApiResultRP<PageDataRP<IEnumerable<ContactInfo>>> Get([FromQuery] ContactInfoQueryRQ objRQ)
+        public ApiResultRP<PageDataRP<IEnumerable<QueryRP>>> Get([FromQuery] QueryRQ objRQ)
         {
             return _contactInfoCommand.QueryByCondition(objRQ);
         }
@@ -54,9 +53,9 @@ namespace WebApi.Controllers
         /// <param name="objRQ"></param>
         /// <returns></returns>
         [HttpPost]
-        public ApiResultRP<ContactInfo> Post([FromBody] ContactInfoAddRQ objRQ)
+        public ApiResultRP<QueryRP> Post([FromBody] CreateRQ objRQ)
         {
-            return _contactInfoCommand.Add(objRQ);
+            return _contactInfoCommand.Create(objRQ);
         }
 
         /// <summary>
@@ -66,9 +65,9 @@ namespace WebApi.Controllers
         /// <param name="objRQ"></param>
         /// <returns></returns>
         [HttpPut, Route("{id}")]
-        public ApiResultRP<ContactInfo> Put(long id, [FromBody] ContactInfoRestfulEditRQ objRQ)
+        public ApiResultRP<QueryRP> Put([FromRoute] long id, [FromBody] RestfulEditRQ objRQ)
         {
-            return _contactInfoCommand.Edit(new ContactInfoEditRQ()
+            return _contactInfoCommand.Edit(new EditRQ()
             {
                 ID = id,
                 Name = objRQ.Name,
@@ -87,9 +86,9 @@ namespace WebApi.Controllers
         /// <param name="objRQ"></param>
         /// <returns></returns>
         [HttpPatch, Route("{id}")]
-        public ApiResultRP<ContactInfo> Patch(long id, [FromBody] ContactInfoRestfulEditPartialRQ objRQ)
+        public ApiResultRP<QueryRP> Patch([FromRoute] long id, [FromBody] RestfulEditPartialRQ objRQ)
         {
-            return _contactInfoCommand.EditPartial(new ContactInfoEditPartialRQ()
+            return _contactInfoCommand.EditPartial(new EditPartialRQ()
             {
                 ID = id,
                 Name = objRQ.Name,
@@ -107,9 +106,9 @@ namespace WebApi.Controllers
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpDelete, Route("{id}")]
-        public ApiResultRP<bool> Delete(long id)
+        public ApiResultRP<bool> Delete([FromRoute] long id)
         {
-            return _contactInfoCommand.DeleteByID(new List<long>() { id });
+            return _contactInfoCommand.Remove(new List<long>() { id });
         }
     }
 }

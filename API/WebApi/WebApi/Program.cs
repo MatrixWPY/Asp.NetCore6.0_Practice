@@ -1,14 +1,23 @@
+using AspectCore.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi.Models;
 using MySql.Data.MySqlClient;
+using Newtonsoft.Json;
 using NLog.Extensions.Logging;
+using Oracle.ManagedDataAccess.Client;
 using System.Data;
 using System.Data.SqlClient;
+using System.Net;
 using System.Text.Encodings.Web;
 using System.Text.Unicode;
+using WebApi.BackServices;
 using WebApi.Commands.Instance;
 using WebApi.Commands.Interface;
+using WebApi.DtoModels.Common;
+using WebApi.Interceptors;
 using WebApi.Middlewares;
+using WebApi.Profiles;
 using WebApi.Services.Instance;
 using WebApi.Services.Interface;
 
@@ -18,29 +27,29 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers().AddJsonOptions(opt =>
 {
-    // ¦WºÙ©¿²¤¤j¤p¼g
+    // åç¨±å¿½ç•¥å¤§å°å¯«
     opt.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
-    // §Ç¦C¤Æ©R¦W³W«h
+    // åºåˆ—åŒ–å‘½åè¦å‰‡
     opt.JsonSerializerOptions.PropertyNamingPolicy = null;
-    // ºû«ù­ì¦r¤¸½s½X
+    // ç¶­æŒåŸå­—å…ƒç·¨ç¢¼
     opt.JsonSerializerOptions.Encoder = JavaScriptEncoder.Create(UnicodeRanges.All);
 });
 
 builder.Services.Configure<ApiBehaviorOptions>(opt =>
 {
-    // °±¥ÎModelStateInvalidFilter => ¨Ï¥Î¦Û­qValidFilter:ValidRequest
+    // åœç”¨ModelStateInvalidFilter => ä½¿ç”¨è‡ªè¨‚ValidFilter:ValidRequest
     opt.SuppressModelStateInvalidFilter = true;
 });
 
-#region µù¥USwagger
+#region è¨­å®šSwagger
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc(
-        // name: §ñÃö SwaggerDocument ªº URL ¦ì¸m¡C
+        // name: æ”¸é—œ SwaggerDocument çš„ URL ä½ç½®ã€‚
         name: "v1",
-        // info: ¬O¥Î©ó SwaggerDocument ª©¥»¸ê°TªºÅã¥Ü(¤º®e«D¥²¶ñ)¡C
+        // info: æ˜¯ç”¨æ–¼ SwaggerDocument ç‰ˆæœ¬è³‡è¨Šçš„é¡¯ç¤º(å…§å®¹éå¿…å¡«)ã€‚
         info: new OpenApiInfo
         {
             Title = "WebApi",
@@ -54,52 +63,112 @@ builder.Services.AddSwaggerGen(c =>
         }
     );
 
-    // XML ÀÉ®×: ¤å¥óµù¸Ñ¼ĞÅÒ
+    // XML æª”æ¡ˆ: æ–‡ä»¶è¨»è§£æ¨™ç±¤
     var xmlPath = Path.Combine(AppContext.BaseDirectory, "WebApi.xml");
     c.IncludeXmlComments(xmlPath);
 });
 #endregion
 
-#region µù¥UNLog
+#region è¨­å®šNLog
 builder.Logging.AddNLog("nlog.config");
 #endregion
 
-#region µù¥URedis
+#region è¨­å®šAspectCore
+// ä½¿ç”¨AspectCoreå–ä»£é è¨­IoCå®¹å™¨
+builder.Host.UseServiceProviderFactory(new DynamicProxyServiceProviderFactory());
+builder.Services.ConfigureDynamicProxy();
+#endregion
+
+#region è¨»å†ŠInterceptor
+builder.Services.AddScoped<LogInterceptor>();
+#endregion
+
+#region è®€å–appsettings.jsonè¨­å®š
+builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+
+var isOpenSwagger = (bool)builder.Configuration.GetValue(typeof(bool), "IsOpenSwagger");
 var isUseRedis = (bool)builder.Configuration.GetValue(typeof(bool), "IsUseRedis");
+var isUseRabbitMQ = (bool)builder.Configuration.GetValue(typeof(bool), "IsUseRabbitMQ");
+var isUseBackService = (bool)builder.Configuration.GetValue(typeof(bool), "IsUseBackService");
+
+var dbType = builder.Configuration["DbType"];
+var redisType = builder.Configuration["RedisType"];
+var queueType = builder.Configuration["QueueType"];
+var pubsubType = builder.Configuration["PubSubType"];
+
+var dbConnectString = string.Empty;
+switch (dbType)
+{
+    case "MsSql":
+        dbConnectString = builder.Configuration["ConnectionStrings:MsSql"];
+        break;
+
+    case "MsSqlSP":
+        dbConnectString = builder.Configuration["ConnectionStrings:MsSqlSP"];
+        break;
+
+    case "MySql":
+        dbConnectString = builder.Configuration["ConnectionStrings:MySql"];
+        break;
+
+    case "MySqlSP":
+        dbConnectString = builder.Configuration["ConnectionStrings:MySqlSP"];
+        break;
+
+    case "Oracle":
+        dbConnectString = builder.Configuration["ConnectionStrings:Oracle"];
+        break;
+
+    case "OracleSP":
+        dbConnectString = builder.Configuration["ConnectionStrings:OracleSP"];
+        break;
+}
+#endregion
+
+#region è¨»å†ŠRedis
 if (isUseRedis)
 {
     builder.Services.AddSingleton<IRedisService, RedisService>();
 }
 #endregion
 
-#region µù¥UDB³s½u
-var dbType = builder.Configuration.GetValue(typeof(string), "DbType");
-var dbConnectString = string.Empty;
+#region è¨»å†ŠRabbitMQ
+if (isUseRabbitMQ)
+{
+    builder.Services.AddSingleton<IRabbitMQService, RabbitMQService>();
+}
+#endregion
+
+#region è¨»å†ŠDBé€£ç·š
 switch (dbType)
 {
     case "MsSql":
-        dbConnectString = (string)builder.Configuration.GetValue(typeof(string), "ConnectionStrings:MsSql");
         builder.Services.AddScoped<IDbConnection, SqlConnection>(db => new SqlConnection(dbConnectString));
         break;
 
     case "MsSqlSP":
-        dbConnectString = (string)builder.Configuration.GetValue(typeof(string), "ConnectionStrings:MsSqlSP");
         builder.Services.AddScoped<IDbConnection, SqlConnection>(db => new SqlConnection(dbConnectString));
         break;
 
     case "MySql":
-        dbConnectString = (string)builder.Configuration.GetValue(typeof(string), "ConnectionStrings:MySql");
         builder.Services.AddScoped<IDbConnection, MySqlConnection>(db => new MySqlConnection(dbConnectString));
         break;
 
     case "MySqlSP":
-        dbConnectString = (string)builder.Configuration.GetValue(typeof(string), "ConnectionStrings:MySqlSP");
         builder.Services.AddScoped<IDbConnection, MySqlConnection>(db => new MySqlConnection(dbConnectString));
+        break;
+
+    case "Oracle":
+        builder.Services.AddScoped<IDbConnection, OracleConnection>(db => new OracleConnection(dbConnectString));
+        break;
+
+    case "OracleSP":
+        builder.Services.AddScoped<IDbConnection, OracleConnection>(db => new OracleConnection(dbConnectString));
         break;
 }
 #endregion
 
-#region µù¥UService
+#region è¨»å†ŠService
 switch (dbType)
 {
     case "MsSql":
@@ -117,18 +186,74 @@ switch (dbType)
     case "MySqlSP":
         builder.Services.AddScoped<IContactInfoService, ContactInfoMysqlSPService>();
         break;
+
+    case "Oracle":
+        builder.Services.AddScoped<IContactInfoService, ContactInfoOracleService>();
+        break;
+
+    case "OracleSP":
+        builder.Services.AddScoped<IContactInfoService, ContactInfoOracleSPService>();
+        break;
 }
 #endregion
 
-#region µù¥UCommand
+#region è¨»å†ŠCommand
 if (isUseRedis)
 {
-    builder.Services.AddScoped<IContactInfoCommand, ContactInfoRedisCommand>();
+    switch (redisType)
+    {
+        case "String":
+            builder.Services.AddScoped<IContactInfoCommand, ContactInfoRedisStringCommand>();
+            break;
+
+        case "Hash":
+            builder.Services.AddScoped<IContactInfoCommand, ContactInfoRedisHashCommand>();
+            break;
+    }
 }
 else
 {
     builder.Services.AddScoped<IContactInfoCommand, ContactInfoCommand>();
 }
+
+switch (queueType)
+{
+    case "RabbitMQ" when isUseRabbitMQ:
+        builder.Services.AddScoped<IQueueCommand, QueueRabbitMQCommand>();
+        break;
+
+    case "RedisList" when isUseRedis:
+        builder.Services.AddScoped<IQueueCommand, QueueRedisListCommand>();
+        break;
+
+    case "RedisStream" when isUseRedis:
+        builder.Services.AddScoped<IQueueCommand, QueueRedisStreamCommand>();
+        break;
+}
+
+switch (pubsubType)
+{
+    case "RabbitMQ" when isUseRabbitMQ:
+        builder.Services.AddScoped<IPublishCommand, PublishRabbitMQCommand>();
+        builder.Services.AddSingleton<ISubscribeCommand, SubscribeRabbitMQCommand>();
+        break;
+
+    case "RedisList" when isUseRedis:
+        builder.Services.AddScoped<IPublishCommand, PublishRedisListCommand>();
+        builder.Services.AddSingleton<ISubscribeCommand, SubscribeRedisListCommand>();
+        break;
+}
+#endregion
+
+#region è¨»å†ŠBackService
+if (isUseBackService)
+{
+    builder.Services.AddHostedService<ContactInfoSubscribeBackService>();
+}
+#endregion
+
+#region è¨­å®šAutoMapper
+builder.Services.AddAutoMapper(typeof(ContactInfoProfile));
 #endregion
 
 #endregion
@@ -137,36 +262,60 @@ var app = builder.Build();
 
 #region Configure the HTTP request pipeline.
 
-app.UseHttpsRedirection();
-
-#region °O¿ı¶Ç¤J°Ñ¼Æ
-app.UseLogRequestMiddleware();
-#endregion
-
-#region °O¿ı¶Ç¥X°Ñ¼Æ
-app.UseLogResponseMiddleware();
-#endregion
-
-app.UseAuthorization();
-
-app.MapControllers();
-
-#region ¨Ï¥ÎSwaggerUI
-var isOpenSwagger = (bool)app.Configuration.GetValue(typeof(bool), "IsOpenSwagger");
+#region ä½¿ç”¨SwaggerUI
 if (app.Environment.IsDevelopment() && isOpenSwagger)
 {
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
         c.SwaggerEndpoint(
-            // url: »İ°t¦X SwaggerDoc ªº name¡C "/swagger/{SwaggerDoc name}/swagger.json"
+            // url: éœ€é…åˆ SwaggerDoc çš„ nameã€‚ "/swagger/{SwaggerDoc name}/swagger.json"
             url: "/swagger/v1/swagger.json",
-            // name: ¥Î©ó Swagger UI ¥k¤W¨¤¿ï¾Ü¤£¦Pª©¥»ªº SwaggerDocument Åã¥Ü¦WºÙ¨Ï¥Î¡C
+            // name: ç”¨æ–¼ Swagger UI å³ä¸Šè§’é¸æ“‡ä¸åŒç‰ˆæœ¬çš„ SwaggerDocument é¡¯ç¤ºåç¨±ä½¿ç”¨ã€‚
             name: "API Document V1"
         );
     });
 }
 #endregion
+
+app.UseHttpsRedirection();
+
+#region è¨˜éŒ„å‚³å‡ºåƒæ•¸
+app.UseLogResponseMiddleware();
+#endregion
+
+#region éŒ¯èª¤è™•ç†
+// è‹¥æœ‰è¨»å†Š NLog å¥—ä»¶ï¼Œå‰‡æœƒè‡ªå‹•è¨˜éŒ„ç•°å¸¸è‡³ Level=Error é…ç½®ç›®æ¨™ä¸­
+app.UseExceptionHandler(appBuilder =>
+{
+    appBuilder.Run(async context =>
+    {
+        context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+        context.Response.ContentType = "application/json";
+
+        var exceptionHandlerFeature = context.Features.Get<IExceptionHandlerFeature>();
+        if (exceptionHandlerFeature != null)
+        {
+            var res = new ApiResultRP<string>
+            {
+                Code = context.Response.StatusCode,
+                Msg = "An unexpected error occurred.",
+                Result = exceptionHandlerFeature.Error.Message
+            };
+
+            await context.Response.WriteAsync(JsonConvert.SerializeObject(res));
+        }
+    });
+});
+#endregion
+
+#region è¨˜éŒ„å‚³å…¥åƒæ•¸
+app.UseLogRequestMiddleware();
+#endregion
+
+app.UseAuthorization();
+
+app.MapControllers();
 
 #endregion
 

@@ -1,7 +1,8 @@
-﻿using WebApi.Commands.Interface;
-using WebApi.Models.Data;
-using WebApi.Models.Request;
-using WebApi.Models.Response;
+﻿using AutoMapper;
+using WebApi.Commands.Interface;
+using WebApi.DtoModels.Common;
+using WebApi.DtoModels.ContactInfo;
+using WebApi.Models;
 using WebApi.Services.Interface;
 
 namespace WebApi.Commands.Instance
@@ -11,14 +12,20 @@ namespace WebApi.Commands.Instance
     /// </summary>
     public class ContactInfoCommand : BaseCommand, IContactInfoCommand
     {
+        private readonly IMapper _mapper;
         private readonly IContactInfoService _contactInfoService;
 
         /// <summary>
         /// 
         /// </summary>
+        /// <param name="mapper"></param>
         /// <param name="contactInfoService"></param>
-        public ContactInfoCommand(IContactInfoService contactInfoService)
+        public ContactInfoCommand(
+            IMapper mapper,
+            IContactInfoService contactInfoService
+        )
         {
+            _mapper = mapper;
             _contactInfoService = contactInfoService;
         }
 
@@ -27,10 +34,18 @@ namespace WebApi.Commands.Instance
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        public ApiResultRP<ContactInfo> QueryByID(long id)
+        public ApiResultRP<QueryRP> QueryByID(long id)
         {
             var res = _contactInfoService.Query(id);
-            return res == null ? FailRP<ContactInfo>(1, "No Data") : SuccessRP(res);
+
+            if (res == null)
+            {
+                return FailRP<QueryRP>(1, "No Data");
+            }
+            else
+            {
+                return SuccessRP(_mapper.Map<QueryRP>(res));
+            }
         }
 
         /// <summary>
@@ -38,7 +53,7 @@ namespace WebApi.Commands.Instance
         /// </summary>
         /// <param name="objRQ"></param>
         /// <returns></returns>
-        public ApiResultRP<PageDataRP<IEnumerable<ContactInfo>>> QueryByCondition(ContactInfoQueryRQ objRQ)
+        public ApiResultRP<PageDataRP<IEnumerable<QueryRP>>> QueryByCondition(QueryRQ objRQ)
         {
             Dictionary<string, object> dicParams = new Dictionary<string, object>();
             if (string.IsNullOrWhiteSpace(objRQ.Name) == false)
@@ -57,18 +72,25 @@ namespace WebApi.Commands.Instance
             dicParams["RowLength"] = objRQ.PageSize;
 
             var res = _contactInfoService.Query(dicParams);
-            return res.Item2 == null ? FailRP<PageDataRP<IEnumerable<ContactInfo>>>(1, "No Data")
-                                     : SuccessRP(new PageDataRP<IEnumerable<ContactInfo>>()
-                                     {
-                                         PageInfo = new PageInfoRP()
-                                         {
-                                             PageIndex = objRQ.PageIndex,
-                                             PageSize = res.Item2.Count(),
-                                             PageCnt = (res.Item1 % objRQ.PageSize == 0 ? res.Item1 / objRQ.PageSize : res.Item1 / objRQ.PageSize + 1),
-                                             TotalCnt = res.Item1
-                                         },
-                                         Data = res.Item2
-                                     });
+
+            if (res.data == null)
+            {
+                return FailRP<PageDataRP<IEnumerable<QueryRP>>>(1, "No Data");
+            }
+            else
+            {
+                return SuccessRP(new PageDataRP<IEnumerable<QueryRP>>
+                {
+                    PageInfo = new PageInfoRP
+                    {
+                        CurrentIndex = objRQ.PageIndex,
+                        CurrentSize = res.data.Count(),
+                        PageCnt = (int)Math.Ceiling((decimal)res.totalCnt / objRQ.PageSize),
+                        TotalCnt = res.totalCnt
+                    },
+                    Data = _mapper.Map<IEnumerable<QueryRP>>(res.data)
+                });
+            }
         }
 
         /// <summary>
@@ -76,19 +98,22 @@ namespace WebApi.Commands.Instance
         /// </summary>
         /// <param name="objRQ"></param>
         /// <returns></returns>
-        public ApiResultRP<ContactInfo> Add(ContactInfoAddRQ objRQ)
+        public ApiResultRP<QueryRP> Create(CreateRQ objRQ)
         {
-            var objInsert = new ContactInfo()
+            var objInsert = _mapper.Map<ContactInfo>(objRQ);
+
+            var resInsert = _contactInfoService.Insert(objInsert);
+
+            if (resInsert == false)
             {
-                Name = objRQ.Name,
-                Nickname = objRQ.Nickname,
-                Gender = (ContactInfo.EnumGender?)objRQ.Gender,
-                Age = objRQ.Age,
-                PhoneNo = objRQ.PhoneNo,
-                Address = objRQ.Address
-            };
-            return _contactInfoService.Insert(objInsert) == false ? FailRP<ContactInfo>(2, "Add Fail")
-                                                                  : SuccessRP(_contactInfoService.Query(objInsert.ContactInfoID));
+                return FailRP<QueryRP>(2, "Create Fail");
+            }
+            else
+            {
+                var resQuery = _contactInfoService.Query(objInsert.ContactInfoID);
+
+                return SuccessRP(_mapper.Map<QueryRP>(resQuery));
+            }
         }
 
         /// <summary>
@@ -96,26 +121,27 @@ namespace WebApi.Commands.Instance
         /// </summary>
         /// <param name="objRQ"></param>
         /// <returns></returns>
-        public ApiResultRP<ContactInfo> Edit(ContactInfoEditRQ objRQ)
+        public ApiResultRP<QueryRP> Edit(EditRQ objRQ)
         {
             var objOrigin = _contactInfoService.Query(objRQ.ID ?? 0);
             if (objOrigin == null)
             {
-                return FailRP<ContactInfo>(1, "No Data");
+                return FailRP<QueryRP>(1, "No Data");
             }
+            var objUpdate = _mapper.Map<ContactInfo>(objRQ);
 
-            var objUpdate = new ContactInfo()
+            var resUpdate = _contactInfoService.Update(objUpdate);
+
+            if (resUpdate == false)
             {
-                ContactInfoID = objRQ.ID ?? 0,
-                Name = objRQ.Name,
-                Nickname = objRQ.Nickname,
-                Gender = (ContactInfo.EnumGender?)objRQ.Gender,
-                Age = objRQ.Age,
-                PhoneNo = objRQ.PhoneNo,
-                Address = objRQ.Address
-            };
-            return _contactInfoService.Update(objUpdate) == false ? FailRP<ContactInfo>(3, "Edit Fail")
-                                                                  : SuccessRP(_contactInfoService.Query(objUpdate.ContactInfoID));
+                return FailRP<QueryRP>(3, "Edit Fail");
+            }
+            else
+            {
+                var resQuery = _contactInfoService.Query(objUpdate.ContactInfoID);
+
+                return SuccessRP(_mapper.Map<QueryRP>(resQuery));
+            }
         }
 
         /// <summary>
@@ -123,37 +149,39 @@ namespace WebApi.Commands.Instance
         /// </summary>
         /// <param name="objRQ"></param>
         /// <returns></returns>
-        public ApiResultRP<ContactInfo> EditPartial(ContactInfoEditPartialRQ objRQ)
+        public ApiResultRP<QueryRP> EditPartial(EditPartialRQ objRQ)
         {
             var objOrigin = _contactInfoService.Query(objRQ.ID ?? 0);
             if (objOrigin == null)
             {
-                return FailRP<ContactInfo>(1, "No Data");
+                return FailRP<QueryRP>(1, "No Data");
             }
+            var objUpdate = _mapper.Map<ContactInfo>(objOrigin);
+            _mapper.Map(objRQ, objUpdate);
 
-            var objUpdate = new ContactInfo()
+            var resUpdate = _contactInfoService.Update(objUpdate);
+
+            if (resUpdate == false)
             {
-                ContactInfoID = objRQ.ID ?? 0,
-                Name = string.IsNullOrWhiteSpace(objRQ.Name) ? objOrigin.Name : objRQ.Name,
-                Nickname = string.IsNullOrWhiteSpace(objRQ.Nickname) ? objOrigin.Nickname : objRQ.Nickname,
-                Gender = (ContactInfo.EnumGender?)objRQ.Gender ?? objOrigin.Gender,
-                Age = objRQ.Age ?? objOrigin.Age,
-                PhoneNo = string.IsNullOrWhiteSpace(objRQ.PhoneNo) ? objOrigin.PhoneNo : objRQ.PhoneNo,
-                Address = string.IsNullOrWhiteSpace(objRQ.Address) ? objOrigin.Address : objRQ.Address
-            };
-            return _contactInfoService.Update(objUpdate) == false ? FailRP<ContactInfo>(3, "Edit Partial Fail")
-                                                                  : SuccessRP(_contactInfoService.Query(objUpdate.ContactInfoID));
+                return FailRP<QueryRP>(3, "Edit Partial Fail");
+            }
+            else
+            {
+                var resQuery = _contactInfoService.Query(objUpdate.ContactInfoID);
+
+                return SuccessRP(_mapper.Map<QueryRP>(resQuery));
+            }
         }
 
         /// <summary>
         /// 刪除資料
         /// </summary>
-        /// <param name="liID"></param>
+        /// <param name="ids"></param>
         /// <returns></returns>
-        public ApiResultRP<bool> DeleteByID(IEnumerable<long> liID)
+        public ApiResultRP<bool> Remove(IEnumerable<long> ids)
         {
-            var res = _contactInfoService.Delete(liID);
-            return res == false ? FailRP<bool>(4, "Delete Fail") : SuccessRP(res);
+            var res = _contactInfoService.Delete(ids);
+            return res == false ? FailRP<bool>(4, "Remove Fail") : SuccessRP(res);
         }
     }
 }

@@ -1,6 +1,6 @@
 ﻿using Dapper;
 using System.Data;
-using WebApi.Models.Data;
+using WebApi.Models;
 using WebApi.Services.Interface;
 
 namespace WebApi.Services.Instance
@@ -41,7 +41,7 @@ namespace WebApi.Services.Instance
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Query Fail : {ex.Message}");
-                return null;
+                throw;
             }
         }
 
@@ -50,7 +50,7 @@ namespace WebApi.Services.Instance
         /// </summary>
         /// <param name="dicParams"></param>
         /// <returns></returns>
-        public (int, IEnumerable<ContactInfo>) Query(Dictionary<string, object> dicParams)
+        public (int totalCnt, IEnumerable<ContactInfo> data) Query(Dictionary<string, object> dicParams)
         {
             try
             {
@@ -70,7 +70,7 @@ namespace WebApi.Services.Instance
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Query Fail : {ex.Message}");
-                return (0, null);
+                throw;
             }
         }
 
@@ -100,7 +100,7 @@ namespace WebApi.Services.Instance
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Insert Fail : {ex.Message}");
-                return false;
+                throw;
             }
         }
 
@@ -130,28 +130,28 @@ namespace WebApi.Services.Instance
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Update Fail : {ex.Message}");
-                return false;
+                throw;
             }
         }
 
         /// <summary>
         /// 刪除
         /// </summary>
-        /// <param name="liID"></param>
+        /// <param name="ids"></param>
         /// <returns></returns>
-        public bool Delete(IEnumerable<long> liID)
+        public bool Delete(IEnumerable<long> ids)
         {
             try
             {
                 return _dbConnection.Execute(
                         "dbo.Sp_RemoveContactInfo",
-                        new { ContactInfoIDs = string.Join(",", liID) },
+                        new { ContactInfoIDs = string.Join(",", ids) },
                         commandType: CommandType.StoredProcedure) > 0;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Delete Fail : {ex.Message}");
-                return false;
+                throw;
             }
         }
     }

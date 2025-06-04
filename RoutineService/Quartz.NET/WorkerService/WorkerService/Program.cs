@@ -23,9 +23,15 @@ builder.ConfigureServices((hostContext, services) =>
     #region 註冊 Redis
     services.AddSingleton<RedisHelper>();
     #endregion
-
     #region 註冊 RedisQueue 監聽服務
     services.AddSingleton<SubscribeRedisListService>();
+    #endregion
+
+    #region 註冊 RabbitMQ
+    services.AddSingleton<RabbitMQHelper>();
+    #endregion
+    #region 註冊 RabbitMQ 監聽服務
+    services.AddSingleton<ConsumeRabbitMQService>();
     #endregion
 
     #region 註冊 Quartz 並設定排程
@@ -49,6 +55,12 @@ builder.ConfigureServices((hostContext, services) =>
         q.AddJob<SubscribeRedisListJob>(opts => opts.WithIdentity(jkRedisListJob));
         q.AddTrigger(opts => opts.ForJob(jkRedisListJob)
                                  .WithIdentity($"{nameof(SubscribeRedisListJob)}-trigger")
+                                 .StartNow());
+
+        var jkRabbitMQJob = new JobKey(nameof(ConsumeRabbitMQJob));
+        q.AddJob<ConsumeRabbitMQJob>(opts => opts.WithIdentity(jkRabbitMQJob));
+        q.AddTrigger(opts => opts.ForJob(jkRabbitMQJob)
+                                 .WithIdentity($"{nameof(ConsumeRabbitMQJob)}-trigger")
                                  .StartNow());
     });
     #endregion

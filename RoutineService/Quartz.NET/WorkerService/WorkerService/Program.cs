@@ -1,7 +1,9 @@
 ﻿using NLog.Extensions.Logging;
 using Quartz;
 using Quartz.Simpl;
+using WorkerService.Helpers;
 using WorkerService.Jobs;
+using WorkerService.Services;
 
 var builder = Host.CreateDefaultBuilder(args);
 
@@ -9,7 +11,7 @@ var builder = Host.CreateDefaultBuilder(args);
 builder.UseWindowsService();
 #endregion
 
-#region 註冊NLog
+#region 註冊 NLog
 builder.ConfigureLogging(logging =>
 {
     logging.AddNLog("nlog.config");
@@ -18,30 +20,48 @@ builder.ConfigureLogging(logging =>
 
 builder.ConfigureServices((hostContext, services) =>
 {
+    #region 註冊 Redis
+    services.AddSingleton<RedisHelper>();
+    #endregion
+    #region 註冊 RedisQueue 監聽服務
+    services.AddSingleton<SubscribeRedisListService>();
+    #endregion
+
+    #region 註冊 RabbitMQ
+    services.AddSingleton<RabbitMQHelper>();
+    #endregion
+    #region 註冊 RabbitMQ 監聽服務
+    services.AddSingleton<ConsumeRabbitMQService>();
+    #endregion
+
     #region 註冊 Quartz 並設定排程
     services.AddQuartz(q =>
     {
         q.UseJobFactory<MicrosoftDependencyInjectionJobFactory>();
 
         var jkPerMinuteJob = new JobKey(nameof(WriteLogPerMinuteJob));
-        q.AddJob<WriteLogPerMinuteJob>(opts =>
-            opts.WithIdentity(jkPerMinuteJob)
-        );
-        q.AddTrigger(opts => opts
-            .ForJob(jkPerMinuteJob)
-            .WithIdentity($"{nameof(WriteLogPerMinuteJob)}-trigger")
-            .WithCronSchedule("0 0/1 * * * ?", x => x.InTimeZone(TimeZoneInfo.Local))
-        );
+        q.AddJob<WriteLogPerMinuteJob>(opts => opts.WithIdentity(jkPerMinuteJob));
+        q.AddTrigger(opts => opts.ForJob(jkPerMinuteJob)
+                                 .WithIdentity($"{nameof(WriteLogPerMinuteJob)}-trigger")
+                                 .WithCronSchedule("0 0/1 * * * ?", x => x.InTimeZone(TimeZoneInfo.Local)));
 
         var jkOnTimeJob = new JobKey(nameof(WriteLogOnTimeJob));
-        q.AddJob<WriteLogOnTimeJob>(opts =>
-            opts.WithIdentity(jkOnTimeJob)
-        );
-        q.AddTrigger(opts => opts
-            .ForJob(jkOnTimeJob)
-            .WithIdentity($"{nameof(WriteLogOnTimeJob)}-trigger")
-            .WithCronSchedule("0 0 6 * * ?", x => x.InTimeZone(TimeZoneInfo.Local))
-        );
+        q.AddJob<WriteLogOnTimeJob>(opts => opts.WithIdentity(jkOnTimeJob));
+        q.AddTrigger(opts => opts.ForJob(jkOnTimeJob)
+                                 .WithIdentity($"{nameof(WriteLogOnTimeJob)}-trigger")
+                                 .WithCronSchedule("0 0 6 * * ?", x => x.InTimeZone(TimeZoneInfo.Local)));
+
+        var jkRedisListJob = new JobKey(nameof(SubscribeRedisListJob));
+        q.AddJob<SubscribeRedisListJob>(opts => opts.WithIdentity(jkRedisListJob));
+        q.AddTrigger(opts => opts.ForJob(jkRedisListJob)
+                                 .WithIdentity($"{nameof(SubscribeRedisListJob)}-trigger")
+                                 .StartNow());
+
+        var jkRabbitMQJob = new JobKey(nameof(ConsumeRabbitMQJob));
+        q.AddJob<ConsumeRabbitMQJob>(opts => opts.WithIdentity(jkRabbitMQJob));
+        q.AddTrigger(opts => opts.ForJob(jkRabbitMQJob)
+                                 .WithIdentity($"{nameof(ConsumeRabbitMQJob)}-trigger")
+                                 .StartNow());
     });
     #endregion
 

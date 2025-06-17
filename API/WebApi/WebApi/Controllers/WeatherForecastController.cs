@@ -1,34 +1,39 @@
-using Microsoft.AspNetCore.Mvc;
-using WebApi.Models;
+﻿using Microsoft.AspNetCore.Mvc;
+using WebApi.Commands.Interface;
+using WebApi.DtoModels.Common;
+using WebApi.DtoModels.WeatherForecast;
+using WebApi.Filters;
 
 namespace WebApi.Controllers
 {
+    /// <summary>
+    /// 
+    /// </summary>
+    [Route("api/[controller]")]
+    [ValidRequest]
     [ApiController]
-    [Route("[controller]")]
     public class WeatherForecastController : ControllerBase
     {
-        private static readonly string[] Summaries = new[]
-        {
-        "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-    };
+        private readonly IWeatherForecastCommand _weatherForecastCommand; 
 
-        private readonly ILogger<WeatherForecastController> _logger;
-
-        public WeatherForecastController(ILogger<WeatherForecastController> logger)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="weatherForecastCommand"></param>
+        public WeatherForecastController(IWeatherForecastCommand weatherForecastCommand)
         {
-            _logger = logger;
+            _weatherForecastCommand = weatherForecastCommand;
         }
 
-        [HttpGet(Name = "GetWeatherForecast")]
-        public IEnumerable<WeatherForecast> Get()
+        /// <summary>
+        /// 查詢36小時天氣預報
+        /// </summary>
+        /// <param name="objRQ"></param>
+        /// <returns></returns>
+        [HttpGet, Route("GetThirtySixHourForecast")]
+        public async Task<ApiResultRP<GetThirtySixHourForecastRP>> GetThirtySixHourForecast([FromQuery] GetThirtySixHourForecastRQ objRQ)
         {
-            return Enumerable.Range(1, 5).Select(index => new WeatherForecast
-            {
-                Date = DateTime.Now.AddDays(index),
-                TemperatureC = Random.Shared.Next(-20, 55),
-                Summary = Summaries[Random.Shared.Next(Summaries.Length)]
-            })
-            .ToArray();
+            return await _weatherForecastCommand.GetThirtySixHourForecast(objRQ);
         }
     }
 }

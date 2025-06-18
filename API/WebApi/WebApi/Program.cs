@@ -6,6 +6,7 @@ using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
 using NLog.Extensions.Logging;
 using Oracle.ManagedDataAccess.Client;
+using Polly;
 using System.Data;
 using System.Data.SqlClient;
 using System.Net;
@@ -21,6 +22,7 @@ using WebApi.Middlewares;
 using WebApi.Profiles;
 using WebApi.Services.Instance;
 using WebApi.Services.Interface;
+using static WebApi.Extensions.PollyPolicyExtensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -180,6 +182,15 @@ builder.Services.AddHttpClient("WeatherForecastApiClient", client =>
 .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
 {
     SslProtocols = SslProtocols.Tls12 | SslProtocols.Tls13
+})
+.AddPolicyHandler((services, request) =>
+{
+    var logger = services.GetRequiredService<ILoggerFactory>()
+                         .CreateLogger("PollyRetryPolicy");
+    return Policy.WrapAsync(
+                GetRetryPolicy(logger),
+                Policy.TimeoutAsync<HttpResponseMessage>(30)
+           );
 });
 #endregion
 

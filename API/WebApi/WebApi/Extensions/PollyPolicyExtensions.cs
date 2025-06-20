@@ -23,13 +23,12 @@ namespace WebApi.Extensions
                         sleepDurationProvider: retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
                         onRetry: (outcome, timespan, retryAttempt, context) =>
                         {
-                            var statusCode = outcome?.Result?.StatusCode.ToString() ?? "N/A";
-                            logger.LogWarning(
+                            logger.LogInformation(
                                 "Retry {RetryAttempt} after {Delay} seconds due to {Reason} (Status: {StatusCode})",
                                 retryAttempt,
                                 timespan.TotalSeconds,
                                 outcome.Exception?.Message ?? outcome.Result?.ReasonPhrase ?? "Unknown error",
-                                statusCode
+                                outcome?.Result?.StatusCode.ToString() ?? "N/A"
                             );
                         }
                     );

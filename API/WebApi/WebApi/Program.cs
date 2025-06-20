@@ -6,9 +6,11 @@ using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
 using NLog.Extensions.Logging;
 using Oracle.ManagedDataAccess.Client;
+using Polly;
 using System.Data;
 using System.Data.SqlClient;
 using System.Net;
+using System.Security.Authentication;
 using System.Text.Encodings.Web;
 using System.Text.Unicode;
 using WebApi.BackServices;
@@ -20,6 +22,7 @@ using WebApi.Middlewares;
 using WebApi.Profiles;
 using WebApi.Services.Instance;
 using WebApi.Services.Interface;
+using static WebApi.Extensions.PollyPolicyExtensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -96,6 +99,8 @@ var redisType = builder.Configuration["RedisType"];
 var queueType = builder.Configuration["QueueType"];
 var pubsubType = builder.Configuration["PubSubType"];
 
+var weatherForecastApiUrl = builder.Configuration["WeatherForecastApi:Url"];
+
 var dbConnectString = string.Empty;
 switch (dbType)
 {
@@ -168,6 +173,27 @@ switch (dbType)
 }
 #endregion
 
+#region 註冊HttpClient設定
+builder.Services.AddHttpClient("WeatherForecastApiClient", client =>
+{
+    client.BaseAddress = new Uri(weatherForecastApiUrl);
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+})
+.ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+{
+    SslProtocols = SslProtocols.Tls12 | SslProtocols.Tls13
+})
+.AddPolicyHandler((services, request) =>
+{
+    var logger = services.GetRequiredService<ILoggerFactory>()
+                         .CreateLogger("PollyRetryPolicy");
+    return Policy.WrapAsync(
+                GetRetryPolicy(logger),
+                Policy.TimeoutAsync<HttpResponseMessage>(30)
+           );
+});
+#endregion
+
 #region 註冊Service
 switch (dbType)
 {
@@ -195,6 +221,8 @@ switch (dbType)
         builder.Services.AddScoped<IContactInfoService, ContactInfoOracleSPService>();
         break;
 }
+
+builder.Services.AddScoped<IWeatherForecastService, WeatherForecastService>();
 #endregion
 
 #region 註冊Command
@@ -243,6 +271,8 @@ switch (pubsubType)
         builder.Services.AddSingleton<ISubscribeCommand, SubscribeRedisListCommand>();
         break;
 }
+
+builder.Services.AddScoped<IWeatherForecastCommand, WeatherForecastCommand>();
 #endregion
 
 #region 註冊BackService
@@ -254,6 +284,7 @@ if (isUseBackService)
 
 #region 設定AutoMapper
 builder.Services.AddAutoMapper(typeof(ContactInfoProfile));
+builder.Services.AddAutoMapper(typeof(WeatherForecastProfile));
 #endregion
 
 #endregion

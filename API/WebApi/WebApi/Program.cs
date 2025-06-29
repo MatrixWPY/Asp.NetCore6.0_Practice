@@ -13,6 +13,7 @@ using System.Net;
 using System.Security.Authentication;
 using System.Text.Encodings.Web;
 using System.Text.Unicode;
+using System.Threading.RateLimiting;
 using WebApi.BackServices;
 using WebApi.Commands.Instance;
 using WebApi.Commands.Interface;
@@ -287,6 +288,25 @@ builder.Services.AddAutoMapper(typeof(ContactInfoProfile));
 builder.Services.AddAutoMapper(typeof(WeatherForecastProfile));
 #endregion
 
+#region 設定RateLimiter限制器
+// Concurrency 限制：同時最多處理 10 個，另外可排隊 20 個
+var concurrencyLimiter = new ConcurrencyLimiter(new ConcurrencyLimiterOptions
+{
+    PermitLimit = 10,
+    QueueLimit = 20,
+    QueueProcessingOrder = QueueProcessingOrder.OldestFirst
+});
+// Token Bucket 限制：爆量時最多 30 個，每秒補充 3 個
+var tokenBucketLimiter = new TokenBucketRateLimiter(new TokenBucketRateLimiterOptions
+{
+    TokenLimit = 30,
+    TokensPerPeriod = 3,
+    ReplenishmentPeriod = TimeSpan.FromSeconds(1),
+    AutoReplenishment = true,
+    QueueLimit = 0
+});
+#endregion
+
 #endregion
 
 var app = builder.Build();
@@ -310,6 +330,10 @@ if (app.Environment.IsDevelopment() && isOpenSwagger)
 #endregion
 
 app.UseHttpsRedirection();
+
+#region 使用RateLimit限流處理
+app.UseMiddleware<RateLimitMiddleware>(concurrencyLimiter, tokenBucketLimiter);
+#endregion
 
 #region 記錄傳出參數
 app.UseLogResponseMiddleware();

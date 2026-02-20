@@ -10,20 +10,23 @@ Console.WriteLine($"Subscribe from {channelName}");
 var sub = redis.GetSubscriber();
 sub.Subscribe(channelName, (chl, msg) =>
 {
-    string queueName = msg;
-    Console.WriteLine($"Consume from {queueName}:");
-
-    while (db.ListLength(queueName) > 0)
+    Task.Run(() =>
     {
-        var data = db.ListRightPop(queueName);
-        if (data.IsNullOrEmpty)
-        {
-            break;
-        }
-        Console.WriteLine(data);
-    }
+        string queueName = msg;
+        Console.WriteLine($"Consume from {queueName}:");
 
-    Console.WriteLine("Consume Finish");
+        while (true)
+        {
+            var data = db.ListRightPop(queueName);
+            if (data.IsNullOrEmpty)
+            {
+                break;
+            }
+            Console.WriteLine(data);
+        }
+
+        Console.WriteLine("Consume Finish");
+    });
 });
 
 Console.ReadKey();

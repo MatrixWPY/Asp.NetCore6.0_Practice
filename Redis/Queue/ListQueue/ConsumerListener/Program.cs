@@ -18,4 +18,8 @@ while (true)
         }
         Console.WriteLine();
     }
+    else
+    {
+        await Task.Delay(500);
+    }
 }

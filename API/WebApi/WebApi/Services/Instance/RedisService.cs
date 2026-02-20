@@ -829,23 +829,26 @@ namespace WebApi.Services.Instance
 
             sub.Subscribe(channel, (chl, msg) =>
             {
-                string queueName = msg;
-                if (queueName.EndsWith($":{typeof(T).Name}") == false)
+                Task.Run(() =>
                 {
-                    return;
-                }
-
-                var db = _redisConnection.GetDatabase();
-                while (db.ListLength(queueName) > 0)
-                {
-                    var data = db.ListRightPop(queueName);
-                    if (data.IsNullOrEmpty)
+                    string queueName = msg;
+                    if (queueName.EndsWith($":{typeof(T).Name}") == false)
                     {
-                        break;
+                        return;
                     }
 
-                    action(JsonConvert.DeserializeObject<T>(data));
-                }
+                    var db = _redisConnection.GetDatabase();
+                    while (true)
+                    {
+                        var data = db.ListRightPop(queueName);
+                        if (data.IsNullOrEmpty)
+                        {
+                            break;
+                        }
+
+                        action(JsonConvert.DeserializeObject<T>(data));
+                    }
+                });
             });
         }
 
@@ -870,25 +873,28 @@ namespace WebApi.Services.Instance
                             ? RedisChannel.PatternMode.Pattern : RedisChannel.PatternMode.Literal;
             var channel = new RedisChannel(channelName, patternMode);
 
-            await sub.SubscribeAsync(channel, async (chl, msg) =>
+            await sub.SubscribeAsync(channel, (chl, msg) =>
             {
-                string queueName = msg;
-                if (queueName.EndsWith($":{typeof(T).Name}") == false)
+                Task.Run(async () =>
                 {
-                    return;
-                }
-
-                var db = _redisConnection.GetDatabase();
-                while (await db.ListLengthAsync(queueName) > 0)
-                {
-                    var data = await db.ListRightPopAsync(queueName);
-                    if (data.IsNullOrEmpty)
+                    string queueName = msg;
+                    if (queueName.EndsWith($":{typeof(T).Name}") == false)
                     {
-                        break;
+                        return;
                     }
 
-                    await func(JsonConvert.DeserializeObject<T>(data));
-                }
+                    var db = _redisConnection.GetDatabase();
+                    while (true)
+                    {
+                        var data = await db.ListRightPopAsync(queueName);
+                        if (data.IsNullOrEmpty)
+                        {
+                            break;
+                        }
+
+                        await func(JsonConvert.DeserializeObject<T>(data));
+                    }
+                });
             });
         }
 
@@ -913,20 +919,23 @@ namespace WebApi.Services.Instance
 
             sub.Subscribe(channel, (chl, msg) =>
             {
-                string queueName = msg;
-                if (queueName.EndsWith($":{typeof(T).Name}") == false)
+                Task.Run(() =>
                 {
-                    return;
-                }
+                    string queueName = msg;
+                    if (queueName.EndsWith($":{typeof(T).Name}") == false)
+                    {
+                        return;
+                    }
 
-                var db = _redisConnection.GetDatabase();
-                var datas = db.ListRightPop(queueName, db.ListLength(queueName));
-                if (datas == null)
-                {
-                    return;
-                }
+                    var db = _redisConnection.GetDatabase();
+                    var datas = db.ListRightPop(queueName, db.ListLength(queueName));
+                    if (datas == null)
+                    {
+                        return;
+                    }
 
-                action(datas.Select(e => JsonConvert.DeserializeObject<T>(e)));
+                    action(datas.Select(e => JsonConvert.DeserializeObject<T>(e)));
+                });
             });
         }
 
@@ -951,22 +960,25 @@ namespace WebApi.Services.Instance
                             ? RedisChannel.PatternMode.Pattern : RedisChannel.PatternMode.Literal;
             var channel = new RedisChannel(channelName, patternMode);
 
-            await sub.SubscribeAsync(channel, async (chl, msg) =>
+            await sub.SubscribeAsync(channel, (chl, msg) =>
             {
-                string queueName = msg;
-                if (queueName.EndsWith($":{typeof(T).Name}") == false)
+                Task.Run(async () =>
                 {
-                    return;
-                }
+                    string queueName = msg;
+                    if (queueName.EndsWith($":{typeof(T).Name}") == false)
+                    {
+                        return;
+                    }
 
-                var db = _redisConnection.GetDatabase();
-                var datas = await db.ListRightPopAsync(queueName, await db.ListLengthAsync(queueName));
-                if (datas == null)
-                {
-                    return;
-                }
+                    var db = _redisConnection.GetDatabase();
+                    var datas = await db.ListRightPopAsync(queueName, await db.ListLengthAsync(queueName));
+                    if (datas == null)
+                    {
+                        return;
+                    }
 
-                await func(datas.Select(e => JsonConvert.DeserializeObject<T>(e)));
+                    await func(datas.Select(e => JsonConvert.DeserializeObject<T>(e)));
+                });
             });
         }
 
@@ -991,27 +1003,30 @@ namespace WebApi.Services.Instance
 
             sub.Subscribe(channel, (chl, msg) =>
             {
-                string queueName = msg;
-                if (queueName.EndsWith($":{typeof(T).Name}") == false)
+                Task.Run(() =>
                 {
-                    return;
-                }
-
-                var db = _redisConnection.GetDatabase();
-                while (db.ListLength(queueName) > 0)
-                {
-                    var data = db.ListRightPop(queueName);
-                    if (data.IsNullOrEmpty)
+                    string queueName = msg;
+                    if (queueName.EndsWith($":{typeof(T).Name}") == false)
                     {
-                        break;
+                        return;
                     }
 
-                    var res = func(JsonConvert.DeserializeObject<T>(data));
-                    if (res == false)
+                    var db = _redisConnection.GetDatabase();
+                    while (true)
                     {
-                        db.ListRightPush(queueName, data);
+                        var data = db.ListRightPop(queueName);
+                        if (data.IsNullOrEmpty)
+                        {
+                            break;
+                        }
+
+                        var res = func(JsonConvert.DeserializeObject<T>(data));
+                        if (res == false)
+                        {
+                            db.ListRightPush(queueName, data);
+                        }
                     }
-                }
+                });
             });
         }
 
@@ -1036,30 +1051,33 @@ namespace WebApi.Services.Instance
                             ? RedisChannel.PatternMode.Pattern : RedisChannel.PatternMode.Literal;
             var channel = new RedisChannel(channelName, patternMode);
 
-            await sub.SubscribeAsync(channel, async (chl, msg) =>
+            await sub.SubscribeAsync(channel, (chl, msg) =>
             {
-                string queueName = msg;
-                if (queueName.EndsWith($":{typeof(T).Name}") == false)
+                Task.Run(async () =>
                 {
-                    return;
-                }
-
-                var db = _redisConnection.GetDatabase();
-
-                while (await db.ListLengthAsync(queueName) > 0)
-                {
-                    var data = await db.ListRightPopAsync(queueName);
-                    if (data.IsNullOrEmpty)
+                    string queueName = msg;
+                    if (queueName.EndsWith($":{typeof(T).Name}") == false)
                     {
-                        break;
+                        return;
                     }
 
-                    var res = await funcAsync(JsonConvert.DeserializeObject<T>(data));
-                    if (res == false)
+                    var db = _redisConnection.GetDatabase();
+
+                    while (true)
                     {
-                        await db.ListRightPushAsync(queueName, data);
+                        var data = await db.ListRightPopAsync(queueName);
+                        if (data.IsNullOrEmpty)
+                        {
+                            break;
+                        }
+
+                        var res = await funcAsync(JsonConvert.DeserializeObject<T>(data));
+                        if (res == false)
+                        {
+                            await db.ListRightPushAsync(queueName, data);
+                        }
                     }
-                }
+                });
             });
         }
 

@@ -13,7 +13,7 @@ sub.Subscribe(channelName, (chl, msg) =>
     string queueName = msg;
     Console.WriteLine($"Consume from {queueName}:");
 
-    while (db.ListLength(queueName) > 0)
+    while (true)
     {
         var data = db.ListRightPop(queueName);
         if (data.IsNullOrEmpty)

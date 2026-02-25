@@ -23,10 +23,10 @@ namespace RedLock.Controllers
         {
             string orderNo = null;
 
-            var resource = $"OrderNo";                  //resource lock key
-            var expiry = TimeSpan.FromSeconds(10);      //lock key expire 時間
-            var wait = TimeSpan.FromSeconds(10);        //放棄重試時間
-            var retry = TimeSpan.FromMilliseconds(1);   //重試間隔時間
+            var resource = $"OrderNo";                  //lock key
+            var expiry = TimeSpan.FromSeconds(10);      //lock key 過期時間
+            var wait = TimeSpan.FromSeconds(10);        //等待時間
+            var retry = TimeSpan.FromMilliseconds(1);   //重試間隔
             do
             {
                 orderNo = await _redlockService.AcquireLockAsync(resource, expiry, wait, retry,
@@ -39,7 +39,7 @@ namespace RedLock.Controllers
                                 var lastOrderNo = _redisService.Get<string>(redisKey);
                                 if (lastOrderNo == newOrderNo)
                                 {
-                                    _logger.LogInformation($"{Thread.CurrentThread.ManagedThreadId}: OrderNo duplicate => Retry");
+                                    _logger.LogInformation($"{Thread.CurrentThread.ManagedThreadId}: OrderNo duplicate");
                                     return null;
                                 }
                                 else
@@ -56,7 +56,7 @@ namespace RedLock.Controllers
                         },
                         () =>
                         {
-                            _logger.LogInformation($"{Thread.CurrentThread.ManagedThreadId}: Not get the locker => Retry");
+                            _logger.LogInformation($"{Thread.CurrentThread.ManagedThreadId}: Not get the locker");
                             return null;
                         }
                 );

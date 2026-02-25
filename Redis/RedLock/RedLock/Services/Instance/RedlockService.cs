@@ -35,23 +35,25 @@ namespace RedLock.Services.Instance
         {
             T result = default(T);
 
-            // blocks 直到取得 lock 資源或是達到放棄重試時間
+            // Redis 分散式鎖參數說明
+            // 1. resource : 鎖的資源名稱
+            // 2. expiryTime : 鎖的過期時間
+            // 3. waitTime : 未取得鎖的等待時間
+            // 4. retryTime : 未取得鎖的重試間隔
             using (var redLock = await _redLockFactory.CreateLockAsync(resource, expiry, wait, retry))
             {
-                // 確定取得 lock 所有權
                 if (redLock.IsAcquired)
                 {
-                    // 執行需要獨佔資源的核心工作
+                    // 成功取得鎖的所有權，執行需要獨佔資源的核心工作
                     result = success();
                 }
-                // 尚未取得 lock 所有權
                 else
                 {
-                    // 執行尚未取得lock的後續工作
+                    // 重試達到等待時間仍未取得鎖的所有權，執行失敗的後續處理
                     result = fail();
                 }
             }
-            // 脫離 using 範圍自動就會解除 lock
+            // 離開 using 區塊時，RedLock.net 會自動執行 Lua Script 安全地釋放鎖
 
             return result;
         }

@@ -89,9 +89,9 @@ namespace WebMVC.Services.Instance
 
             return await _redlockService.AcquireLockAsync(
                 $"EditLock_{origin.ContactInfoID}", //lock key
-                TimeSpan.FromSeconds(30),           //lock key expiry
-                TimeSpan.FromSeconds(15),           //放棄重試時間
-                TimeSpan.FromMilliseconds(100),     //重試間隔時間
+                TimeSpan.FromSeconds(30),           //lock key 過期時間
+                TimeSpan.FromSeconds(15),           //等待時間
+                TimeSpan.FromMilliseconds(100),     //重試間隔
                 async () =>                         //取得lock執行的工作
                 {
                     return await _contactInfoRepository.UpdateAsync(origin);

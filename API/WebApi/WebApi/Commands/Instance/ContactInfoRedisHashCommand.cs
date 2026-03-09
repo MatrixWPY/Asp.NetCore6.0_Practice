@@ -179,11 +179,11 @@ namespace WebApi.Commands.Instance
             }
             else
             {
-                var objCache = _contactInfoService.Query(objUpdate.ContactInfoID);
-                _redisService.SetHashObjectAsync(_redisQueryByID, new Dictionary<long, ContactInfo> { { objCache.ContactInfoID, objCache } }, TimeSpan.FromMinutes(5));
+                _redisService.DeleteHashAsync(_redisQueryByID, objUpdate.ContactInfoID);
                 _redisService.RemoveAsync(_redisQueryByCondition);
 
-                return SuccessRP(_mapper.Map<QueryRP>(objCache));
+                var resQuery = _contactInfoService.Query(objUpdate.ContactInfoID);
+                return SuccessRP(_mapper.Map<QueryRP>(resQuery));
             }
         }
 
@@ -210,11 +210,11 @@ namespace WebApi.Commands.Instance
             }
             else
             {
-                var objCache = _contactInfoService.Query(objUpdate.ContactInfoID);
-                _redisService.SetHashObjectAsync(_redisQueryByID, new Dictionary<long, ContactInfo> { { objCache.ContactInfoID, objCache } }, TimeSpan.FromMinutes(5));
+                _redisService.DeleteHashAsync(_redisQueryByID, objUpdate.ContactInfoID);
                 _redisService.RemoveAsync(_redisQueryByCondition);
 
-                return SuccessRP(_mapper.Map<QueryRP>(objCache));
+                var resQuery = _contactInfoService.Query(objUpdate.ContactInfoID);
+                return SuccessRP(_mapper.Map<QueryRP>(resQuery));
             }
         }
 

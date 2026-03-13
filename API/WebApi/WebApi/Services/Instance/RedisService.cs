@@ -13,6 +13,7 @@ namespace WebApi.Services.Instance
         private static object _redisConnectionLock = new object();
         private readonly ConfigurationOptions _configOptions;
         private readonly ILogger<RedisService> _logger;
+        private const string _redisEmptyValue = "EMPTY_VALUE";
 
         /// <summary>
         /// 
@@ -272,7 +273,7 @@ namespace WebApi.Services.Instance
         public T GetObject<T>(string redisKey)
         {
             var value = _redisConnection.GetDatabase().StringGet(redisKey);
-            if (value.HasValue)
+            if (value.HasValue && value != _redisEmptyValue)
             {
                 return JsonConvert.DeserializeObject<T>(value);
             }
@@ -291,7 +292,7 @@ namespace WebApi.Services.Instance
         public async Task<T> GetObjectAsync<T>(string redisKey)
         {
             var value = await _redisConnection.GetDatabase().StringGetAsync(redisKey);
-            if (value.HasValue)
+            if (value.HasValue && value != _redisEmptyValue)
             {
                 return JsonConvert.DeserializeObject<T>(value);
             }
@@ -314,6 +315,10 @@ namespace WebApi.Services.Instance
             {
                 _redisConnection.GetDatabase().StringSet(redisKey, JsonConvert.SerializeObject(redisValue), tsExpiry);
             }
+            else
+            {
+                _redisConnection.GetDatabase().StringSet(redisKey, _redisEmptyValue, tsExpiry);
+            }
         }
 
         /// <summary>
@@ -329,6 +334,10 @@ namespace WebApi.Services.Instance
             if (redisValue != null)
             {
                 await _redisConnection.GetDatabase().StringSetAsync(redisKey, JsonConvert.SerializeObject(redisValue), tsExpiry);
+            }
+            else
+            {
+                await _redisConnection.GetDatabase().StringSetAsync(redisKey, _redisEmptyValue, tsExpiry);
             }
         }
 
@@ -496,7 +505,15 @@ namespace WebApi.Services.Instance
         /// <returns></returns>
         public TValue GetHashObject<TKey, TValue>(string redisKey, TKey hashKey)
         {
-            return JsonConvert.DeserializeObject<TValue>(_redisConnection.GetDatabase().HashGet(redisKey, hashKey.ToString()));
+            var hashValue = _redisConnection.GetDatabase().HashGet(redisKey, hashKey.ToString());
+            if (hashValue != _redisEmptyValue)
+            {
+                return JsonConvert.DeserializeObject<TValue>(hashValue);
+            }
+            else
+            {
+                return default;
+            }
         }
 
         /// <summary>
@@ -509,7 +526,15 @@ namespace WebApi.Services.Instance
         /// <returns></returns>
         public async Task<TValue> GetHashObjectAsync<TKey, TValue>(string redisKey, TKey hashKey)
         {
-            return JsonConvert.DeserializeObject<TValue>(await _redisConnection.GetDatabase().HashGetAsync(redisKey, hashKey.ToString()));
+            var hashValue = await _redisConnection.GetDatabase().HashGetAsync(redisKey, hashKey.ToString());
+            if (hashValue != _redisEmptyValue)
+            {
+                return JsonConvert.DeserializeObject<TValue>(hashValue);
+            }
+            else
+            {
+                return default;
+            }
         }
 
         /// <summary>
@@ -524,7 +549,9 @@ namespace WebApi.Services.Instance
         {
             if (hashKeyValue != null && hashKeyValue.Count > 0)
             {
-                HashEntry[] hashFields = hashKeyValue.Select(e => new HashEntry(e.Key.ToString(), JsonConvert.SerializeObject(e.Value))).ToArray();
+                HashEntry[] hashFields = hashKeyValue.Select(e =>
+                    new HashEntry(e.Key.ToString(), e.Value == null ? _redisEmptyValue : JsonConvert.SerializeObject(e.Value))
+                ).ToArray();
 
                 var batch = _redisConnection.GetDatabase().CreateBatch();
                 batch.HashSetAsync(redisKey, hashFields);
@@ -546,7 +573,9 @@ namespace WebApi.Services.Instance
         {
             if (hashKeyValue != null && hashKeyValue.Count > 0)
             {
-                HashEntry[] hashFields = hashKeyValue.Select(e => new HashEntry(e.Key.ToString(), JsonConvert.SerializeObject(e.Value))).ToArray();
+                HashEntry[] hashFields = hashKeyValue.Select(e =>
+                    new HashEntry(e.Key.ToString(), e.Value == null ? _redisEmptyValue : JsonConvert.SerializeObject(e.Value))
+                ).ToArray();
 
                 var batch = _redisConnection.GetDatabase().CreateBatch();
                 Task taskSet = batch.HashSetAsync(redisKey, hashFields);

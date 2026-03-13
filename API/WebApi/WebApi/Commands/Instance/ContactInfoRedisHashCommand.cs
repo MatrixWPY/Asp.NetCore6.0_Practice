@@ -19,6 +19,7 @@ namespace WebApi.Commands.Instance
         private const string _redisQueryByCondition = $"{nameof(ContactInfo)}:{nameof(QueryByCondition)}";
         private TimeSpan _redisTTL = TimeSpan.FromMinutes(10);
         private TimeSpan _redisJitter = TimeSpan.FromMinutes(5);
+        private TimeSpan _redisEmptyTTL = TimeSpan.FromMinutes(3);
 
         /// <summary>
         /// 
@@ -48,7 +49,14 @@ namespace WebApi.Commands.Instance
             {
                 var res = _redisService.GetHashObject<long, ContactInfo>(_redisQueryByID, id);
 
-                return SuccessRP(_mapper.Map<QueryRP>(res));
+                if (res == null)
+                {
+                    return FailRP<QueryRP>(1, "No Data");
+                }
+                else
+                {
+                    return SuccessRP(_mapper.Map<QueryRP>(res));
+                }
             }
             else
             {
@@ -56,12 +64,12 @@ namespace WebApi.Commands.Instance
 
                 if (res == null)
                 {
+                    _redisService.SetHashObject(_redisQueryByID, new Dictionary<long, ContactInfo> { { id, null } }, _redisEmptyTTL);
                     return FailRP<QueryRP>(1, "No Data");
                 }
                 else
                 {
                     _redisService.SetHashObjectWithJitter(_redisQueryByID, new Dictionary<long, ContactInfo> { { id, res } }, _redisTTL, _redisJitter);
-
                     return SuccessRP(_mapper.Map<QueryRP>(res));
                 }
             }
@@ -111,7 +119,7 @@ namespace WebApi.Commands.Instance
             {
                 var res = _contactInfoService.Query(dicParams);
 
-                if (res.data == null)
+                if (res.data == null || res.data.Any() == false)
                 {
                     return FailRP<PageDataRP<IEnumerable<QueryRP>>>(1, "No Data");
                 }

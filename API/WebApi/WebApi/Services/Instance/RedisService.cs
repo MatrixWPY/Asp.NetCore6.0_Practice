@@ -331,6 +331,51 @@ namespace WebApi.Services.Instance
                 await _redisConnection.GetDatabase().StringSetAsync(redisKey, JsonConvert.SerializeObject(redisValue), tsExpiry);
             }
         }
+
+        /// <summary>
+        /// 設置Serialize緩存值，並加上隨機過期時間
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="redisKey"></param>
+        /// <param name="redisValue"></param>
+        /// <param name="tsBaseExpiry"></param>
+        /// <param name="tsMaxJitter"></param>
+        public void SetObjectWithJitter<T>(string redisKey, T redisValue, TimeSpan tsBaseExpiry, TimeSpan tsMaxJitter)
+        {
+            if (redisValue != null)
+            {
+                string jsonValue = JsonConvert.SerializeObject(redisValue);
+
+                double randomMs = Random.Shared.NextDouble() * tsMaxJitter.TotalMilliseconds;
+                TimeSpan jitter = TimeSpan.FromMilliseconds(randomMs);
+                TimeSpan finalExpiry = tsBaseExpiry + jitter;
+
+                _redisConnection.GetDatabase().StringSet(redisKey, jsonValue, finalExpiry);
+            }
+        }
+
+        /// <summary>
+        /// 異步設置Serialize緩存值，並加上隨機過期時間
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="redisKey"></param>
+        /// <param name="redisValue"></param>
+        /// <param name="tsBaseExpiry"></param>
+        /// <param name="tsMaxJitter"></param>
+        /// <returns></returns>
+        public async Task SetObjectWithJitterAsync<T>(string redisKey, T redisValue, TimeSpan tsBaseExpiry, TimeSpan tsMaxJitter)
+        {
+            if (redisValue != null)
+            {
+                string jsonValue = JsonConvert.SerializeObject(redisValue);
+
+                double randomMs = Random.Shared.NextDouble() * tsMaxJitter.TotalMilliseconds;
+                TimeSpan jitter = TimeSpan.FromMilliseconds(randomMs);
+                TimeSpan finalExpiry = tsBaseExpiry + jitter;
+
+                await _redisConnection.GetDatabase().StringSetAsync(redisKey, jsonValue, finalExpiry);
+            }
+        }
         #endregion
 
         #region Hash
@@ -477,10 +522,14 @@ namespace WebApi.Services.Instance
         /// <param name="tsExpiry"></param>
         public void SetHashObject<TKey, TValue>(string redisKey, IDictionary<TKey, TValue> hashKeyValue, TimeSpan tsExpiry)
         {
-            if (hashKeyValue != null)
+            if (hashKeyValue != null && hashKeyValue.Count > 0)
             {
-                _redisConnection.GetDatabase().HashSet(redisKey, hashKeyValue.Select(e => new HashEntry(e.Key.ToString(), JsonConvert.SerializeObject(e.Value))).ToArray());
-                _redisConnection.GetDatabase().KeyExpire(redisKey, tsExpiry);
+                HashEntry[] hashFields = hashKeyValue.Select(e => new HashEntry(e.Key.ToString(), JsonConvert.SerializeObject(e.Value))).ToArray();
+
+                var batch = _redisConnection.GetDatabase().CreateBatch();
+                batch.HashSetAsync(redisKey, hashFields);
+                batch.KeyExpireAsync(redisKey, tsExpiry);
+                batch.Execute();
             }
         }
 
@@ -495,10 +544,71 @@ namespace WebApi.Services.Instance
         /// <returns></returns>
         public async Task SetHashObjectAsync<TKey, TValue>(string redisKey, IDictionary<TKey, TValue> hashKeyValue, TimeSpan tsExpiry)
         {
-            if (hashKeyValue != null)
+            if (hashKeyValue != null && hashKeyValue.Count > 0)
             {
-                await _redisConnection.GetDatabase().HashSetAsync(redisKey, hashKeyValue.Select(e => new HashEntry(e.Key.ToString(), JsonConvert.SerializeObject(e.Value))).ToArray());
-                await _redisConnection.GetDatabase().KeyExpireAsync(redisKey, tsExpiry);
+                HashEntry[] hashFields = hashKeyValue.Select(e => new HashEntry(e.Key.ToString(), JsonConvert.SerializeObject(e.Value))).ToArray();
+
+                var batch = _redisConnection.GetDatabase().CreateBatch();
+                Task taskSet = batch.HashSetAsync(redisKey, hashFields);
+                Task taskExpire = batch.KeyExpireAsync(redisKey, tsExpiry);
+                batch.Execute();
+
+                await Task.WhenAll(taskSet, taskExpire);
+            }
+        }
+
+        /// <summary>
+        /// 設置Hash Serialize緩存值，並加上隨機過期時間
+        /// </summary>
+        /// <typeparam name="TKey"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
+        /// <param name="redisKey"></param>
+        /// <param name="hashKeyValue"></param>
+        /// <param name="tsBaseExpiry"></param>
+        /// <param name="tsMaxJitter"></param>
+        public void SetHashObjectWithJitter<TKey, TValue>(string redisKey, IDictionary<TKey, TValue> hashKeyValue, TimeSpan tsBaseExpiry, TimeSpan tsMaxJitter)
+        {
+            if (hashKeyValue != null && hashKeyValue.Count > 0)
+            {
+                HashEntry[] hashFields = hashKeyValue.Select(e => new HashEntry(e.Key.ToString(), JsonConvert.SerializeObject(e.Value))).ToArray();
+
+                double randomMs = Random.Shared.NextDouble() * tsMaxJitter.TotalMilliseconds;
+                TimeSpan jitter = TimeSpan.FromMilliseconds(randomMs);
+                TimeSpan finalExpiry = tsBaseExpiry + jitter;
+
+                var batch = _redisConnection.GetDatabase().CreateBatch();
+                batch.HashSetAsync(redisKey, hashFields);
+                batch.KeyExpireAsync(redisKey, finalExpiry);
+                batch.Execute();
+            }
+        }
+
+        /// <summary>
+        /// 異步設置Hash Serialize緩存值，並加上隨機過期時間
+        /// </summary>
+        /// <typeparam name="TKey"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
+        /// <param name="redisKey"></param>
+        /// <param name="hashKeyValue"></param>
+        /// <param name="tsBaseExpiry"></param>
+        /// <param name="tsMaxJitter"></param>
+        /// <returns></returns>
+        public async Task SetHashObjectWithJitterAsync<TKey, TValue>(string redisKey, IDictionary<TKey, TValue> hashKeyValue, TimeSpan tsBaseExpiry, TimeSpan tsMaxJitter)
+        {
+            if (hashKeyValue != null && hashKeyValue.Count > 0)
+            {
+                HashEntry[] hashFields = hashKeyValue.Select(e => new HashEntry(e.Key.ToString(), JsonConvert.SerializeObject(e.Value))).ToArray();
+
+                double randomMs = Random.Shared.NextDouble() * tsMaxJitter.TotalMilliseconds;
+                TimeSpan jitter = TimeSpan.FromMilliseconds(randomMs);
+                TimeSpan finalExpiry = tsBaseExpiry + jitter;
+
+                var batch = _redisConnection.GetDatabase().CreateBatch();
+                Task taskSet = batch.HashSetAsync(redisKey, hashFields);
+                Task taskExpire = batch.KeyExpireAsync(redisKey, finalExpiry);
+                batch.Execute();
+
+                await Task.WhenAll(taskSet, taskExpire);
             }
         }
 

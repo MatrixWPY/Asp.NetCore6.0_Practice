@@ -17,6 +17,8 @@ namespace WebApi.Commands.Instance
         private readonly IRedisService _redisService;
         private const string _redisQueryByID = $"{nameof(ContactInfo)}:{nameof(QueryByID)}";
         private const string _redisQueryByCondition = $"{nameof(ContactInfo)}:{nameof(QueryByCondition)}";
+        private TimeSpan _redisTTL = TimeSpan.FromMinutes(10);
+        private TimeSpan _redisJitter = TimeSpan.FromMinutes(5);
 
         /// <summary>
         /// 
@@ -58,7 +60,7 @@ namespace WebApi.Commands.Instance
                 }
                 else
                 {
-                    _redisService.SetHashObjectAsync(_redisQueryByID, new Dictionary<long, ContactInfo> { { id, res } }, TimeSpan.FromMinutes(5));
+                    _redisService.SetHashObjectWithJitter(_redisQueryByID, new Dictionary<long, ContactInfo> { { id, res } }, _redisTTL, _redisJitter);
 
                     return SuccessRP(_mapper.Map<QueryRP>(res));
                 }
@@ -115,7 +117,7 @@ namespace WebApi.Commands.Instance
                 }
                 else
                 {
-                    _redisService.SetHashObjectAsync(_redisQueryByCondition, new Dictionary<string, (int, IEnumerable<ContactInfo>)> { { hashKey, res } }, TimeSpan.FromMinutes(5));
+                    _redisService.SetHashObjectWithJitter(_redisQueryByCondition, new Dictionary<string, (int, IEnumerable<ContactInfo>)> { { hashKey, res } }, _redisTTL, _redisJitter);
 
                     return SuccessRP(new PageDataRP<IEnumerable<QueryRP>>
                     {
@@ -150,7 +152,7 @@ namespace WebApi.Commands.Instance
             else
             {
                 var objCache = _contactInfoService.Query(objInsert.ContactInfoID);
-                _redisService.SetHashObjectAsync(_redisQueryByID, new Dictionary<long, ContactInfo> { { objCache.ContactInfoID, objCache } }, TimeSpan.FromMinutes(5));
+                _redisService.SetHashObjectWithJitter(_redisQueryByID, new Dictionary<long, ContactInfo> { { objCache.ContactInfoID, objCache } }, _redisTTL, _redisJitter);
                 _redisService.RemoveAsync(_redisQueryByCondition);
 
                 return SuccessRP(_mapper.Map<QueryRP>(objCache));

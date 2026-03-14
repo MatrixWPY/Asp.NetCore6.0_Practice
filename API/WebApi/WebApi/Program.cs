@@ -21,6 +21,7 @@ using WebApi.DtoModels.Common;
 using WebApi.Interceptors;
 using WebApi.Middlewares;
 using WebApi.Profiles;
+using WebApi.Services;
 using WebApi.Services.Instance;
 using WebApi.Services.Interface;
 using static WebApi.Extensions.PollyPolicyExtensions;
@@ -134,7 +135,9 @@ switch (dbType)
 #region 註冊Redis
 if (isUseRedis)
 {
+    builder.Services.AddSingleton<RedisBaseService>();
     builder.Services.AddSingleton<IRedisService, RedisService>();
+    builder.Services.AddSingleton<IRedlockService, RedlockService>();
 }
 #endregion
 

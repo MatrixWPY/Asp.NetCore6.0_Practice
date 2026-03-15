@@ -9,78 +9,21 @@ namespace WebApi.Services.Instance
     /// </summary>
     public class RedisService : IRedisService
     {
-        public volatile ConnectionMultiplexer _redisConnection;
-        private static object _redisConnectionLock = new object();
-        private readonly ConfigurationOptions _configOptions;
         private readonly ILogger<RedisService> _logger;
+        private readonly ConnectionMultiplexer _connection;
+        private readonly IDatabase _db;
+        private const string _redisEmptyValue = "EMPTY_VALUE";
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="logger"></param>
-        /// <param name="configuration"></param>
-        public RedisService(ILogger<RedisService> logger, IConfiguration configuration)
+        /// <param name="redisBaseService"></param>
+        public RedisService(ILogger<RedisService> logger, RedisBaseService redisBaseService)
         {
             _logger = logger;
-            ConfigurationOptions options = ReadRedisSetting(configuration);
-            if (options == null)
-            {
-                _logger.LogError("Redis數據庫配置有誤");
-            }
-
-            _configOptions = options;
-            _redisConnection = ConnectionRedis();
-        }
-
-        private ConfigurationOptions ReadRedisSetting(IConfiguration configuration)
-        {
-            try
-            {
-                ConfigurationOptions options = new ConfigurationOptions
-                {
-                    ClientName = configuration.GetValue<string>("Redis:Name"),
-                    EndPoints =
-                    {
-                        {
-                            configuration.GetValue<string>("Redis:Ip"),
-                            configuration.GetValue<int>("Redis:Port")
-                        }
-                    },
-                    Password = configuration.GetValue<string>("Redis:Password"),
-                    DefaultDatabase = configuration.GetValue<int>("Redis:Db")
-                };
-                return options;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"獲取Redis配置信息失敗：{ex.Message}");
-                throw;
-            }
-        }
-
-        private ConnectionMultiplexer ConnectionRedis()
-        {
-            if (_redisConnection != null && _redisConnection.IsConnected)
-            {
-                return _redisConnection; // 已有連接，直接使用
-            }
-            lock (_redisConnectionLock)
-            {
-                if (_redisConnection != null)
-                {
-                    _redisConnection.Dispose(); // 釋放，重連
-                }
-                try
-                {
-                    _redisConnection = ConnectionMultiplexer.Connect(_configOptions);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError($"Redis服務啟動失敗：{ex.Message}");
-                    throw;
-                }
-            }
-            return _redisConnection;
+            _connection = redisBaseService.Connection;
+            _db = _connection.GetDatabase();
         }
 
         #region Common
@@ -89,11 +32,24 @@ namespace WebApi.Services.Instance
         /// </summary>
         public void Clear()
         {
-            foreach (var endPoint in ConnectionRedis().GetEndPoints())
+            try
             {
-                var server = ConnectionRedis().GetServer(endPoint);
-                var redisKeys = server.Keys();
-                _redisConnection.GetDatabase().KeyDelete(redisKeys.ToArray());
+                var endpoints = _connection.GetEndPoints();
+
+                foreach (var endpoint in endpoints)
+                {
+                    var server = _connection.GetServer(endpoint);
+                    if (!server.IsReplica)
+                    {
+                        server.FlushDatabase(_db.Database);
+                        _logger.LogInformation($"已清空 Redis 節點 {endpoint} 的 Database {_db.Database}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "清空 Redis 快取時發生錯誤");
+                throw;
             }
         }
 
@@ -103,11 +59,27 @@ namespace WebApi.Services.Instance
         /// <returns></returns>
         public async Task ClearAsync()
         {
-            foreach (var endPoint in ConnectionRedis().GetEndPoints())
+            try
             {
-                var server = ConnectionRedis().GetServer(endPoint);
-                var redisKeys = server.Keys();
-                await _redisConnection.GetDatabase().KeyDeleteAsync(redisKeys.ToArray());
+                var endpoints = _connection.GetEndPoints();
+                var flushTasks = new List<Task>();
+
+                foreach (var endpoint in endpoints)
+                {
+                    var server = _connection.GetServer(endpoint);
+                    if (!server.IsReplica)
+                    {
+                        flushTasks.Add(server.FlushDatabaseAsync(_db.Database));
+                        _logger.LogInformation($"準備清空 Redis 節點 {endpoint} 的 Database {_db.Database}");
+                    }
+                }
+
+                await Task.WhenAll(flushTasks);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "非同步清空 Redis 快取時發生錯誤");
+                throw;
             }
         }
 
@@ -117,7 +89,7 @@ namespace WebApi.Services.Instance
         /// <param name="redisKey"></param>
         public void Remove(string redisKey)
         {
-            _redisConnection.GetDatabase().KeyDelete(redisKey);
+            _db.KeyDelete(redisKey);
         }
 
         /// <summary>
@@ -127,7 +99,7 @@ namespace WebApi.Services.Instance
         /// <returns></returns>
         public async Task RemoveAsync(string redisKey)
         {
-            await _redisConnection.GetDatabase().KeyDeleteAsync(redisKey);
+            await _db.KeyDeleteAsync(redisKey);
         }
 
         /// <summary>
@@ -136,7 +108,7 @@ namespace WebApi.Services.Instance
         /// <param name="redisKeys"></param>
         public void Remove(IEnumerable<string> redisKeys)
         {
-            _redisConnection.GetDatabase().KeyDelete(redisKeys.Select(e => new RedisKey(e)).ToArray());
+            _db.KeyDelete(redisKeys.Select(e => new RedisKey(e)).ToArray());
         }
 
         /// <summary>
@@ -146,7 +118,7 @@ namespace WebApi.Services.Instance
         /// <returns></returns>
         public async Task RemoveAsync(IEnumerable<string> redisKeys)
         {
-            await _redisConnection.GetDatabase().KeyDeleteAsync(redisKeys.Select(e => new RedisKey(e)).ToArray());
+            await _db.KeyDeleteAsync(redisKeys.Select(e => new RedisKey(e)).ToArray());
         }
 
         /// <summary>
@@ -155,18 +127,20 @@ namespace WebApi.Services.Instance
         /// <param name="keyPrefix"></param>
         public void RemoveByKey(string keyPrefix)
         {
-            var redisResult = _redisConnection.GetDatabase().ScriptEvaluate(
-                LuaScript.Prepare(
-                    //模糊查詢：
-                    " local res = redis.call('KEYS', @keypattern) " + " return res "
-                ),
-                new { @keypattern = keyPrefix + "*" }
-            );
+            var endpoints = _connection.GetEndPoints();
 
-            if (!redisResult.IsNull)
+            foreach (var endpoint in endpoints)
             {
-                var redisKeys = (string[])redisResult;
-                _redisConnection.GetDatabase().KeyDelete(redisKeys.Select(e => new RedisKey(e)).ToArray());
+                var server = _connection.GetServer(endpoint);
+                if (!server.IsReplica)
+                {
+                    var keys = server.Keys(database: _db.Database, pattern: $"{keyPrefix}*").ToArray();
+
+                    if (keys.Length > 0)
+                    {
+                        _db.KeyDelete(keys);
+                    }
+                }
             }
         }
 
@@ -177,18 +151,26 @@ namespace WebApi.Services.Instance
         /// <returns></returns>
         public async Task RemoveByKeyAsync(string keyPrefix)
         {
-            var redisResult = await _redisConnection.GetDatabase().ScriptEvaluateAsync(
-                LuaScript.Prepare(
-                    //模糊查詢：
-                    " local res = redis.call('KEYS', @keypattern) " + " return res "
-                ),
-                new { @keypattern = keyPrefix + "*" }
-            );
+            var endpoints = _connection.GetEndPoints();
+            var deleteTasks = new List<Task>();
 
-            if (!redisResult.IsNull)
+            foreach (var endpoint in endpoints)
             {
-                var redisKeys = (string[])redisResult;
-                await _redisConnection.GetDatabase().KeyDeleteAsync(redisKeys.Select(e => new RedisKey(e)).ToArray());
+                var server = _connection.GetServer(endpoint);
+                if (!server.IsReplica)
+                {
+                    var keys = server.Keys(database: _db.Database, pattern: $"{keyPrefix}*").ToArray();
+
+                    if (keys.Length > 0)
+                    {
+                        deleteTasks.Add(_db.KeyDeleteAsync(keys));
+                    }
+                }
+            }
+
+            if (deleteTasks.Count > 0)
+            {
+                await Task.WhenAll(deleteTasks);
             }
         }
 
@@ -199,7 +181,7 @@ namespace WebApi.Services.Instance
         /// <returns></returns>
         public bool Exist(string redisKey)
         {
-            return _redisConnection.GetDatabase().KeyExists(redisKey);
+            return _db.KeyExists(redisKey);
         }
 
         /// <summary>
@@ -209,60 +191,11 @@ namespace WebApi.Services.Instance
         /// <returns></returns>
         public async Task<bool> ExistAsync(string redisKey)
         {
-            return await _redisConnection.GetDatabase().KeyExistsAsync(redisKey);
+            return await _db.KeyExistsAsync(redisKey);
         }
         #endregion
 
         #region String
-        /// <summary>
-        /// 獲取String緩存值
-        /// </summary>
-        /// <param name="redisKey"></param>
-        /// <returns></returns>
-        public string GetString(string redisKey)
-        {
-            return _redisConnection.GetDatabase().StringGet(redisKey);
-        }
-
-        /// <summary>
-        /// 異步獲取String緩存值
-        /// </summary>
-        /// <param name="redisKey"></param>
-        /// <returns></returns>
-        public async Task<string> GetStringAsync(string redisKey)
-        {
-            return await _redisConnection.GetDatabase().StringGetAsync(redisKey);
-        }
-
-        /// <summary>
-        /// 設置String緩存值
-        /// </summary>
-        /// <param name="redisKey"></param>
-        /// <param name="redisValue"></param>
-        /// <param name="tsExpiry"></param>
-        public void SetString(string redisKey, string redisValue, TimeSpan tsExpiry)
-        {
-            if (redisValue != null)
-            {
-                _redisConnection.GetDatabase().StringSet(redisKey, redisValue, tsExpiry);
-            }
-        }
-
-        /// <summary>
-        /// 異步設置String緩存值
-        /// </summary>
-        /// <param name="redisKey"></param>
-        /// <param name="redisValue"></param>
-        /// <param name="tsExpiry"></param>
-        /// <returns></returns>
-        public async Task SetStringAsync(string redisKey, string redisValue, TimeSpan tsExpiry)
-        {
-            if (redisValue != null)
-            {
-                await _redisConnection.GetDatabase().StringSetAsync(redisKey, redisValue, tsExpiry);
-            }
-        }
-
         /// <summary>
         /// 獲取Deserialize緩存值
         /// </summary>
@@ -271,8 +204,8 @@ namespace WebApi.Services.Instance
         /// <returns></returns>
         public T GetObject<T>(string redisKey)
         {
-            var value = _redisConnection.GetDatabase().StringGet(redisKey);
-            if (value.HasValue)
+            var value = _db.StringGet(redisKey);
+            if (value.HasValue && value != _redisEmptyValue)
             {
                 return JsonConvert.DeserializeObject<T>(value);
             }
@@ -290,8 +223,8 @@ namespace WebApi.Services.Instance
         /// <returns></returns>
         public async Task<T> GetObjectAsync<T>(string redisKey)
         {
-            var value = await _redisConnection.GetDatabase().StringGetAsync(redisKey);
-            if (value.HasValue)
+            var value = await _db.StringGetAsync(redisKey);
+            if (value.HasValue && value != _redisEmptyValue)
             {
                 return JsonConvert.DeserializeObject<T>(value);
             }
@@ -312,7 +245,11 @@ namespace WebApi.Services.Instance
         {
             if (redisValue != null)
             {
-                _redisConnection.GetDatabase().StringSet(redisKey, JsonConvert.SerializeObject(redisValue), tsExpiry);
+                _db.StringSet(redisKey, JsonConvert.SerializeObject(redisValue), tsExpiry);
+            }
+            else
+            {
+                _db.StringSet(redisKey, _redisEmptyValue, tsExpiry);
             }
         }
 
@@ -328,7 +265,56 @@ namespace WebApi.Services.Instance
         {
             if (redisValue != null)
             {
-                await _redisConnection.GetDatabase().StringSetAsync(redisKey, JsonConvert.SerializeObject(redisValue), tsExpiry);
+                await _db.StringSetAsync(redisKey, JsonConvert.SerializeObject(redisValue), tsExpiry);
+            }
+            else
+            {
+                await _db.StringSetAsync(redisKey, _redisEmptyValue, tsExpiry);
+            }
+        }
+
+        /// <summary>
+        /// 設置Serialize緩存值，並加上隨機過期時間
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="redisKey"></param>
+        /// <param name="redisValue"></param>
+        /// <param name="tsBaseExpiry"></param>
+        /// <param name="tsMaxJitter"></param>
+        public void SetObjectWithJitter<T>(string redisKey, T redisValue, TimeSpan tsBaseExpiry, TimeSpan tsMaxJitter)
+        {
+            if (redisValue != null)
+            {
+                string jsonValue = JsonConvert.SerializeObject(redisValue);
+
+                double randomMs = Random.Shared.NextDouble() * tsMaxJitter.TotalMilliseconds;
+                TimeSpan jitter = TimeSpan.FromMilliseconds(randomMs);
+                TimeSpan finalExpiry = tsBaseExpiry + jitter;
+
+                _db.StringSet(redisKey, jsonValue, finalExpiry);
+            }
+        }
+
+        /// <summary>
+        /// 異步設置Serialize緩存值，並加上隨機過期時間
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="redisKey"></param>
+        /// <param name="redisValue"></param>
+        /// <param name="tsBaseExpiry"></param>
+        /// <param name="tsMaxJitter"></param>
+        /// <returns></returns>
+        public async Task SetObjectWithJitterAsync<T>(string redisKey, T redisValue, TimeSpan tsBaseExpiry, TimeSpan tsMaxJitter)
+        {
+            if (redisValue != null)
+            {
+                string jsonValue = JsonConvert.SerializeObject(redisValue);
+
+                double randomMs = Random.Shared.NextDouble() * tsMaxJitter.TotalMilliseconds;
+                TimeSpan jitter = TimeSpan.FromMilliseconds(randomMs);
+                TimeSpan finalExpiry = tsBaseExpiry + jitter;
+
+                await _db.StringSetAsync(redisKey, jsonValue, finalExpiry);
             }
         }
         #endregion
@@ -343,7 +329,7 @@ namespace WebApi.Services.Instance
         /// <returns></returns>
         public bool ExistHash<TKey>(string redisKey, TKey hashKey)
         {
-            return _redisConnection.GetDatabase().HashExists(redisKey, hashKey.ToString());
+            return _db.HashExists(redisKey, hashKey.ToString());
         }
 
         /// <summary>
@@ -355,66 +341,7 @@ namespace WebApi.Services.Instance
         /// <returns></returns>
         public async Task<bool> ExistHashAsync<TKey>(string redisKey, TKey hashKey)
         {
-            return await _redisConnection.GetDatabase().HashExistsAsync(redisKey, hashKey.ToString());
-        }
-
-        /// <summary>
-        /// 獲取Hash緩存值
-        /// </summary>
-        /// <typeparam name="TKey"></typeparam>
-        /// <param name="redisKey"></param>
-        /// <param name="hashKey"></param>
-        /// <returns></returns>
-        public string GetHash<TKey>(string redisKey, TKey hashKey)
-        {
-            return _redisConnection.GetDatabase().HashGet(redisKey, hashKey.ToString());
-        }
-
-        /// <summary>
-        /// 異步獲取Hash緩存值
-        /// </summary>
-        /// <typeparam name="TKey"></typeparam>
-        /// <param name="redisKey"></param>
-        /// <param name="hashKey"></param>
-        /// <returns></returns>
-        public async Task<string> GetHashAsync<TKey>(string redisKey, TKey hashKey)
-        {
-            return await _redisConnection.GetDatabase().HashGetAsync(redisKey, hashKey.ToString());
-        }
-
-        /// <summary>
-        /// 設置Hash緩存值
-        /// </summary>
-        /// <typeparam name="TKey"></typeparam>
-        /// <param name="redisKey"></param>
-        /// <param name="hashKey"></param>
-        /// <param name="hashValue"></param>
-        /// <param name="tsExpiry"></param>
-        public void SetHash<TKey>(string redisKey, TKey hashKey, string hashValue, TimeSpan tsExpiry)
-        {
-            if (hashKey != null && hashValue != null)
-            {
-                _redisConnection.GetDatabase().HashSet(redisKey, hashKey.ToString(), hashValue);
-                _redisConnection.GetDatabase().KeyExpire(redisKey, tsExpiry);
-            }
-        }
-
-        /// <summary>
-        /// 異步設置Hash緩存值
-        /// </summary>
-        /// <typeparam name="TKey"></typeparam>
-        /// <param name="redisKey"></param>
-        /// <param name="hashKey"></param>
-        /// <param name="hashValue"></param>
-        /// <param name="tsExpiry"></param>
-        /// <returns></returns>
-        public async Task SetHashAsync<TKey>(string redisKey, TKey hashKey, string hashValue, TimeSpan tsExpiry)
-        {
-            if (hashKey != null && hashValue != null)
-            {
-                await _redisConnection.GetDatabase().HashSetAsync(redisKey, hashKey.ToString(), hashValue);
-                await _redisConnection.GetDatabase().KeyExpireAsync(redisKey, tsExpiry);
-            }
+            return await _db.HashExistsAsync(redisKey, hashKey.ToString());
         }
 
         /// <summary>
@@ -426,7 +353,7 @@ namespace WebApi.Services.Instance
         /// <returns></returns>
         public IDictionary<TKey, TValue> GetHashObject<TKey, TValue>(string redisKey)
         {
-            return _redisConnection.GetDatabase().HashGetAll(redisKey).ToDictionary(e => (TKey)Convert.ChangeType(e.Name, typeof(TKey)), e => JsonConvert.DeserializeObject<TValue>(e.Value));
+            return _db.HashGetAll(redisKey).ToDictionary(e => (TKey)Convert.ChangeType(e.Name, typeof(TKey)), e => JsonConvert.DeserializeObject<TValue>(e.Value));
         }
 
         /// <summary>
@@ -438,7 +365,7 @@ namespace WebApi.Services.Instance
         /// <returns></returns>
         public async Task<IDictionary<TKey, TValue>> GetHashObjectAsync<TKey, TValue>(string redisKey)
         {
-            return (await _redisConnection.GetDatabase().HashGetAllAsync(redisKey)).ToDictionary(e => (TKey)Convert.ChangeType(e.Name, typeof(TKey)), e => JsonConvert.DeserializeObject<TValue>(e.Value));
+            return (await _db.HashGetAllAsync(redisKey)).ToDictionary(e => (TKey)Convert.ChangeType(e.Name, typeof(TKey)), e => JsonConvert.DeserializeObject<TValue>(e.Value));
         }
 
         /// <summary>
@@ -451,7 +378,15 @@ namespace WebApi.Services.Instance
         /// <returns></returns>
         public TValue GetHashObject<TKey, TValue>(string redisKey, TKey hashKey)
         {
-            return JsonConvert.DeserializeObject<TValue>(_redisConnection.GetDatabase().HashGet(redisKey, hashKey.ToString()));
+            var hashValue = _db.HashGet(redisKey, hashKey.ToString());
+            if (hashValue != _redisEmptyValue)
+            {
+                return JsonConvert.DeserializeObject<TValue>(hashValue);
+            }
+            else
+            {
+                return default;
+            }
         }
 
         /// <summary>
@@ -464,7 +399,15 @@ namespace WebApi.Services.Instance
         /// <returns></returns>
         public async Task<TValue> GetHashObjectAsync<TKey, TValue>(string redisKey, TKey hashKey)
         {
-            return JsonConvert.DeserializeObject<TValue>(await _redisConnection.GetDatabase().HashGetAsync(redisKey, hashKey.ToString()));
+            var hashValue = await _db.HashGetAsync(redisKey, hashKey.ToString());
+            if (hashValue != _redisEmptyValue)
+            {
+                return JsonConvert.DeserializeObject<TValue>(hashValue);
+            }
+            else
+            {
+                return default;
+            }
         }
 
         /// <summary>
@@ -477,10 +420,22 @@ namespace WebApi.Services.Instance
         /// <param name="tsExpiry"></param>
         public void SetHashObject<TKey, TValue>(string redisKey, IDictionary<TKey, TValue> hashKeyValue, TimeSpan tsExpiry)
         {
-            if (hashKeyValue != null)
+            if (hashKeyValue != null && hashKeyValue.Count > 0)
             {
-                _redisConnection.GetDatabase().HashSet(redisKey, hashKeyValue.Select(e => new HashEntry(e.Key.ToString(), JsonConvert.SerializeObject(e.Value))).ToArray());
-                _redisConnection.GetDatabase().KeyExpire(redisKey, tsExpiry);
+                HashEntry[] hashFields = hashKeyValue.Select(e =>
+                    new HashEntry(e.Key.ToString(), e.Value == null ? _redisEmptyValue : JsonConvert.SerializeObject(e.Value))
+                ).ToArray();
+
+                var tran = _db.CreateTransaction();
+                _ = tran.HashSetAsync(redisKey, hashFields);
+                _ = tran.KeyExpireAsync(redisKey, tsExpiry);
+
+                bool committed = tran.Execute();
+
+                if (!committed)
+                {
+                    _logger.LogError($"SetHashObject 交易失敗，Key: {redisKey}");
+                }
             }
         }
 
@@ -495,10 +450,87 @@ namespace WebApi.Services.Instance
         /// <returns></returns>
         public async Task SetHashObjectAsync<TKey, TValue>(string redisKey, IDictionary<TKey, TValue> hashKeyValue, TimeSpan tsExpiry)
         {
-            if (hashKeyValue != null)
+            if (hashKeyValue != null && hashKeyValue.Count > 0)
             {
-                await _redisConnection.GetDatabase().HashSetAsync(redisKey, hashKeyValue.Select(e => new HashEntry(e.Key.ToString(), JsonConvert.SerializeObject(e.Value))).ToArray());
-                await _redisConnection.GetDatabase().KeyExpireAsync(redisKey, tsExpiry);
+                HashEntry[] hashFields = hashKeyValue.Select(e =>
+                    new HashEntry(e.Key.ToString(), e.Value == null ? _redisEmptyValue : JsonConvert.SerializeObject(e.Value))
+                ).ToArray();
+
+                var tran = _db.CreateTransaction();
+                _ = tran.HashSetAsync(redisKey, hashFields);
+                _ = tran.KeyExpireAsync(redisKey, tsExpiry);
+
+                bool committed = await tran.ExecuteAsync();
+
+                if (!committed)
+                {
+                    _logger.LogError($"SetHashObjectAsync 交易失敗，Key: {redisKey}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// 設置Hash Serialize緩存值，並加上隨機過期時間
+        /// </summary>
+        /// <typeparam name="TKey"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
+        /// <param name="redisKey"></param>
+        /// <param name="hashKeyValue"></param>
+        /// <param name="tsBaseExpiry"></param>
+        /// <param name="tsMaxJitter"></param>
+        public void SetHashObjectWithJitter<TKey, TValue>(string redisKey, IDictionary<TKey, TValue> hashKeyValue, TimeSpan tsBaseExpiry, TimeSpan tsMaxJitter)
+        {
+            if (hashKeyValue != null && hashKeyValue.Count > 0)
+            {
+                HashEntry[] hashFields = hashKeyValue.Select(e => new HashEntry(e.Key.ToString(), JsonConvert.SerializeObject(e.Value))).ToArray();
+
+                double randomMs = Random.Shared.NextDouble() * tsMaxJitter.TotalMilliseconds;
+                TimeSpan jitter = TimeSpan.FromMilliseconds(randomMs);
+                TimeSpan finalExpiry = tsBaseExpiry + jitter;
+
+                var tran = _db.CreateTransaction();
+                _ = tran.HashSetAsync(redisKey, hashFields);
+                _ = tran.KeyExpireAsync(redisKey, finalExpiry);
+
+                bool committed = tran.Execute();
+
+                if (!committed)
+                {
+                    _logger.LogError($"SetHashObjectWithJitter 交易失敗: {redisKey}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// 異步設置Hash Serialize緩存值，並加上隨機過期時間
+        /// </summary>
+        /// <typeparam name="TKey"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
+        /// <param name="redisKey"></param>
+        /// <param name="hashKeyValue"></param>
+        /// <param name="tsBaseExpiry"></param>
+        /// <param name="tsMaxJitter"></param>
+        /// <returns></returns>
+        public async Task SetHashObjectWithJitterAsync<TKey, TValue>(string redisKey, IDictionary<TKey, TValue> hashKeyValue, TimeSpan tsBaseExpiry, TimeSpan tsMaxJitter)
+        {
+            if (hashKeyValue != null && hashKeyValue.Count > 0)
+            {
+                HashEntry[] hashFields = hashKeyValue.Select(e => new HashEntry(e.Key.ToString(), JsonConvert.SerializeObject(e.Value))).ToArray();
+
+                double randomMs = Random.Shared.NextDouble() * tsMaxJitter.TotalMilliseconds;
+                TimeSpan jitter = TimeSpan.FromMilliseconds(randomMs);
+                TimeSpan finalExpiry = tsBaseExpiry + jitter;
+
+                var tran = _db.CreateTransaction();
+                _ = tran.HashSetAsync(redisKey, hashFields);
+                _ = tran.KeyExpireAsync(redisKey, finalExpiry);
+
+                bool committed = await tran.ExecuteAsync();
+
+                if (!committed)
+                {
+                    _logger.LogError($"SetHashObjectWithJitterAsync 交易失敗: {redisKey}");
+                }
             }
         }
 
@@ -510,7 +542,7 @@ namespace WebApi.Services.Instance
         /// <param name="hashKey"></param>
         public void DeleteHash<TKey>(string redisKey, TKey hashKey)
         {
-            _redisConnection.GetDatabase().HashDelete(redisKey, hashKey.ToString());
+            _db.HashDelete(redisKey, hashKey.ToString());
         }
 
         /// <summary>
@@ -522,7 +554,7 @@ namespace WebApi.Services.Instance
         /// <returns></returns>
         public async Task DeleteHashAsync<TKey>(string redisKey, TKey hashKey)
         {
-            await _redisConnection.GetDatabase().HashDeleteAsync(redisKey, hashKey.ToString());
+            await _db.HashDeleteAsync(redisKey, hashKey.ToString());
         }
 
         /// <summary>
@@ -533,7 +565,7 @@ namespace WebApi.Services.Instance
         /// <param name="hashKeys"></param>
         public void DeleteHash<TKey>(string redisKey, IEnumerable<TKey> hashKeys)
         {
-            _redisConnection.GetDatabase().HashDelete(redisKey, hashKeys.Select(e => new RedisValue(e.ToString())).ToArray());
+            _db.HashDelete(redisKey, hashKeys.Select(e => new RedisValue(e.ToString())).ToArray());
         }
 
         /// <summary>
@@ -545,7 +577,7 @@ namespace WebApi.Services.Instance
         /// <returns></returns>
         public async Task DeleteHashAsync<TKey>(string redisKey, IEnumerable<TKey> hashKeys)
         {
-            await _redisConnection.GetDatabase().HashDeleteAsync(redisKey, hashKeys.Select(e => new RedisValue(e.ToString())).ToArray());
+            await _db.HashDeleteAsync(redisKey, hashKeys.Select(e => new RedisValue(e.ToString())).ToArray());
         }
         #endregion
 
@@ -561,7 +593,7 @@ namespace WebApi.Services.Instance
         {
             List<T> res = new List<T>();
 
-            var listDatas = _redisConnection.GetDatabase().ListRightPop(queueName, maxCount);
+            var listDatas = _db.ListRightPop(queueName, maxCount);
             if (listDatas?.Any() ?? false)
             {
                 foreach (var data in listDatas)
@@ -584,7 +616,7 @@ namespace WebApi.Services.Instance
         {
             List<T> res = new List<T>();
 
-            var listDatas = await _redisConnection.GetDatabase().ListRightPopAsync(queueName, maxCount);
+            var listDatas = await _db.ListRightPopAsync(queueName, maxCount);
             if (listDatas?.Any() ?? false)
             {
                 foreach (var data in listDatas)
@@ -604,7 +636,7 @@ namespace WebApi.Services.Instance
         /// <param name="redisValue"></param>
         public void SendListQueue<T>(string queueName, T redisValue)
         {
-            _redisConnection.GetDatabase().ListLeftPush(queueName, JsonConvert.SerializeObject(redisValue));
+            _db.ListLeftPush(queueName, JsonConvert.SerializeObject(redisValue));
         }
 
         /// <summary>
@@ -616,7 +648,7 @@ namespace WebApi.Services.Instance
         /// <returns></returns>
         public async Task SendListQueueAsync<T>(string queueName, T redisValue)
         {
-            await _redisConnection.GetDatabase().ListLeftPushAsync(queueName, JsonConvert.SerializeObject(redisValue));
+            await _db.ListLeftPushAsync(queueName, JsonConvert.SerializeObject(redisValue));
         }
         #endregion
 
@@ -636,14 +668,14 @@ namespace WebApi.Services.Instance
             IDictionary<TKey, TValue> res = new Dictionary<TKey, TValue>();
 
             #region 前置判斷
-            var hasKey = _redisConnection.GetDatabase().KeyExists(queueName, CommandFlags.None);
+            var hasKey = _db.KeyExists(queueName, CommandFlags.None);
             if (hasKey == false)
             {
                 _logger.LogError($"不存在 Queue = {queueName}");
                 return res;
             }
 
-            var groups = _redisConnection.GetDatabase().StreamGroupInfo(queueName, CommandFlags.None);
+            var groups = _db.StreamGroupInfo(queueName, CommandFlags.None);
             if (groups == null || groups?.Any(x => x.Name.Equals(groupName, StringComparison.OrdinalIgnoreCase)) == false)
             {
                 _logger.LogError($"不存在 Group = {groupName}");
@@ -651,7 +683,7 @@ namespace WebApi.Services.Instance
             }
             #endregion
 
-            var streamDatas = _redisConnection.GetDatabase().StreamReadGroup(queueName, groupName, consumerName, ">", maxCount, noAck: false);
+            var streamDatas = _db.StreamReadGroup(queueName, groupName, consumerName, ">", maxCount, noAck: false);
             if (streamDatas.Any())
             {
                 foreach (var streamData in streamDatas)
@@ -662,8 +694,8 @@ namespace WebApi.Services.Instance
                         res[(TKey)Convert.ChangeType(data.Name, typeof(TKey))] = JsonConvert.DeserializeObject<TValue>(data.Value);
                     }
 
-                    _redisConnection.GetDatabase().StreamAcknowledge(queueName, groupName, id);
-                    _redisConnection.GetDatabase().StreamDelete(queueName, new RedisValue[] { id });
+                    _db.StreamAcknowledge(queueName, groupName, id);
+                    _db.StreamDelete(queueName, new RedisValue[] { id });
                 }
             }
 
@@ -685,14 +717,14 @@ namespace WebApi.Services.Instance
             IDictionary<TKey, TValue> res = new Dictionary<TKey, TValue>();
 
             #region 前置判斷
-            var hasKey = await _redisConnection.GetDatabase().KeyExistsAsync(queueName, CommandFlags.None);
+            var hasKey = await _db.KeyExistsAsync(queueName, CommandFlags.None);
             if (hasKey == false)
             {
                 _logger.LogError($"不存在 Queue = {queueName}");
                 return res;
             }
 
-            var groups = await _redisConnection.GetDatabase().StreamGroupInfoAsync(queueName, CommandFlags.None);
+            var groups = await _db.StreamGroupInfoAsync(queueName, CommandFlags.None);
             if (groups == null || groups?.Any(x => x.Name.Equals(groupName, StringComparison.OrdinalIgnoreCase)) == false)
             {
                 _logger.LogError($"不存在 Group = {groupName}");
@@ -700,7 +732,7 @@ namespace WebApi.Services.Instance
             }
             #endregion
 
-            var streamDatas = await _redisConnection.GetDatabase().StreamReadGroupAsync(queueName, groupName, consumerName, ">", maxCount, noAck: false);
+            var streamDatas = await _db.StreamReadGroupAsync(queueName, groupName, consumerName, ">", maxCount, noAck: false);
             if (streamDatas.Any())
             {
                 foreach (var streamData in streamDatas)
@@ -711,8 +743,8 @@ namespace WebApi.Services.Instance
                         res[(TKey)Convert.ChangeType(data.Name, typeof(TKey))] = JsonConvert.DeserializeObject<TValue>(data.Value);
                     }
 
-                    await _redisConnection.GetDatabase().StreamAcknowledgeAsync(queueName, groupName, id);
-                    await _redisConnection.GetDatabase().StreamDeleteAsync(queueName, new RedisValue[] { id });
+                    await _db.StreamAcknowledgeAsync(queueName, groupName, id);
+                    await _db.StreamDeleteAsync(queueName, new RedisValue[] { id });
                 }
             }
 
@@ -734,22 +766,22 @@ namespace WebApi.Services.Instance
             // 因需先 StreamCreateConsumerGroup 後再 StreamAdd，後續 StreamReadGroup 才讀的到資料
             // 故在 Producer 時先行設置 Consumer 會使用的 GroupName
 
-            var hasKey = _redisConnection.GetDatabase().KeyExists(queueName, CommandFlags.None);
+            var hasKey = _db.KeyExists(queueName, CommandFlags.None);
             if (hasKey == false)
             {
                 // 此時尚未執行 StreamCreateConsumerGroup，故此筆資料不會被 StreamReadGroup 讀出
                 // 此處執行 StreamAdd 目的為使之後的 StreamGroupInfo 可作用
-                _redisConnection.GetDatabase().StreamAdd(queueName, "-1", $"Root_{queueName}");
+                _db.StreamAdd(queueName, "-1", $"Root_{queueName}");
             }
 
-            var groups = _redisConnection.GetDatabase().StreamGroupInfo(queueName, CommandFlags.None);
+            var groups = _db.StreamGroupInfo(queueName, CommandFlags.None);
             if (groups == null || groups?.Any(x => x.Name.Equals(groupName, StringComparison.OrdinalIgnoreCase)) == false)
             {
                 try
                 {
                     // 設置 Consumer 會使用的 GroupName
                     // 之後執行 StreamAdd 的資料已可被 StreamReadGroup 讀出
-                    _redisConnection.GetDatabase().StreamCreateConsumerGroup(queueName, groupName, StreamPosition.NewMessages);
+                    _db.StreamCreateConsumerGroup(queueName, groupName, StreamPosition.NewMessages);
                 }
                 catch (Exception ex)
                 {
@@ -759,7 +791,7 @@ namespace WebApi.Services.Instance
             }
             #endregion
 
-            _redisConnection.GetDatabase().StreamAdd(queueName, redisKey.ToString(), JsonConvert.SerializeObject(redisValue));
+            _db.StreamAdd(queueName, redisKey.ToString(), JsonConvert.SerializeObject(redisValue));
         }
 
         /// <summary>
@@ -778,22 +810,22 @@ namespace WebApi.Services.Instance
             // 因需先 StreamCreateConsumerGroupAsync 後再 StreamAddAsync，後續 StreamReadGroupAsync 才讀的到資料
             // 故在 Producer 時先行設置 Consumer 會使用的 GroupName
 
-            var hasKey = await _redisConnection.GetDatabase().KeyExistsAsync(queueName, CommandFlags.None);
+            var hasKey = await _db.KeyExistsAsync(queueName, CommandFlags.None);
             if (hasKey == false)
             {
                 // 此時尚未執行 StreamCreateConsumerGroupAsync，故此筆資料不會被 StreamReadGroupAsync 讀出
                 // 此處執行 StreamAddAsync 目的為使之後的 StreamGroupInfoAsync 可作用
-                await _redisConnection.GetDatabase().StreamAddAsync(queueName, "-1", $"Root_{queueName}");
+                await _db.StreamAddAsync(queueName, "-1", $"Root_{queueName}");
             }
 
-            var groups = await _redisConnection.GetDatabase().StreamGroupInfoAsync(queueName, CommandFlags.None);
+            var groups = await _db.StreamGroupInfoAsync(queueName, CommandFlags.None);
             if (groups == null || groups?.Any(x => x.Name.Equals(groupName, StringComparison.OrdinalIgnoreCase)) == false)
             {
                 try
                 {
                     // 設置 Consumer 會使用的 GroupName
                     // 之後執行 StreamAddAsync 的資料已可被 StreamReadGroupAsync 讀出
-                    await _redisConnection.GetDatabase().StreamCreateConsumerGroupAsync(queueName, groupName, StreamPosition.NewMessages);
+                    await _db.StreamCreateConsumerGroupAsync(queueName, groupName, StreamPosition.NewMessages);
                 }
                 catch (Exception ex)
                 {
@@ -803,7 +835,7 @@ namespace WebApi.Services.Instance
             }
             #endregion
 
-            await _redisConnection.GetDatabase().StreamAddAsync(queueName, redisKey.ToString(), JsonConvert.SerializeObject(redisValue));
+            await _db.StreamAddAsync(queueName, redisKey.ToString(), JsonConvert.SerializeObject(redisValue));
         }
         #endregion
 
@@ -822,7 +854,7 @@ namespace WebApi.Services.Instance
                 return;
             }
 
-            var sub = _redisConnection.GetSubscriber();
+            var sub = _connection.GetSubscriber();
             var patternMode = channelName.StartsWith("*") || channelName.EndsWith("*")
                             ? RedisChannel.PatternMode.Pattern : RedisChannel.PatternMode.Literal;
             var channel = new RedisChannel(channelName, patternMode);
@@ -837,10 +869,9 @@ namespace WebApi.Services.Instance
                         return;
                     }
 
-                    var db = _redisConnection.GetDatabase();
                     while (true)
                     {
-                        var data = db.ListRightPop(queueName);
+                        var data = _db.ListRightPop(queueName);
                         if (data.IsNullOrEmpty)
                         {
                             break;
@@ -868,7 +899,7 @@ namespace WebApi.Services.Instance
                 return;
             }
 
-            var sub = _redisConnection.GetSubscriber();
+            var sub = _connection.GetSubscriber();
             var patternMode = channelName.StartsWith("*") || channelName.EndsWith("*")
                             ? RedisChannel.PatternMode.Pattern : RedisChannel.PatternMode.Literal;
             var channel = new RedisChannel(channelName, patternMode);
@@ -883,10 +914,9 @@ namespace WebApi.Services.Instance
                         return;
                     }
 
-                    var db = _redisConnection.GetDatabase();
                     while (true)
                     {
-                        var data = await db.ListRightPopAsync(queueName);
+                        var data = await _db.ListRightPopAsync(queueName);
                         if (data.IsNullOrEmpty)
                         {
                             break;
@@ -912,7 +942,7 @@ namespace WebApi.Services.Instance
                 return;
             }
 
-            var sub = _redisConnection.GetSubscriber();
+            var sub = _connection.GetSubscriber();
             var patternMode = channelName.StartsWith("*") || channelName.EndsWith("*")
                             ? RedisChannel.PatternMode.Pattern : RedisChannel.PatternMode.Literal;
             var channel = new RedisChannel(channelName, patternMode);
@@ -927,8 +957,7 @@ namespace WebApi.Services.Instance
                         return;
                     }
 
-                    var db = _redisConnection.GetDatabase();
-                    var datas = db.ListRightPop(queueName, db.ListLength(queueName));
+                    var datas = _db.ListRightPop(queueName, _db.ListLength(queueName));
                     if (datas == null)
                     {
                         return;
@@ -955,7 +984,7 @@ namespace WebApi.Services.Instance
                 return;
             }
 
-            var sub = _redisConnection.GetSubscriber();
+            var sub = _connection.GetSubscriber();
             var patternMode = channelName.StartsWith("*") || channelName.EndsWith("*")
                             ? RedisChannel.PatternMode.Pattern : RedisChannel.PatternMode.Literal;
             var channel = new RedisChannel(channelName, patternMode);
@@ -970,8 +999,7 @@ namespace WebApi.Services.Instance
                         return;
                     }
 
-                    var db = _redisConnection.GetDatabase();
-                    var datas = await db.ListRightPopAsync(queueName, await db.ListLengthAsync(queueName));
+                    var datas = await _db.ListRightPopAsync(queueName, await _db.ListLengthAsync(queueName));
                     if (datas == null)
                     {
                         return;
@@ -996,7 +1024,7 @@ namespace WebApi.Services.Instance
                 return;
             }
 
-            var sub = _redisConnection.GetSubscriber();
+            var sub = _connection.GetSubscriber();
             var patternMode = channelName.StartsWith("*") || channelName.EndsWith("*")
                             ? RedisChannel.PatternMode.Pattern : RedisChannel.PatternMode.Literal;
             var channel = new RedisChannel(channelName, patternMode);
@@ -1011,10 +1039,9 @@ namespace WebApi.Services.Instance
                         return;
                     }
 
-                    var db = _redisConnection.GetDatabase();
                     while (true)
                     {
-                        var data = db.ListRightPop(queueName);
+                        var data = _db.ListRightPop(queueName);
                         if (data.IsNullOrEmpty)
                         {
                             break;
@@ -1023,7 +1050,7 @@ namespace WebApi.Services.Instance
                         var res = func(JsonConvert.DeserializeObject<T>(data));
                         if (res == false)
                         {
-                            db.ListRightPush(queueName, data);
+                            _db.ListRightPush(queueName, data);
                         }
                     }
                 });
@@ -1046,7 +1073,7 @@ namespace WebApi.Services.Instance
                 return;
             }
 
-            var sub = _redisConnection.GetSubscriber();
+            var sub = _connection.GetSubscriber();
             var patternMode = channelName.StartsWith("*") || channelName.EndsWith("*")
                             ? RedisChannel.PatternMode.Pattern : RedisChannel.PatternMode.Literal;
             var channel = new RedisChannel(channelName, patternMode);
@@ -1061,11 +1088,9 @@ namespace WebApi.Services.Instance
                         return;
                     }
 
-                    var db = _redisConnection.GetDatabase();
-
                     while (true)
                     {
-                        var data = await db.ListRightPopAsync(queueName);
+                        var data = await _db.ListRightPopAsync(queueName);
                         if (data.IsNullOrEmpty)
                         {
                             break;
@@ -1074,7 +1099,7 @@ namespace WebApi.Services.Instance
                         var res = await funcAsync(JsonConvert.DeserializeObject<T>(data));
                         if (res == false)
                         {
-                            await db.ListRightPushAsync(queueName, data);
+                            await _db.ListRightPushAsync(queueName, data);
                         }
                     }
                 });
@@ -1095,10 +1120,19 @@ namespace WebApi.Services.Instance
                 return;
             }
 
-            var db = _redisConnection.GetDatabase();
             string queueName = $"{channelName}:{typeof(T).Name}";
-            db.ListLeftPush(queueName, JsonConvert.SerializeObject(data));
-            db.Publish(channelName, queueName);
+            string jsonData = JsonConvert.SerializeObject(data);
+
+            var tran = _db.CreateTransaction();
+            _ = tran.ListLeftPushAsync(queueName, jsonData);
+            _ = tran.PublishAsync(channelName, queueName);
+
+            bool committed = tran.Execute();
+
+            if (!committed)
+            {
+                _logger.LogError($"發布佇列失敗，Channel: {channelName}, Queue: {queueName}");
+            }
         }
 
         /// <summary>
@@ -1117,10 +1151,19 @@ namespace WebApi.Services.Instance
                 return;
             }
 
-            var db = _redisConnection.GetDatabase();
             string queueName = $"{channelName}:{typeof(T).Name}";
-            await db.ListLeftPushAsync(queueName, JsonConvert.SerializeObject(data));
-            await db.PublishAsync(channelName, queueName);
+            string jsonData = JsonConvert.SerializeObject(data);
+
+            var tran = _db.CreateTransaction();
+            _ = tran.ListLeftPushAsync(queueName, jsonData);
+            _ = tran.PublishAsync(channelName, queueName);
+
+            bool committed = await tran.ExecuteAsync();
+
+            if (!committed)
+            {
+                _logger.LogError($"非同步發布佇列失敗，Channel: {channelName}, Queue: {queueName}");
+            }
         }
 
         /// <summary>
@@ -1132,15 +1175,24 @@ namespace WebApi.Services.Instance
         /// <param name="datas"></param>
         public void PublishListQueue<T>(string channelName, IEnumerable<T> datas)
         {
-            if (string.IsNullOrWhiteSpace(channelName) || datas == null)
+            if (string.IsNullOrWhiteSpace(channelName) || datas == null || !datas.Any())
             {
                 return;
             }
 
-            var db = _redisConnection.GetDatabase();
             string queueName = $"{channelName}:{typeof(T).Name}";
-            db.ListLeftPush(queueName, datas.Select(e => new RedisValue(JsonConvert.SerializeObject(e))).ToArray());
-            db.Publish(channelName, queueName);
+            RedisValue[] jsonDatas = datas.Select(e => new RedisValue(JsonConvert.SerializeObject(e))).ToArray();
+
+            var tran = _db.CreateTransaction();
+            _ = tran.ListLeftPushAsync(queueName, jsonDatas);
+            _ = tran.PublishAsync(channelName, queueName);
+
+            bool committed = tran.Execute();
+
+            if (!committed)
+            {
+                _logger.LogError($"批次發布佇列失敗，Channel: {channelName}, Queue: {queueName}");
+            }
         }
 
         /// <summary>
@@ -1154,15 +1206,24 @@ namespace WebApi.Services.Instance
         /// <returns></returns>
         public async Task PublishListQueueAsync<T>(string channelName, IEnumerable<T> datas)
         {
-            if (string.IsNullOrWhiteSpace(channelName) || datas == null)
+            if (string.IsNullOrWhiteSpace(channelName) || datas == null || !datas.Any())
             {
                 return;
             }
 
-            var db = _redisConnection.GetDatabase();
             string queueName = $"{channelName}:{typeof(T).Name}";
-            await db.ListLeftPushAsync(queueName, datas.Select(e => new RedisValue(JsonConvert.SerializeObject(e))).ToArray());
-            await db.PublishAsync(channelName, queueName);
+            RedisValue[] jsonDatas = datas.Select(e => new RedisValue(JsonConvert.SerializeObject(e))).ToArray();
+
+            var tran = _db.CreateTransaction();
+            _ = tran.ListLeftPushAsync(queueName, jsonDatas);
+            _ = tran.PublishAsync(channelName, queueName);
+
+            bool committed = await tran.ExecuteAsync();
+
+            if (!committed)
+            {
+                _logger.LogError($"非同步批次發布佇列失敗，Channel: {channelName}, Queue: {queueName}");
+            }
         }
 
         /// <summary>
@@ -1179,12 +1240,18 @@ namespace WebApi.Services.Instance
                 return;
             }
 
-            var db = _redisConnection.GetDatabase();
+            string typeName = typeof(T).Name;
+            string jsonData = JsonConvert.SerializeObject(data);
+
             foreach (var channelName in channelNames)
             {
-                string queueName = $"{channelName}:{typeof(T).Name}";
-                db.ListLeftPush(queueName, JsonConvert.SerializeObject(data));
-                db.Publish(channelName, queueName);
+                string queueName = $"{channelName}:{typeName}";
+
+                var tran = _db.CreateTransaction();
+                _ = tran.ListLeftPushAsync(queueName, jsonData);
+                _ = tran.PublishAsync(channelName, queueName);
+
+                tran.Execute();
             }
         }
 
@@ -1204,13 +1271,22 @@ namespace WebApi.Services.Instance
                 return;
             }
 
-            var db = _redisConnection.GetDatabase();
+            string typeName = typeof(T).Name;
+            string jsonData = JsonConvert.SerializeObject(data);
+            var executeTasks = new List<Task<bool>>();
+
             foreach (var channelName in channelNames)
             {
-                string queueName = $"{channelName}:{typeof(T).Name}";
-                await db.ListLeftPushAsync(queueName, JsonConvert.SerializeObject(data));
-                await db.PublishAsync(channelName, queueName);
+                string queueName = $"{channelName}:{typeName}";
+
+                var tran = _db.CreateTransaction();
+                _ = tran.ListLeftPushAsync(queueName, jsonData);
+                _ = tran.PublishAsync(channelName, queueName);
+
+                executeTasks.Add(tran.ExecuteAsync());
             }
+
+            await Task.WhenAll(executeTasks);
         }
 
         /// <summary>
@@ -1222,17 +1298,23 @@ namespace WebApi.Services.Instance
         /// <param name="datas"></param>
         public void PublishListQueue<T>(IEnumerable<string> channelNames, IEnumerable<T> datas)
         {
-            if (channelNames == null || channelNames.Any() == false || datas == null)
+            if (channelNames == null || channelNames.Any() == false || datas == null || !datas.Any())
             {
                 return;
             }
 
-            var db = _redisConnection.GetDatabase();
+            string typeName = typeof(T).Name;
+            RedisValue[] jsonDatas = datas.Select(e => new RedisValue(JsonConvert.SerializeObject(e))).ToArray();
+
             foreach (var channelName in channelNames)
             {
-                string queueName = $"{channelName}:{typeof(T).Name}";
-                db.ListLeftPush(queueName, datas.Select(e => new RedisValue(JsonConvert.SerializeObject(e))).ToArray());
-                db.Publish(channelName, queueName);
+                string queueName = $"{channelName}:{typeName}";
+
+                var tran = _db.CreateTransaction();
+                _ = tran.ListLeftPushAsync(queueName, jsonDatas);
+                _ = tran.PublishAsync(channelName, queueName);
+
+                tran.Execute();
             }
         }
 
@@ -1247,18 +1329,27 @@ namespace WebApi.Services.Instance
         /// <returns></returns>
         public async Task PublishListQueueAsync<T>(IEnumerable<string> channelNames, IEnumerable<T> datas)
         {
-            if (channelNames == null || channelNames.Any() == false || datas == null)
+            if (channelNames == null || channelNames.Any() == false || datas == null || !datas.Any())
             {
                 return;
             }
 
-            var db = _redisConnection.GetDatabase();
+            string typeName = typeof(T).Name;
+            RedisValue[] jsonDatas = datas.Select(e => new RedisValue(JsonConvert.SerializeObject(e))).ToArray();
+            var executeTasks = new List<Task<bool>>();
+
             foreach (var channelName in channelNames)
             {
-                string queueName = $"{channelName}:{typeof(T).Name}";
-                await db.ListLeftPushAsync(queueName, datas.Select(e => new RedisValue(JsonConvert.SerializeObject(e))).ToArray());
-                await db.PublishAsync(channelName, queueName);
+                string queueName = $"{channelName}:{typeName}";
+
+                var tran = _db.CreateTransaction();
+                _ = tran.ListLeftPushAsync(queueName, jsonDatas);
+                _ = tran.PublishAsync(channelName, queueName);
+
+                executeTasks.Add(tran.ExecuteAsync());
             }
+
+            await Task.WhenAll(executeTasks);
         }
         #endregion
     }

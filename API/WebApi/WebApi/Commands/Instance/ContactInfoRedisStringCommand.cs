@@ -15,8 +15,12 @@ namespace WebApi.Commands.Instance
         private readonly IMapper _mapper;
         private readonly IContactInfoService _contactInfoService;
         private readonly IRedisService _redisService;
+        private readonly IRedlockService _redlockService;
         private const string _redisQueryByID = $"{nameof(ContactInfo)}:{nameof(QueryByID)}";
         private const string _redisQueryByCondition = $"{nameof(ContactInfo)}:{nameof(QueryByCondition)}";
+        private TimeSpan _redisTTL = TimeSpan.FromMinutes(10);
+        private TimeSpan _redisJitter = TimeSpan.FromMinutes(5);
+        private TimeSpan _redisEmptyTTL = TimeSpan.FromMinutes(3);
 
         /// <summary>
         /// 
@@ -24,15 +28,18 @@ namespace WebApi.Commands.Instance
         /// <param name="mapper"></param>
         /// <param name="contactInfoService"></param>
         /// <param name="redisService"></param>
+        /// <param name="redlockService"></param>
         public ContactInfoRedisStringCommand(
             IMapper mapper,
             IContactInfoService contactInfoService,
-            IRedisService redisService
+            IRedisService redisService,
+            IRedlockService redlockService
         )
         {
             _mapper = mapper;
             _contactInfoService = contactInfoService;
             _redisService = redisService;
+            _redlockService = redlockService;
         }
 
         /// <summary>
@@ -47,22 +54,40 @@ namespace WebApi.Commands.Instance
             {
                 var res = _redisService.GetObject<ContactInfo>(redisKey);
 
-                return SuccessRP(_mapper.Map<QueryRP>(res));
+                return res == null ? FailRP<QueryRP>(1, "No Data") : SuccessRP(_mapper.Map<QueryRP>(res));
             }
             else
             {
-                var res = _contactInfoService.Query(id);
+                var res = _redlockService.AcquireLock(
+                            $"Lock:{redisKey}",
+                            TimeSpan.FromSeconds(30),
+                            TimeSpan.FromSeconds(15),
+                            TimeSpan.FromMilliseconds(500),
+                            () =>
+                            {
+                                if (_redisService.Exist(redisKey))
+                                {
+                                    return _redisService.GetObject<ContactInfo>(redisKey);
+                                }
 
-                if (res == null)
-                {
-                    return FailRP<QueryRP>(1, "No Data");
-                }
-                else
-                {
-                    _redisService.SetObjectAsync(redisKey, res, TimeSpan.FromMinutes(5));
+                                var dbData = _contactInfoService.Query(id);
+                                if (dbData == null)
+                                {
+                                    _redisService.SetObject(redisKey, (ContactInfo)null, _redisEmptyTTL);
+                                }
+                                else
+                                {
+                                    _redisService.SetObjectWithJitter(redisKey, dbData, _redisTTL, _redisJitter);
+                                }
+                                return dbData;
+                            },
+                            () =>
+                            {
+                                throw new TimeoutException("系統忙碌中，請稍後再試");
+                            }
+                );
 
-                    return SuccessRP(_mapper.Map<QueryRP>(res));
-                }
+                return res == null ? FailRP<QueryRP>(1, "No Data") : SuccessRP(_mapper.Map<QueryRP>(res));
             }
         }
 
@@ -110,13 +135,13 @@ namespace WebApi.Commands.Instance
             {
                 var res = _contactInfoService.Query(dicParams);
 
-                if (res.data == null)
+                if (res.data == null || res.data.Any() == false)
                 {
                     return FailRP<PageDataRP<IEnumerable<QueryRP>>>(1, "No Data");
                 }
                 else
                 {
-                    _redisService.SetObjectAsync(redisKey, res, TimeSpan.FromMinutes(5));
+                    _redisService.SetObjectWithJitter(redisKey, res, _redisTTL, _redisJitter);
 
                     return SuccessRP(new PageDataRP<IEnumerable<QueryRP>>
                     {
@@ -151,7 +176,7 @@ namespace WebApi.Commands.Instance
             else
             {
                 var objCache = _contactInfoService.Query(objInsert.ContactInfoID);
-                _redisService.SetObjectAsync($"{_redisQueryByID}:{objCache.ContactInfoID}", objCache, TimeSpan.FromMinutes(5));
+                _redisService.SetObjectWithJitter($"{_redisQueryByID}:{objCache.ContactInfoID}", objCache, _redisTTL, _redisJitter);
                 _redisService.RemoveByKeyAsync($"{_redisQueryByCondition}");
 
                 return SuccessRP(_mapper.Map<QueryRP>(objCache));

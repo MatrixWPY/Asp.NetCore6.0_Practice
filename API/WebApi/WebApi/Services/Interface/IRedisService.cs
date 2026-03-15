@@ -73,37 +73,6 @@
 
         #region String
         /// <summary>
-        /// 獲取String緩存值
-        /// </summary>
-        /// <param name="redisKey"></param>
-        /// <returns></returns>
-        string GetString(string redisKey);
-
-        /// <summary>
-        /// 異步獲取String緩存值
-        /// </summary>
-        /// <param name="redisKey"></param>
-        /// <returns></returns>
-        Task<string> GetStringAsync(string redisKey);
-
-        /// <summary>
-        /// 設置String緩存值
-        /// </summary>
-        /// <param name="redisKey"></param>
-        /// <param name="redisValue"></param>
-        /// <param name="tsExpiry"></param>
-        void SetString(string redisKey, string redisValue, TimeSpan tsExpiry);
-
-        /// <summary>
-        /// 異步設置String緩存值
-        /// </summary>
-        /// <param name="redisKey"></param>
-        /// <param name="redisValue"></param>
-        /// <param name="tsExpiry"></param>
-        /// <returns></returns>
-        Task SetStringAsync(string redisKey, string redisValue, TimeSpan tsExpiry);
-
-        /// <summary>
         /// 獲取Deserialize緩存值
         /// </summary>
         /// <typeparam name="T"></typeparam>
@@ -137,6 +106,27 @@
         /// <param name="tsExpiry"></param>
         /// <returns></returns>
         Task SetObjectAsync<T>(string redisKey, T redisValue, TimeSpan tsExpiry);
+
+        /// <summary>
+        /// 設置Serialize緩存值，並加上隨機過期時間
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="redisKey"></param>
+        /// <param name="redisValue"></param>
+        /// <param name="tsBaseExpiry"></param>
+        /// <param name="tsMaxJitter"></param>
+        void SetObjectWithJitter<T>(string redisKey, T redisValue, TimeSpan tsBaseExpiry, TimeSpan tsMaxJitter);
+
+        /// <summary>
+        /// 異步設置Serialize緩存值，並加上隨機過期時間
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="redisKey"></param>
+        /// <param name="redisValue"></param>
+        /// <param name="tsBaseExpiry"></param>
+        /// <param name="tsMaxJitter"></param>
+        /// <returns></returns>
+        Task SetObjectWithJitterAsync<T>(string redisKey, T redisValue, TimeSpan tsBaseExpiry, TimeSpan tsMaxJitter);
         #endregion
 
         #region Hash
@@ -157,45 +147,6 @@
         /// <param name="hashKey"></param>
         /// <returns></returns>
         Task<bool> ExistHashAsync<TKey>(string redisKey, TKey hashKey);
-
-        /// <summary>
-        /// 獲取Hash緩存值
-        /// </summary>
-        /// <typeparam name="TKey"></typeparam>
-        /// <param name="redisKey"></param>
-        /// <param name="hashKey"></param>
-        /// <returns></returns>
-        string GetHash<TKey>(string redisKey, TKey hashKey);
-
-        /// <summary>
-        /// 異步獲取Hash緩存值
-        /// </summary>
-        /// <typeparam name="TKey"></typeparam>
-        /// <param name="redisKey"></param>
-        /// <param name="hashKey"></param>
-        /// <returns></returns>
-        Task<string> GetHashAsync<TKey>(string redisKey, TKey hashKey);
-
-        /// <summary>
-        /// 設置Hash緩存值
-        /// </summary>
-        /// <typeparam name="TKey"></typeparam>
-        /// <param name="redisKey"></param>
-        /// <param name="hashKey"></param>
-        /// <param name="hashValue"></param>
-        /// <param name="tsExpiry"></param>
-        void SetHash<TKey>(string redisKey, TKey hashKey, string hashValue, TimeSpan tsExpiry);
-
-        /// <summary>
-        /// 異步設置Hash緩存值
-        /// </summary>
-        /// <typeparam name="TKey"></typeparam>
-        /// <param name="redisKey"></param>
-        /// <param name="hashKey"></param>
-        /// <param name="hashValue"></param>
-        /// <param name="tsExpiry"></param>
-        /// <returns></returns>
-        Task SetHashAsync<TKey>(string redisKey, TKey hashKey, string hashValue, TimeSpan tsExpiry);
 
         /// <summary>
         /// 獲取Hash Deserialize緩存值集合
@@ -255,6 +206,29 @@
         /// <param name="tsExpiry"></param>
         /// <returns></returns>
         Task SetHashObjectAsync<TKey, TValue>(string redisKey, IDictionary<TKey, TValue> hashKeyValue, TimeSpan tsExpiry);
+
+        /// <summary>
+        /// 設置Hash Serialize緩存值，並加上隨機過期時間
+        /// </summary>
+        /// <typeparam name="TKey"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
+        /// <param name="redisKey"></param>
+        /// <param name="hashKeyValue"></param>
+        /// <param name="tsBaseExpiry"></param>
+        /// <param name="tsMaxJitter"></param>
+        void SetHashObjectWithJitter<TKey, TValue>(string redisKey, IDictionary<TKey, TValue> hashKeyValue, TimeSpan tsBaseExpiry, TimeSpan tsMaxJitter);
+
+        /// <summary>
+        /// 異步設置Hash Serialize緩存值，並加上隨機過期時間
+        /// </summary>
+        /// <typeparam name="TKey"></typeparam>
+        /// <typeparam name="TValue"></typeparam>
+        /// <param name="redisKey"></param>
+        /// <param name="hashKeyValue"></param>
+        /// <param name="tsBaseExpiry"></param>
+        /// <param name="tsMaxJitter"></param>
+        /// <returns></returns>
+        Task SetHashObjectWithJitterAsync<TKey, TValue>(string redisKey, IDictionary<TKey, TValue> hashKeyValue, TimeSpan tsBaseExpiry, TimeSpan tsMaxJitter);
 
         /// <summary>
         /// 移除Hash緩存值

@@ -1,19 +1,16 @@
 ﻿using RedLockNet.SERedis;
 using RedLockNet.SERedis.Configuration;
-using StackExchange.Redis;
 using WebApi.Services.Interface;
 
 namespace WebApi.Services.Instance
 {
     public class RedlockService : IRedlockService, IDisposable
     {
-        private readonly ConnectionMultiplexer _connection;
         private readonly RedLockFactory _redLockFactory;
 
         public RedlockService(RedisBaseService redisBaseService)
         {
-            _connection = redisBaseService.Connection;
-            _redLockFactory = RedLockFactory.Create(new List<RedLockMultiplexer> { _connection });
+            _redLockFactory = RedLockFactory.Create(new List<RedLockMultiplexer> { redisBaseService.Connection });
         }
 
         public async Task AcquireLockAsync(

@@ -15,6 +15,7 @@ namespace WebApi.Commands.Instance
         private readonly IMapper _mapper;
         private readonly IContactInfoService _contactInfoService;
         private readonly IRedisService _redisService;
+        private readonly IRedlockService _redlockService;
         private const string _redisQueryByID = $"{nameof(ContactInfo)}:{nameof(QueryByID)}";
         private const string _redisQueryByCondition = $"{nameof(ContactInfo)}:{nameof(QueryByCondition)}";
         private TimeSpan _redisTTL = TimeSpan.FromMinutes(10);
@@ -27,15 +28,18 @@ namespace WebApi.Commands.Instance
         /// <param name="mapper"></param>
         /// <param name="contactInfoService"></param>
         /// <param name="redisService"></param>
+        /// <param name="redlockService"></param>
         public ContactInfoRedisHashCommand(
             IMapper mapper,
             IContactInfoService contactInfoService,
-            IRedisService redisService
+            IRedisService redisService,
+            IRedlockService redlockService
         )
         {
             _mapper = mapper;
             _contactInfoService = contactInfoService;
             _redisService = redisService;
+            _redlockService = redlockService;
         }
 
         /// <summary>
@@ -49,29 +53,40 @@ namespace WebApi.Commands.Instance
             {
                 var res = _redisService.GetHashObject<long, ContactInfo>(_redisQueryByID, id);
 
-                if (res == null)
-                {
-                    return FailRP<QueryRP>(1, "No Data");
-                }
-                else
-                {
-                    return SuccessRP(_mapper.Map<QueryRP>(res));
-                }
+                return res == null ? FailRP<QueryRP>(1, "No Data") : SuccessRP(_mapper.Map<QueryRP>(res));
             }
             else
             {
-                var res = _contactInfoService.Query(id);
+                var res = _redlockService.AcquireLock(
+                            $"Lock:{_redisQueryByID}:{id}",
+                            TimeSpan.FromSeconds(30),
+                            TimeSpan.FromSeconds(15),
+                            TimeSpan.FromMilliseconds(500),
+                            () =>
+                            {
+                                if (_redisService.ExistHash(_redisQueryByID, id))
+                                {
+                                    return _redisService.GetHashObject<long, ContactInfo>(_redisQueryByID, id);
+                                }
 
-                if (res == null)
-                {
-                    _redisService.SetHashObject(_redisQueryByID, new Dictionary<long, ContactInfo> { { id, null } }, _redisEmptyTTL);
-                    return FailRP<QueryRP>(1, "No Data");
-                }
-                else
-                {
-                    _redisService.SetHashObjectWithJitter(_redisQueryByID, new Dictionary<long, ContactInfo> { { id, res } }, _redisTTL, _redisJitter);
-                    return SuccessRP(_mapper.Map<QueryRP>(res));
-                }
+                                var dbData = _contactInfoService.Query(id);
+                                if (dbData == null)
+                                {
+                                    _redisService.SetHashObject(_redisQueryByID, new Dictionary<long, ContactInfo> { { id, null } }, _redisEmptyTTL);
+                                }
+                                else
+                                {
+                                    _redisService.SetHashObjectWithJitter(_redisQueryByID, new Dictionary<long, ContactInfo> { { id, dbData } }, _redisTTL, _redisJitter);
+                                }
+                                return dbData;
+                            },
+                            () =>
+                            {
+                                throw new TimeoutException("系統忙碌中，請稍後再試");
+                            }
+                );
+
+                return res == null ? FailRP<QueryRP>(1, "No Data") : SuccessRP(_mapper.Map<QueryRP>(res));
             }
         }
 

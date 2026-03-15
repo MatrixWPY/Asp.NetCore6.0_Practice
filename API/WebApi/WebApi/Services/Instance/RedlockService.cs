@@ -13,6 +13,34 @@ namespace WebApi.Services.Instance
             _redLockFactory = RedLockFactory.Create(new List<RedLockMultiplexer> { redisBaseService.Connection });
         }
 
+        public void AcquireLock(
+            string resource, TimeSpan expiry, TimeSpan wait, TimeSpan retry,
+            Action success, Action fail = null)
+        {
+            // Redis 分散式鎖參數說明
+            // 1. resource : 鎖的資源名稱
+            // 2. expiryTime : 鎖的過期時間
+            // 3. waitTime : 未取得鎖的等待時間
+            // 4. retryTime : 未取得鎖的重試間隔
+            using (var redLock = _redLockFactory.CreateLock(resource, expiry, wait, retry))
+            {
+                if (redLock.IsAcquired)
+                {
+                    // 成功取得鎖的所有權，執行需要獨佔資源的核心工作
+                    success();
+                }
+                else
+                {
+                    // 重試達到等待時間仍未取得鎖的所有權，執行失敗的後續處理
+                    if (fail != null)
+                    {
+                        fail();
+                    }
+                }
+            }
+            // 離開 using 區塊時，RedLock.net 會自動執行 Lua Script 安全地釋放鎖
+        }
+
         public async Task AcquireLockAsync(
             string resource, TimeSpan expiry, TimeSpan wait, TimeSpan retry,
             Func<Task> success, Func<Task> fail = null)
@@ -36,6 +64,31 @@ namespace WebApi.Services.Instance
                     {
                         await fail();
                     }
+                }
+            }
+            // 離開 using 區塊時，RedLock.net 會自動執行 Lua Script 安全地釋放鎖
+        }
+
+        public T AcquireLock<T>(
+            string resource, TimeSpan expiry, TimeSpan wait, TimeSpan retry,
+            Func<T> success, Func<T> fail = null)
+        {
+            // Redis 分散式鎖參數說明
+            // 1. resource : 鎖的資源名稱
+            // 2. expiryTime : 鎖的過期時間
+            // 3. waitTime : 未取得鎖的等待時間
+            // 4. retryTime : 未取得鎖的重試間隔
+            using (var redLock = _redLockFactory.CreateLock(resource, expiry, wait, retry))
+            {
+                if (redLock.IsAcquired)
+                {
+                    // 成功取得鎖的所有權，執行需要獨佔資源的核心工作
+                    return success();
+                }
+                else
+                {
+                    // 重試達到等待時間仍未取得鎖的所有權，執行失敗的後續處理
+                    return fail != null ? fail() : default;
                 }
             }
             // 離開 using 區塊時，RedLock.net 會自動執行 Lua Script 安全地釋放鎖
